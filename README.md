@@ -18,12 +18,12 @@ The system features a dual-architecture: a blazing-fast React frontend and a pow
 
 ## ✨ Features
 
-- 🗺️ **Full-Screen Interactive Map:** Powered by Mapbox GL with dynamic clustering and custom pulsing markers.
-- 🤖 **Autonomous Data Bot:** A Python background worker (`scraper.py`) that fetches and normalizes official external data streams without slowing down the user experience.
-- ⚡ **Real-Time Geolocation:** Instantly calculates your distance from critical incidents using the browser's Geolocation API.
-- 🎨 **Premium UI/UX:** Responsive design, glassmorphism elements, dark/light mode toggle, and micro-animations built with Tailwind CSS and Framer Motion.
-- 🔔 **Smart Notifications:** Persistent local storage alerts system with unread badges and contextual incident routing.
-- 📱 **Mobile-First & PWA Ready:** Flawless responsive layout that adapts from a desktop sidebar to a sleek mobile bottom navigation bar.
+-  **Full-Screen Interactive Map:** Powered by Mapbox GL with dynamic clustering and custom pulsing markers.
+-  **Autonomous Data Bot:** A Python background worker (`scraper.py`) that fetches and normalizes official external data streams without slowing down the user experience.
+-  **Real-Time Geolocation:** Instantly calculates your distance from critical incidents using the browser's Geolocation API.
+-  **Premium UI/UX:** Responsive design, glassmorphism elements, dark/light mode toggle, and micro-animations built with Tailwind CSS and Framer Motion.
+-  **Smart Notifications:** Persistent local storage alerts system with unread badges and contextual incident routing.
+-  **Mobile-First & PWA Ready:** Flawless responsive layout that adapts from a desktop sidebar to a sleek mobile bottom navigation bar.
 
 ## 🛠️ Tech Stack
 
@@ -40,7 +40,7 @@ The system features a dual-architecture: a blazing-fast React frontend and a pow
 - **Database:** SQLite (SQLAlchemy ORM) - *Production ready for PostgreSQL*
 - **Bot Engine:** Python `requests` + background scheduling via async workers.
 
-## 🚀 Getting Started
+## Getting Started
 
 Follow these instructions to set up the project locally on your machine.
 
@@ -93,7 +93,7 @@ cd backend
 python -m bot.main
 ```
 
-## 👨‍💻 Author
+## Author
 
 **activ8st**
 - GitHub: [@activ8st](https://github.com/activ8st)
