@@ -25,7 +25,7 @@ The system features a dual-architecture: a blazing-fast React frontend and a pow
 -  **Smart Notifications:** Persistent local storage alerts system with unread badges and contextual incident routing.
 -  **Mobile-First & PWA Ready:** Flawless responsive layout that adapts from a desktop sidebar to a sleek mobile bottom navigation bar.
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 ### Frontend
 - **Framework:** React 18 + Vite
