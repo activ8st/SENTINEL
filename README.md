@@ -56,7 +56,16 @@ Make sure you have Node.js installed.
 ```bash
 # Install NPM dependencies
 npm install
+```
 
+**⚠️ Important: Mapbox Token**
+Before starting the server, you must provide a Mapbox Access Token.
+Create a file named `.env.local` in the root of the project and add your key:
+```env
+VITE_MAPBOX_ACCESS_TOKEN=your_mapbox_api_key_here
+```
+
+```bash
 # Start the Vite development server
 npm run dev
 ```
