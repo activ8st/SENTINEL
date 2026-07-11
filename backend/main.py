@@ -32,12 +32,21 @@ def get_current_user(db: Session = Depends(get_db)):
     return user
 
 @app.get("/api/incidents", response_model=List[schemas.Incident])
-def get_incidents(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_incidents(skip: int = 0, limit: int = 500, db: Session = Depends(get_db)):
     incidents = db.query(models.Incident).offset(skip).limit(limit).all()
     # Map media objects to media_urls string list for the frontend
     for inc in incidents:
         inc.media_urls = [m.url for m in inc.media]
     return incidents
+
+@app.post("/api/incidents/refresh")
+def refresh_incidents():
+    try:
+        from .fetch_live_incidents import main as fetch_live_incidents
+
+        return fetch_live_incidents()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
 @app.get("/api/incidents/{incident_id}", response_model=schemas.Incident)
 def get_incident(incident_id: str, db: Session = Depends(get_db)):

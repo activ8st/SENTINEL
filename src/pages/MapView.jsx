@@ -7,18 +7,41 @@ import { Slider } from '@/components/ui/slider';
 import IncidentCard from '@/components/incidents/IncidentCard';
 import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
-import { Locate, Layers, X, List, ChevronDown, Navigation } from 'lucide-react';
+import { Locate, Layers, X, List, ChevronDown, Navigation, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
 const IncidentMap = lazy(() => import('@/components/incidents/IncidentMap'));
 
 const DEFAULT_LOC = { lat: 41.9028, lng: 12.4964 };
 
+const TIME_WINDOWS = [
+  ...Array.from({ length: 8 }, (_, i) => ({
+    key: `h-${i}`,
+    fromHours: i * 3,
+    toHours: (i + 1) * 3,
+    label: i === 0 ? 'Ultime 3 ore' : `${i * 3}-${(i + 1) * 3} ore fa`,
+  })),
+  ...Array.from({ length: 29 }, (_, i) => ({
+    key: `d-${i + 1}`,
+    fromHours: 24 * (i + 1),
+    toHours: 24 * (i + 2),
+    label: i === 0 ? 'Ieri' : `${i + 1} giorni fa`,
+  })),
+];
+
+const getIncidentDate = (incident) => new Date(incident.created_date || incident.last_seen_at || Date.now());
+
+const isInTimeWindow = (incident, windowIndex) => {
+  const selected = TIME_WINDOWS[windowIndex] || TIME_WINDOWS[0];
+  const ageHours = (Date.now() - getIncidentDate(incident).getTime()) / 36e5;
+  return ageHours >= selected.fromHours && ageHours < selected.toHours;
+};
+
 export default function MapView() {
   const [mapReady, setMapReady] = useState(false);
   const [location, setLocation] = useState(DEFAULT_LOC);
   const [activeFilters, setActiveFilters] = useState(Object.keys(TYPE_CONFIG));
-  const [radius, setRadius] = useState(200);
-  const [useRadius, setUseRadius] = useState(false);
+  const [radius, setRadius] = useState(() => Number(localStorage.getItem('sentinelRadiusKm') || 200));
+  const [useRadius, setUseRadius] = useState(() => localStorage.getItem('sentinelUseRadius') === 'true');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [followUser, setFollowUser] = useState(false);
@@ -26,6 +49,20 @@ export default function MapView() {
   const [routeCoords, setRouteCoords] = useState(null);
   const [routeTarget, setRouteTarget] = useState(null);
   const [routeIncident, setRouteIncident] = useState(null);
+  const [timeWindowIndex, setTimeWindowIndex] = useState(() => Number(localStorage.getItem('sentinelTimeWindowIndex') || 0));
+  const [refreshingNews, setRefreshingNews] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('sentinelTimeWindowIndex', String(timeWindowIndex));
+  }, [timeWindowIndex]);
+
+  useEffect(() => {
+    localStorage.setItem('sentinelUseRadius', String(useRadius));
+  }, [useRadius]);
+
+  useEffect(() => {
+    localStorage.setItem('sentinelRadiusKm', String(radius));
+  }, [radius]);
 
   useEffect(() => {
     setMapReady(true);
@@ -82,7 +119,7 @@ export default function MapView() {
     }
   }, []);
 
-  const { data: apiIncidents = [] } = useQuery({
+  const { data: apiIncidents = [], refetch, isFetching } = useQuery({
     queryKey: ['incidents'],
     queryFn: async () => {
       const res = await fetch('http://localhost:8000/api/incidents');
@@ -94,6 +131,7 @@ export default function MapView() {
 
   const incidents = useMemo(() => apiIncidents
     .filter(i => activeFilters.includes(i.type))
+    .filter(i => isInTimeWindow(i, timeWindowIndex))
     .filter(i => {
       if (!useRadius) return true;
       return calcDistance(location.lat, location.lng, i.latitude, i.longitude) <= radius;
@@ -102,7 +140,24 @@ export default function MapView() {
       ...i,
       distance: calcDistance(location.lat, location.lng, i.latitude, i.longitude),
     }))
-    .sort((a, b) => a.distance - b.distance), [activeFilters, useRadius, radius, location]);
+    .sort((a, b) => a.distance - b.distance), [apiIncidents, activeFilters, timeWindowIndex, useRadius, radius, location]);
+
+  const moveTimeWindow = (direction) => {
+    setTimeWindowIndex(current => {
+      const next = current + direction;
+      return Math.min(Math.max(next, 0), TIME_WINDOWS.length - 1);
+    });
+  };
+
+  const refreshLiveNews = async () => {
+    setRefreshingNews(true);
+    try {
+      await fetch('http://localhost:8000/api/incidents/refresh', { method: 'POST' });
+      await refetch();
+    } finally {
+      setRefreshingNews(false);
+    }
+  };
 
   const toggleFilter = (key) => {
     setActiveFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
@@ -118,7 +173,7 @@ export default function MapView() {
     );
   };
 
-  const activeFiltersCount = Object.keys(TYPE_CONFIG).length - activeFilters.length + (useRadius ? 1 : 0);
+  const activeFiltersCount = Object.keys(TYPE_CONFIG).length - activeFilters.length + (useRadius ? 1 : 0) + (timeWindowIndex > 0 ? 1 : 0);
 
   // Memoizzati per evitare re-render inutili della mappa → niente lag
   const mapCenter = useMemo(() => {
@@ -215,7 +270,53 @@ export default function MapView() {
         )}
 
         {/* Locate button */}
-        <div className="absolute top-3 right-4 z-30">
+        <div className="absolute top-3 left-4 right-4 z-30 flex items-center justify-between gap-2 pointer-events-none">
+          <div className="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-white/95 dark:bg-gray-900/95 px-2 py-1 shadow pointer-events-auto">
+            <button
+              onClick={() => moveTimeWindow(1)}
+              disabled={timeWindowIndex >= TIME_WINDOWS.length - 1}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-35"
+              aria-label="Mostra periodo precedente"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <label className="sr-only" htmlFor="map-time-window">Seleziona periodo eventi</label>
+            <select
+              id="map-time-window"
+              value={timeWindowIndex}
+              onChange={(event) => setTimeWindowIndex(Number(event.target.value))}
+              className="min-w-[132px] max-w-[168px] bg-transparent text-xs font-semibold text-gray-900 dark:text-white outline-none"
+              aria-label="Seleziona periodo eventi"
+            >
+              {TIME_WINDOWS.map((window, index) => (
+                <option key={window.key} value={index}>
+                  {window.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => moveTimeWindow(-1)}
+              disabled={timeWindowIndex <= 0}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-35"
+              aria-label="Mostra periodo successivo"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <Button
+              size="icon"
+              className="bg-white dark:bg-gray-900/95 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-white/10 shadow"
+              onClick={refreshLiveNews}
+              disabled={refreshingNews || isFetching}
+              aria-label="Aggiorna notizie online"
+            >
+              <RefreshCw className={`w-5 h-5 ${refreshingNews || isFetching ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        </div>
+
+        <div className="absolute top-16 right-4 z-30">
           <Button
             size="icon"
             className={`${followUser ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-white dark:bg-gray-900/95 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white'} border border-gray-200 dark:border-white/10 shadow`}

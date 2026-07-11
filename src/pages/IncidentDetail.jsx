@@ -18,7 +18,7 @@ import { createPageUrl } from '@/utils';
 import {
   ArrowLeft, Share2, MapPin, Clock, Users, Send,
   Navigation, Phone, CheckCircle2, Bell, BellOff, ChevronDown, ChevronUp,
-  ShieldCheck
+  ShieldCheck, ExternalLink
 } from 'lucide-react';
 import VoteButtons from '@/components/incidents/VoteButtons';
 import { ReliabilityBadge } from '@/components/data/reliability';
@@ -140,6 +140,7 @@ export default function IncidentDetail() {
   const status = STATUS_CONFIG[incident.status] || STATUS_CONFIG.active;
   const timeline = generateTimeline(incident);
   const sectionCard = 'rounded-2xl border border-gray-200 dark:border-white/8 bg-white dark:bg-gray-900 shadow-sm';
+  const sourceLinks = Array.isArray(incident.media_urls) ? incident.media_urls.filter(Boolean) : [];
 
   return (
     <div className="min-h-screen bg-transparent pb-8" role="main" aria-labelledby="incident-title">
@@ -216,6 +217,33 @@ export default function IncidentDetail() {
         {incident.description && (
           <div className={`${sectionCard} p-4 mb-4`}>
             <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{incident.description}</p>
+          </div>
+        )}
+
+        {sourceLinks.length > 0 && (
+          <div className={`${sectionCard} p-4 mb-4`}>
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">Fonte e documenti</span>
+              {incident.source && (
+                <Badge variant="outline" className="text-xs border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300">
+                  {incident.source}
+                </Badge>
+              )}
+            </div>
+            <div className="space-y-2">
+              {sourceLinks.map((url, index) => (
+                <a
+                  key={`${url}-${index}`}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 px-3 py-2 text-sm text-gray-800 dark:text-gray-200 hover:border-orange-500/50"
+                >
+                  <span className="truncate">{index === 0 ? 'Apri notizia originale' : `Documento ${index + 1}`}</span>
+                  <ExternalLink className="w-4 h-4 flex-shrink-0 text-orange-500" aria-hidden="true" />
+                </a>
+              ))}
+            </div>
           </div>
         )}
 

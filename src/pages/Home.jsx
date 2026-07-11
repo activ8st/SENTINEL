@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Slider } from '@/components/ui/slider';
 import { useQuery } from '@tanstack/react-query';
 import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -52,6 +53,16 @@ export default function Home() {
   const [showFilters, setShowFilters] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showOnlyActive, setShowOnlyActive] = useState(false);
+  const [useRadius, setUseRadius] = useState(() => localStorage.getItem('sentinelUseRadius') === 'true');
+  const [radius, setRadius] = useState(() => Number(localStorage.getItem('sentinelRadiusKm') || 200));
+
+  useEffect(() => {
+    localStorage.setItem('sentinelUseRadius', String(useRadius));
+  }, [useRadius]);
+
+  useEffect(() => {
+    localStorage.setItem('sentinelRadiusKm', String(radius));
+  }, [radius]);
 
   const loadData = useCallback((loc) => {
     const withDistance = liveIncidents.map(inc => ({
@@ -101,6 +112,7 @@ export default function Home() {
   const filtered = incidents
     .filter(i => activeTypes.includes(i.type))
     .filter(i => !showOnlyActive || i.status === 'active')
+    .filter(i => !useRadius || (i.distance ?? 999999) <= radius)
     .sort((a, b) => {
       if (sortBy === 'distance') return (a.distance ?? 999) - (b.distance ?? 999);
       if (sortBy === 'time') return new Date(b.created_date) - new Date(a.created_date);
@@ -110,7 +122,7 @@ export default function Home() {
 
   const criticalCount = incidents.filter(i => i.severity === 'critical' && i.status === 'active').length;
   const activeCount = incidents.filter(i => i.status === 'active').length;
-  const activeFiltersCount = Object.keys(TYPE_CONFIG).length - activeTypes.length + (showOnlyActive ? 1 : 0);
+  const activeFiltersCount = Object.keys(TYPE_CONFIG).length - activeTypes.length + (showOnlyActive ? 1 : 0) + (useRadius ? 1 : 0);
 
   return (
     <div className="min-h-screen bg-transparent" role="main">
@@ -189,6 +201,11 @@ export default function Home() {
             Solo attivi
           </Badge>
         )}
+        {useRadius && (
+          <Badge variant="outline" className="ml-auto text-xs border-orange-400 bg-orange-500/10 text-orange-500 dark:text-orange-300">
+            Entro {radius} km
+          </Badge>
+        )}
       </div>
 
       {/* Incidents list */}
@@ -207,7 +224,7 @@ export default function Home() {
             <Button
               variant="outline"
               className="mt-4 border-gray-700 text-gray-300"
-              onClick={() => { setActiveTypes(Object.keys(TYPE_CONFIG)); setShowOnlyActive(false); }}
+              onClick={() => { setActiveTypes(Object.keys(TYPE_CONFIG)); setShowOnlyActive(false); setUseRadius(false); }}
             >
               Rimuovi filtri
             </Button>
@@ -249,6 +266,30 @@ export default function Home() {
                 : <Square className="w-5 h-5 text-gray-500" aria-hidden="true" />
               }
             </button>
+          </div>
+
+          <div className="mb-6">
+            <button
+              onClick={() => setUseRadius(!useRadius)}
+              aria-pressed={useRadius}
+              aria-label={useRadius ? 'Disattiva filtro raggio' : 'Attiva filtro raggio'}
+              className="flex items-center justify-between w-full p-3 rounded-xl bg-gray-100 dark:bg-gray-800 mb-3"
+            >
+              <span className="text-gray-900 dark:text-white font-medium">Filtra per raggio</span>
+              {useRadius
+                ? <CheckSquare className="w-5 h-5 text-orange-500" aria-hidden="true" />
+                : <Square className="w-5 h-5 text-gray-500" aria-hidden="true" />
+              }
+            </button>
+            {useRadius && (
+              <>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Distanza massima</span>
+                  <Badge variant="outline" className="text-orange-500 border-orange-500">{radius} km</Badge>
+                </div>
+                <Slider value={[radius]} onValueChange={([v]) => setRadius(v)} min={5} max={500} step={5} />
+              </>
+            )}
           </div>
 
           {/* Type toggles */}
