@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 
 import { useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -17,7 +18,7 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  Bell, MapPin, Crown, LogOut, ChevronRight,
+  Bell, MapPin, Crown, LogOut, ChevronRight, Sun, Moon,
   AlertTriangle, Flame, Car, Heart, Radio, CloudLightning,
   Lock, HelpCircle, Shield, Loader2
 } from 'lucide-react';
@@ -63,6 +64,9 @@ export default function Profile() {
   const updateSetting = (key, value) => {
     setSettings(s => ({ ...s, [key]: value }));
   };
+
+  const { theme, setTheme } = useTheme();
+  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
 
   if (loading) {
     return (
@@ -200,6 +204,21 @@ export default function Profile() {
             ))}
           </div>
         </div>
+
+        {/* Theme Toggle (Mobile) */}
+        <button
+          className="w-full bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-white/6 flex items-center justify-between px-4 py-3 text-left shadow-sm dark:shadow-none md:hidden mb-4"
+          onClick={toggleTheme}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xl" aria-hidden="true">{theme === 'dark' ? '☀️' : '🌙'}</span>
+            <div>
+              <p className="text-sm text-gray-900 dark:text-white">Tema visivo</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Passa alla modalità {theme === 'dark' ? 'chiara' : 'scura'}</p>
+            </div>
+          </div>
+          {theme === 'dark' ? <Sun className="w-5 h-5 text-gray-500" /> : <Moon className="w-5 h-5 text-gray-500" />}
+        </button>
 
         {/* Privacy — active */}
         <button

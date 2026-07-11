@@ -37,7 +37,25 @@ Nel **secondo terminale**, dobbiamo avviare l'interfaccia grafica (il sito web V
 
 ---
 
+## 3. Accendere il Lavoratore (Bot dei Dati In Background)
+
+Nel **terzo terminale**, dobbiamo avviare il motore che cerca autonomamente i nuovi incidenti (come i terremoti INGV).
+
+1. Attiva di nuovo l'ambiente virtuale:
+   ```powershell
+   .\backend\venv\Scripts\Activate.ps1
+   ```
+
+2. Fai partire il bot:
+   ```powershell
+   cd backend
+   python -m bot.main
+   ```
+*(Nota: il bot girerà all'infinito e si metterà in pausa da solo. Puoi lasciarlo acceso).*
+
+---
+
 ### FAQ e Risoluzione Problemi
 - **Vedo 0 incidenti sulla mappa**: Assicurati che il terminale del Backend (il primo) sia acceso e non ci siano errori.
-- **Ho modificato il codice Python e non vedo i cambiamenti**: Hai usato `--reload`? Se sì, si aggiorna da solo. Altrimenti, premi `CTRL+C` nel terminale Python per fermarlo e riavvialo con la freccia su.
-- **Come fermo tutto?**: Premi `CTRL+C` all'interno di entrambi i terminali.
+- **I dati non si aggiornano da soli**: Assicurati che il terminale del Bot (il terzo) sia acceso e stia stampando log di successo.
+- **Come fermo tutto?**: Premi `CTRL+C` all'interno di tutti i terminali.
