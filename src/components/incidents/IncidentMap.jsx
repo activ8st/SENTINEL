@@ -13,6 +13,38 @@ const typeConfig = {
   other: { color: '#6b7280', icon: '❓' }
 };
 
+const coordinateKey = (incident) => `${Number(incident.latitude).toFixed(4)},${Number(incident.longitude).toFixed(4)}`;
+
+const spreadOverlappingIncidents = (incidents = []) => {
+  const groups = incidents.reduce((acc, incident) => {
+    const key = coordinateKey(incident);
+    acc[key] = acc[key] || [];
+    acc[key].push(incident);
+    return acc;
+  }, {});
+
+  return incidents.map((incident) => {
+    const group = groups[coordinateKey(incident)] || [];
+    if (group.length <= 1) {
+      return {
+        incident,
+        markerLatitude: incident.latitude,
+        markerLongitude: incident.longitude,
+      };
+    }
+
+    const index = group.findIndex((item) => item.id === incident.id);
+    const angle = (Math.PI * 2 * index) / group.length;
+    const radius = Math.min(0.004, 0.00045 + group.length * 0.00012);
+
+    return {
+      incident,
+      markerLatitude: incident.latitude + Math.sin(angle) * radius,
+      markerLongitude: incident.longitude + Math.cos(angle) * radius,
+    };
+  });
+};
+
 function IncidentMap({
   incidents,
   center,
@@ -132,6 +164,8 @@ function IncidentMap({
     };
   }, [routeCoords]);
 
+  const visibleMarkers = useMemo(() => spreadOverlappingIncidents(incidents), [incidents]);
+
   if (!mapboxToken || mapboxToken === 'INSERT_YOUR_API_KEY') {
     return (
       <div style={{ height, width: '100%', minHeight: '300px' }} className="overflow-hidden bg-gray-900 relative">
@@ -208,7 +242,7 @@ function IncidentMap({
         )}
 
         {/* Incidents Markers */}
-        {incidents?.map((incident) => {
+        {visibleMarkers.map(({ incident, markerLatitude, markerLongitude }) => {
           const config = typeConfig[incident.type] || typeConfig.other;
           const severity = incident.severity;
           const size = severity === 'critical' ? 40 : severity === 'high' ? 36 : 32;
@@ -216,8 +250,8 @@ function IncidentMap({
           return (
             <Marker 
               key={incident.id} 
-              latitude={incident.latitude} 
-              longitude={incident.longitude} 
+              latitude={markerLatitude} 
+              longitude={markerLongitude} 
               anchor="center"
               onClick={(e) => {
                 e.originalEvent.stopPropagation();

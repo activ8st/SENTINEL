@@ -16,15 +16,13 @@ const DEFAULT_LOC = { lat: 41.9028, lng: 12.4964 };
 const TIME_WINDOWS = [
   ...Array.from({ length: 8 }, (_, i) => ({
     key: `h-${i}`,
-    fromHours: i * 3,
-    toHours: (i + 1) * 3,
-    label: i === 0 ? 'Ultime 3 ore' : `${i * 3}-${(i + 1) * 3} ore fa`,
+    maxHours: (i + 1) * 3,
+    label: `Ultime ${(i + 1) * 3} ore`,
   })),
   ...Array.from({ length: 29 }, (_, i) => ({
-    key: `d-${i + 1}`,
-    fromHours: 24 * (i + 1),
-    toHours: 24 * (i + 2),
-    label: i === 0 ? 'Ieri' : `${i + 1} giorni fa`,
+    key: `d-${i + 2}`,
+    maxHours: 24 * (i + 2),
+    label: `Ultimi ${i + 2} giorni`,
   })),
 ];
 
@@ -33,7 +31,7 @@ const getIncidentDate = (incident) => new Date(incident.created_date || incident
 const isInTimeWindow = (incident, windowIndex) => {
   const selected = TIME_WINDOWS[windowIndex] || TIME_WINDOWS[0];
   const ageHours = (Date.now() - getIncidentDate(incident).getTime()) / 36e5;
-  return ageHours >= selected.fromHours && ageHours < selected.toHours;
+  return ageHours >= 0 && ageHours <= selected.maxHours;
 };
 
 export default function MapView() {

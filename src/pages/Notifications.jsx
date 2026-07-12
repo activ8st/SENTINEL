@@ -1,28 +1,50 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { TYPE_CONFIG, SEVERITY_CONFIG } from '@/components/data/mockData';
+import { calcDistance, TYPE_CONFIG, SEVERITY_CONFIG } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { Bell, BellOff, Trash2, MapPin, ChevronRight, Shield, Settings } from 'lucide-react';
+import { Bell, BellOff, Trash2, MapPin, ChevronRight, Settings, CheckSquare, Square } from 'lucide-react';
+
+const DEFAULT_LOC = { lat: 41.9028, lng: 12.4964 };
 
 export default function Notifications() {
   const navigate = useNavigate();
+  const [location, setLocation] = useState(DEFAULT_LOC);
+  const [useRadius, setUseRadius] = useState(() => localStorage.getItem('sentinelUseRadius') === 'true');
+  const [radius, setRadius] = useState(() => Number(localStorage.getItem('sentinelRadiusKm') || 200));
   const [readIds, setReadIdsState] = useState(() => {
     try {
       const saved = localStorage.getItem('sentinel_read_ids');
       return saved ? new Set(JSON.parse(saved)) : new Set();
     } catch { return new Set(); }
   });
+
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { timeout: 5000, maximumAge: 60000 }
+    );
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('sentinelUseRadius', String(useRadius));
+  }, [useRadius]);
+
+  useEffect(() => {
+    localStorage.setItem('sentinelRadiusKm', String(radius));
+  }, [radius]);
   
   const [dismissed, setDismissedState] = useState(() => {
     try {
@@ -56,8 +78,13 @@ export default function Notifications() {
   const alerts = useMemo(() =>
     fetchedAlerts
       .filter(i => !dismissed.has(i.id))
+      .map(i => ({
+        ...i,
+        distance: calcDistance(location.lat, location.lng, i.latitude, i.longitude),
+      }))
+      .filter(i => !useRadius || i.distance <= radius)
       .sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
-    [fetchedAlerts, dismissed]
+    [fetchedAlerts, dismissed, location, useRadius, radius]
   );
 
   const unreadCount = alerts.filter(i => !readIds.has(i.id)).length;
@@ -138,6 +165,33 @@ export default function Notifications() {
       </div>
 
       <div className="px-4 py-4">
+        <div className="mb-4 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-gray-900">
+          <button
+            onClick={() => setUseRadius(!useRadius)}
+            className="flex w-full items-center justify-between gap-3"
+            aria-pressed={useRadius}
+            aria-label={useRadius ? 'Disattiva filtro raggio alert' : 'Attiva filtro raggio alert'}
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+              <MapPin className="h-4 w-4 text-orange-500" />
+              Filtra alert per raggio
+            </span>
+            {useRadius
+              ? <CheckSquare className="h-5 w-5 text-orange-500" aria-hidden="true" />
+              : <Square className="h-5 w-5 text-gray-500" aria-hidden="true" />
+            }
+          </button>
+          {useRadius && (
+            <div className="mt-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Distanza massima</span>
+                <Badge variant="outline" className="border-orange-500 text-orange-500">{radius} km</Badge>
+              </div>
+              <Slider value={[radius]} onValueChange={([v]) => setRadius(v)} min={5} max={500} step={5} />
+            </div>
+          )}
+        </div>
+
         {alerts.length === 0 ? (
           <div className="text-center py-20">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-800 flex items-center justify-center">

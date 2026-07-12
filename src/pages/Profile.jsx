@@ -46,15 +46,25 @@ export default function Profile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [settings, setSettings] = useState({
-    notification_radius: 5,
-    notify_crime: true,
-    notify_fire: true,
-    notify_accident: true,
-    notify_medical: true,
-    notify_traffic: true,
-    notify_weather: true,
+  const [settings, setSettings] = useState(() => {
+    const defaults = {
+      notification_radius: 5,
+      notify_crime: true,
+      notify_fire: true,
+      notify_accident: true,
+      notify_medical: true,
+      notify_traffic: true,
+      notify_weather: true,
+    };
+    try {
+      return { ...defaults, ...JSON.parse(localStorage.getItem('sentinel_notify_settings') || '{}') };
+    } catch {
+      return defaults;
+    }
   });
+  const [notificationPermission, setNotificationPermission] = useState(() => (
+    'Notification' in window ? Notification.permission : 'unsupported'
+  ));
 
   useEffect(() => {
     setUser({ id: 'user-1', full_name: 'User', karma: 100, email: 'user@example.com' });
@@ -63,6 +73,25 @@ export default function Profile() {
 
   const updateSetting = (key, value) => {
     setSettings(s => ({ ...s, [key]: value }));
+  };
+
+  useEffect(() => {
+    localStorage.setItem('sentinel_notify_settings', JSON.stringify(settings));
+  }, [settings]);
+
+  const requestBrowserNotifications = async () => {
+    if (!('Notification' in window)) {
+      toast.error('Questo browser non supporta le notifiche di sistema');
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    setNotificationPermission(permission);
+    if (permission === 'granted') {
+      toast.success('Notifiche browser attivate');
+    } else {
+      toast.error('Notifiche browser non autorizzate');
+    }
   };
 
   const { theme, setTheme } = useTheme();
@@ -188,6 +217,21 @@ export default function Profile() {
           <div className="flex items-center gap-2 px-4 pt-4 pb-3 border-b border-gray-200 dark:border-white/6">
             <Bell className="w-5 h-5 text-orange-500" />
             <span className="font-semibold text-gray-900 dark:text-white">Tipi di notifiche</span>
+          </div>
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-white/6">
+            <Button
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+              onClick={requestBrowserNotifications}
+              disabled={notificationPermission === 'granted' || notificationPermission === 'unsupported'}
+            >
+              <Bell className="w-4 h-4 mr-2" />
+              {notificationPermission === 'granted'
+                ? 'Notifiche browser attive'
+                : notificationPermission === 'unsupported'
+                  ? 'Notifiche non supportate'
+                  : 'Attiva notifiche browser'
+              }
+            </Button>
           </div>
           <div className="divide-y divide-gray-200 dark:divide-white/4">
             {NOTIFY_TYPES.map(({ key, emoji, label }) => (

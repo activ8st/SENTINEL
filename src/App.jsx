@@ -1,11 +1,15 @@
 import { Toaster } from "@/components/ui/toaster"
+import { Toaster as SonnerToaster } from "@/components/ui/sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { toast } from 'sonner';
+import { calcDistance } from '@/components/data/mockData';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -14,6 +18,111 @@ const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
+
+const DEFAULT_LOC = { lat: 41.9028, lng: 12.4964 };
+
+const notifyKeyForType = (type) => `notify_${type}`;
+
+const loadNotifySettings = () => {
+  try {
+    return JSON.parse(localStorage.getItem('sentinel_notify_settings') || '{}');
+  } catch {
+    return {};
+  }
+};
+
+const shouldNotifyIncident = (incident, location) => {
+  const settings = loadNotifySettings();
+  const enabled = settings[notifyKeyForType(incident.type)] ?? true;
+  if (!enabled) return false;
+
+  const useRadius = localStorage.getItem('sentinelUseRadius') === 'true';
+  if (!useRadius) return true;
+
+  const radius = Number(localStorage.getItem('sentinelRadiusKm') || settings.notification_radius || 200);
+  const distance = calcDistance(location.lat, location.lng, incident.latitude, incident.longitude);
+  return distance <= radius;
+};
+
+const AlertWatcher = () => {
+  const navigate = useNavigate();
+  const [location, setLocation] = useState(DEFAULT_LOC);
+  const initializedRef = useRef(false);
+  const knownIdsRef = useRef(new Set());
+
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { timeout: 5000, maximumAge: 60000 }
+    );
+  }, []);
+
+  const { data: incidents = [] } = useQuery({
+    queryKey: ['incidents'],
+    queryFn: async () => {
+      const res = await fetch('http://localhost:8000/api/incidents');
+      if (!res.ok) return [];
+      return res.json();
+    },
+    refetchInterval: 10000,
+  });
+
+  useEffect(() => {
+    if (!incidents.length) return;
+
+    if (!initializedRef.current) {
+      knownIdsRef.current = new Set(incidents.map((incident) => incident.id));
+      initializedRef.current = true;
+      return;
+    }
+
+    const newIncidents = incidents
+      .filter((incident) => !knownIdsRef.current.has(incident.id))
+      .filter((incident) => shouldNotifyIncident(incident, location))
+      .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+
+    incidents.forEach((incident) => knownIdsRef.current.add(incident.id));
+
+    if (newIncidents.length === 0) return;
+
+    const incident = newIncidents[0];
+    const title = incident.severity === 'critical' ? 'Alert critico Sentinel' : 'Nuovo alert Sentinel';
+    const description = `${incident.title} - ${incident.city || incident.address || 'Italia'}`;
+
+    toast(title, {
+      description,
+      action: {
+        label: 'Apri',
+        onClick: () => navigate(`/IncidentDetail?id=${incident.id}`),
+      },
+    });
+
+    if ('Notification' in window) {
+      const showNotification = () => {
+        const notification = new Notification(title, {
+          body: description,
+          tag: incident.id,
+        });
+        notification.onclick = () => {
+          window.focus();
+          navigate(`/IncidentDetail?id=${incident.id}`);
+          notification.close();
+        };
+      };
+
+      if (Notification.permission === 'granted') {
+        showNotification();
+      } else if (Notification.permission === 'default') {
+        Notification.requestPermission().then((permission) => {
+          if (permission === 'granted') showNotification();
+        });
+      }
+    }
+  }, [incidents, location, navigate]);
+
+  return null;
+};
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -40,29 +149,32 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    <Routes>
-      <Route path="/" element={
-        <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
-        </LayoutWrapper>
-      } />
-      {Object.entries(Pages).map(([path, Page]) => (
-        <Route
-          key={path}
-          path={`/${path}`}
-          element={
-            <LayoutWrapper currentPageName={path}>
-              <Page />
-            </LayoutWrapper>
-          }
-        />
-      ))}
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    <>
+      <AlertWatcher />
+      <Routes>
+        <Route path="/" element={
+          <LayoutWrapper currentPageName={mainPageKey}>
+            <MainPage />
+          </LayoutWrapper>
+        } />
+        {Object.entries(Pages).map(([path, Page]) => (
+          <Route
+            key={path}
+            path={`/${path}`}
+            element={
+              <LayoutWrapper currentPageName={path}>
+                <Page />
+              </LayoutWrapper>
+            }
+          />
+        ))}
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </>
   );
 };
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { initializeDB } from '@/lib/db';
 import { ThemeProvider } from 'next-themes';
 
@@ -79,6 +191,7 @@ function App() {
             <AuthenticatedApp />
           </Router>
           <Toaster />
+          <SonnerToaster />
         </QueryClientProvider>
       </AuthProvider>
     </ThemeProvider>
