@@ -7,8 +7,9 @@ import { Slider } from '@/components/ui/slider';
 import IncidentCard from '@/components/incidents/IncidentCard';
 import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
-import { Locate, Layers, X, List, ChevronDown, Navigation, ChevronLeft, ChevronRight, RefreshCw, Plus } from 'lucide-react';
+import { Locate, Layers, X, List, ChevronDown, Navigation, ChevronLeft, ChevronRight, RefreshCw, Plus, Clock } from 'lucide-react';
 import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 const IncidentMap = lazy(() => import('@/components/incidents/IncidentMap'));
 
@@ -271,33 +272,40 @@ export default function MapView() {
 
         {/* Locate button */}
         <div className="absolute top-3 left-4 right-4 z-30 flex items-center justify-between gap-2 pointer-events-none">
-          <div className="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-white/95 dark:bg-gray-900/95 px-2 py-1 shadow pointer-events-auto">
+          <div className="flex items-center gap-1 rounded-full border border-gray-200 dark:border-white/10 bg-white/95 dark:bg-gray-900/95 p-1 shadow-md backdrop-blur pointer-events-auto">
             <button
               onClick={() => moveTimeWindow(1)}
               disabled={timeWindowIndex >= TIME_WINDOWS.length - 1}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-35"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-35 transition-colors"
               aria-label="Mostra periodo precedente"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <label className="sr-only" htmlFor="map-time-window">Seleziona periodo eventi</label>
-            <select
-              id="map-time-window"
-              value={timeWindowIndex}
-              onChange={(event) => setTimeWindowIndex(Number(event.target.value))}
-              className="min-w-[132px] max-w-[168px] bg-transparent text-xs font-semibold text-gray-900 dark:text-white outline-none"
-              aria-label="Seleziona periodo eventi"
-            >
-              {TIME_WINDOWS.map((window, index) => (
-                <option key={window.key} value={index}>
-                  {window.label}
-                </option>
-              ))}
-            </select>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center justify-center gap-1.5 px-3 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-[13px] font-semibold text-gray-900 dark:text-white outline-none min-w-[130px]">
+                  <Clock className="w-3.5 h-3.5 text-orange-500" />
+                  {TIME_WINDOWS[timeWindowIndex]?.label}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="max-h-[60vh] overflow-y-auto rounded-xl shadow-xl border-gray-200 dark:border-gray-800 w-[180px]">
+                {TIME_WINDOWS.map((window, index) => (
+                  <DropdownMenuItem 
+                    key={window.key} 
+                    onClick={() => setTimeWindowIndex(index)}
+                    className={`rounded-lg cursor-pointer my-0.5 ${index === timeWindowIndex ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 font-semibold' : 'text-gray-700 dark:text-gray-300'}`}
+                  >
+                    {window.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <button
               onClick={() => moveTimeWindow(-1)}
               disabled={timeWindowIndex <= 0}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-35"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-35 transition-colors"
               aria-label="Mostra periodo successivo"
             >
               <ChevronRight className="w-4 h-4" />

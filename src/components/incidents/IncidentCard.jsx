@@ -34,8 +34,8 @@ export default function IncidentCard({ incident, distance, unread = false }) {
         )}
 
         {/* Type icon */}
-        <div className={`flex-shrink-0 w-11 h-11 rounded-xl ${type.bg} flex items-center justify-center text-xl`}>
-          {type.emoji}
+        <div className={`flex-shrink-0 w-11 h-11 rounded-xl ${type.bg} ${type.text} flex items-center justify-center`}>
+          <type.icon className="w-5 h-5" />
         </div>
 
         {/* Body */}

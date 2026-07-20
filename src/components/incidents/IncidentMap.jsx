@@ -2,16 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Map, { Marker, Source, Layer, NavigationControl } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-const typeConfig = {
-  crime: { color: '#ef4444', icon: '🚨' },
-  fire: { color: '#f97316', icon: '🔥' },
-  accident: { color: '#eab308', icon: '🚗' },
-  medical: { color: '#ec4899', icon: '🏥' },
-  suspicious: { color: '#a855f7', icon: '👁️' },
-  traffic: { color: '#3b82f6', icon: '🚦' },
-  weather: { color: '#06b6d4', icon: '⛈️' },
-  other: { color: '#6b7280', icon: '❓' }
-};
+import { TYPE_CONFIG } from '@/components/data/mockData';
 
 const coordinateKey = (incident) => `${Number(incident.latitude).toFixed(4)},${Number(incident.longitude).toFixed(4)}`;
 
@@ -243,7 +234,7 @@ function IncidentMap({
 
         {/* Incidents Markers */}
         {visibleMarkers.map(({ incident, markerLatitude, markerLongitude }) => {
-          const config = typeConfig[incident.type] || typeConfig.other;
+          const config = TYPE_CONFIG[incident.type] || TYPE_CONFIG.other;
           const severity = incident.severity;
           const size = severity === 'critical' ? 40 : severity === 'high' ? 36 : 32;
 
@@ -262,12 +253,12 @@ function IncidentMap({
                 style={{
                   width: `${size}px`, height: `${size}px`, background: config.color,
                   borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: `${size * 0.5}px`, boxShadow: `0 4px 12px ${config.color}80`,
+                  boxShadow: `0 4px 12px ${config.color}80`,
                   border: '3px solid white', cursor: 'pointer',
                   animation: severity === 'critical' ? 'mapbox-pulse 1.5s infinite' : 'none'
                 }}
               >
-                {config.icon}
+                <config.icon size={size * 0.45} color="white" strokeWidth={2.5} />
               </div>
             </Marker>
           );

@@ -1,5 +1,6 @@
 // Shared mock data — used by Feed, Map, Alerts, Incident Detail
 // 20 realistic incidents around Rome
+import { ShieldAlert, Flame, Car, Activity, Eye, TrafficCone, CloudLightning, Info } from 'lucide-react';
 
 const now = Date.now();
 const mins = (m) => new Date(now - m * 60 * 1000).toISOString();
@@ -683,14 +684,14 @@ export const calcDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 export const TYPE_CONFIG = {
-  crime:     { label: 'Crimine',           color: '#ef4444', text: 'text-red-500',    bg: 'bg-red-500/15',    border: 'border-red-500/40',    emoji: '🚨' },
-  fire:      { label: 'Incendio',          color: '#f97316', text: 'text-orange-500', bg: 'bg-orange-500/15', border: 'border-orange-500/40', emoji: '🔥' },
-  accident:  { label: 'Incidente',         color: '#eab308', text: 'text-yellow-400', bg: 'bg-yellow-500/15', border: 'border-yellow-500/40', emoji: '🚗' },
-  medical:   { label: 'Emergenza Medica',  color: '#ec4899', text: 'text-pink-500',   bg: 'bg-pink-500/15',   border: 'border-pink-500/40',   emoji: '🏥' },
-  suspicious:{ label: 'Att. Sospetta',     color: '#a855f7', text: 'text-purple-500', bg: 'bg-purple-500/15', border: 'border-purple-500/40', emoji: '👁️' },
-  traffic:   { label: 'Traffico',          color: '#3b82f6', text: 'text-blue-500',   bg: 'bg-blue-500/15',   border: 'border-blue-500/40',   emoji: '🚦' },
-  weather:   { label: 'Meteo',             color: '#06b6d4', text: 'text-cyan-500',   bg: 'bg-cyan-500/15',   border: 'border-cyan-500/40',   emoji: '⛈️' },
-  other:     { label: 'Altro',             color: '#6b7280', text: 'text-gray-400',   bg: 'bg-gray-500/15',   border: 'border-gray-500/40',   emoji: '❗' },
+  crime:     { label: 'Crimine',           color: '#ef4444', text: 'text-red-500',    bg: 'bg-red-500/15',    border: 'border-red-500/40',    icon: ShieldAlert },
+  fire:      { label: 'Incendio',          color: '#f97316', text: 'text-orange-500', bg: 'bg-orange-500/15', border: 'border-orange-500/40', icon: Flame },
+  accident:  { label: 'Incidente',         color: '#eab308', text: 'text-yellow-400', bg: 'bg-yellow-500/15', border: 'border-yellow-500/40', icon: Car },
+  medical:   { label: 'Emergenza Medica',  color: '#ec4899', text: 'text-pink-500',   bg: 'bg-pink-500/15',   border: 'border-pink-500/40',   icon: Activity },
+  suspicious:{ label: 'Att. Sospetta',     color: '#a855f7', text: 'text-purple-500', bg: 'bg-purple-500/15', border: 'border-purple-500/40', icon: Eye },
+  traffic:   { label: 'Traffico',          color: '#3b82f6', text: 'text-blue-500',   bg: 'bg-blue-500/15',   border: 'border-blue-500/40',   icon: TrafficCone },
+  weather:   { label: 'Meteo',             color: '#06b6d4', text: 'text-cyan-500',   bg: 'bg-cyan-500/15',   border: 'border-cyan-500/40',   icon: CloudLightning },
+  other:     { label: 'Altro',             color: '#6b7280', text: 'text-gray-400',   bg: 'bg-gray-500/15',   border: 'border-gray-500/40',   icon: Info },
 };
 
 export const SEVERITY_CONFIG = {
