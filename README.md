@@ -19,6 +19,8 @@ The system features a dual-architecture: a blazing-fast React frontend and a pow
 ## ✨ Features
 
 -  **Full-Screen Interactive Map:** Powered by Mapbox GL with dynamic clustering and custom pulsing markers.
+-  **Dual Architecture:** Separates the unauthenticated public Marketing Site (with 3D WebGL maps) from the Secure App Feed.
+-  **Authentication System:** Complete login and registration flow with OTP simulation, enforcing a walled garden for verified users.
 -  **Autonomous Data Bot:** A Python background worker (`scraper.py`) that fetches and normalizes official external data streams without slowing down the user experience.
 -  **Real-Time Geolocation:** Instantly calculates your distance from critical incidents using the browser's Geolocation API.
 -  **Premium UI/UX:** Responsive design, glassmorphism elements, dark/light mode toggle, and micro-animations built with Tailwind CSS and Framer Motion.

@@ -35,6 +35,11 @@ Nel **secondo terminale**, dobbiamo avviare l'interfaccia grafica (il sito web V
 
 2. Clicca sul link che appare nel terminale (di solito `http://localhost:5173`) tenendo premuto `CTRL` per aprire Sentinel nel browser.
 
+3. **Note sull'ambiente Locale (DEV)**:
+   - In locale, il login viene **bypassato in automatico**. Aprendo `/` ti ritroverai direttamente loggato come "Dev User" all'interno del Feed.
+   - Per visualizzare la Landing Page (il sito marketing), apri `http://localhost:5173/LandingPage`
+   - Per testare la pagina di Auth, apri `http://localhost:5173/Auth`
+
 ---
 
 ## 3. Accendere il Lavoratore (Bot dei Dati In Background)

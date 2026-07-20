@@ -4,20 +4,26 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { useQuery } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useNavigate, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { toast } from 'sonner';
 import { calcDistance } from '@/components/data/mockData';
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeDB } from '@/lib/db';
+import { ThemeProvider } from 'next-themes';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
-const LayoutWrapper = ({ children, currentPageName }) => Layout ?
-  <Layout currentPageName={currentPageName}>{children}</Layout>
-  : <>{children}</>;
+const LayoutWrapper = ({ children, currentPageName }) => {
+  const marketingPages = ['LandingPage', 'Platform', 'Manifesto', 'Contact', 'Auth'];
+  if (marketingPages.includes(currentPageName)) return <>{children}</>;
+  return Layout ? <Layout currentPageName={currentPageName}>{children}</Layout> : <>{children}</>;
+};
 
 const DEFAULT_LOC = { lat: 41.9028, lng: 12.4964 };
 
@@ -44,7 +50,7 @@ const shouldNotifyIncident = (incident, location) => {
   return distance <= radius;
 };
 
-const AlertWatcher = () => {
+const AlertWatcher = ({ children }) => {
   const navigate = useNavigate();
   const [location, setLocation] = useState(DEFAULT_LOC);
   const initializedRef = useRef(false);
@@ -121,7 +127,7 @@ const AlertWatcher = () => {
     }
   }, [incidents, location, navigate]);
 
-  return null;
+  return children || null;
 };
 
 const AuthenticatedApp = () => {
@@ -147,36 +153,46 @@ const AuthenticatedApp = () => {
     }
   }
 
-  // Render the main app
   return (
-    <>
-      <AlertWatcher />
-      <Routes>
-        <Route path="/" element={
-          <LayoutWrapper currentPageName={mainPageKey}>
-            <MainPage />
-          </LayoutWrapper>
-        } />
-        {Object.entries(Pages).map(([path, Page]) => (
-          <Route
-            key={path}
-            path={`/${path}`}
-            element={
-              <LayoutWrapper currentPageName={path}>
-                <Page />
-              </LayoutWrapper>
-            }
-          />
-        ))}
-        <Route path="*" element={<PageNotFound />} />
-      </Routes>
-    </>
+    <Routes>
+      {Object.entries(Pages).map(([pageName, PageComponent]) => {
+        const marketingPages = ['LandingPage', 'Platform', 'Manifesto', 'Contact', 'Auth'];
+        const isMarketing = marketingPages.includes(pageName);
+        const path = pageName === mainPageKey ? "/" : `/${pageName}`;
+
+        if (isMarketing) {
+          return (
+            <Route
+              key={pageName}
+              path={path}
+              element={
+                <LayoutWrapper currentPageName={pageName}>
+                  <PageComponent />
+                </LayoutWrapper>
+              }
+            />
+          );
+        }
+
+        return (
+          <Route key={pageName} element={<ProtectedRoute unauthenticatedElement={<Navigate to="/Auth" replace />} />}>
+            <Route
+              path={path}
+              element={
+                <AlertWatcher>
+                  <LayoutWrapper currentPageName={pageName}>
+                    <PageComponent />
+                  </LayoutWrapper>
+                </AlertWatcher>
+              }
+            />
+          </Route>
+        );
+      })}
+      <Route path="*" element={<PageNotFound />} />
+    </Routes>
   );
 };
-
-import { useEffect, useRef, useState } from 'react';
-import { initializeDB } from '@/lib/db';
-import { ThemeProvider } from 'next-themes';
 
 function App() {
   useEffect(() => {

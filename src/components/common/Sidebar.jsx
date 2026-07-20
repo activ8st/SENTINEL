@@ -13,7 +13,7 @@ export default function Sidebar() {
   };
 
   const NAV_ITEMS = [
-    { name: 'Feed', icon: Home, path: '/' },
+    { name: 'Feed', icon: Home, path: '/Home' },
     { name: 'Mappa', icon: MapIcon, path: createPageUrl('MapView') },
     { name: 'Segnala', icon: PlusSquare, path: createPageUrl('Report') },
     { name: 'Alerts', icon: Bell, path: createPageUrl('Notifications') },
@@ -24,7 +24,7 @@ export default function Sidebar() {
     <aside className={`hidden md:flex flex-col h-screen sticky top-0 left-0 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-white/5 transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/5">
         {!collapsed && (
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Link to="/Home" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <img src="/logo.png" alt="Sentinel" className="w-8 h-8 rounded-lg object-cover" />
             <span className="font-bold text-lg tracking-tight text-gray-900 dark:text-white">Sentinel</span>
           </Link>
