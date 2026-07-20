@@ -7,7 +7,8 @@ import { Slider } from '@/components/ui/slider';
 import IncidentCard from '@/components/incidents/IncidentCard';
 import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
-import { Locate, Layers, X, List, ChevronDown, Navigation, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Locate, Layers, X, List, ChevronDown, Navigation, ChevronLeft, ChevronRight, RefreshCw, Plus } from 'lucide-react';
+import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
 
 const IncidentMap = lazy(() => import('@/components/incidents/IncidentMap'));
 
@@ -49,6 +50,7 @@ export default function MapView() {
   const [routeIncident, setRouteIncident] = useState(null);
   const [timeWindowIndex, setTimeWindowIndex] = useState(() => Number(localStorage.getItem('sentinelTimeWindowIndex') || 0));
   const [refreshingNews, setRefreshingNews] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('sentinelTimeWindowIndex', String(timeWindowIndex));
@@ -324,6 +326,17 @@ export default function MapView() {
           </Button>
         </div>
 
+        {/* Report FAB */}
+        <div className="absolute bottom-6 right-4 z-30">
+          <Button
+            className="w-14 h-14 rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-[0_8px_30px_rgb(249,115,22,0.4)] transition-transform hover:scale-105 active:scale-95"
+            onClick={() => setIsReportModalOpen(true)}
+            aria-label="Segnala Emergenza"
+          >
+            <Plus className="w-7 h-7" />
+          </Button>
+        </div>
+
         {/* Selected incident preview */}
         <AnimatePresence>
           {selectedIncident && !showList && (
@@ -442,6 +455,12 @@ export default function MapView() {
           </Button>
         </SheetContent>
       </Sheet>
+
+      <ReportIncidentModal 
+        isOpen={isReportModalOpen} 
+        onClose={() => setIsReportModalOpen(false)} 
+        userLocation={location} 
+      />
     </div>
   );
 }

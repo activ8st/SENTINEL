@@ -28,3 +28,10 @@ dist-ssr
 *.sw?
 
 .env
+.agent
+
+backend/venv/
+backend/__pycache__/
+*.db
+backend/*.db
+__pycache__/

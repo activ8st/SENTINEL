@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, UniqueConstraint, Boolean
 from sqlalchemy.orm import relationship
 import datetime
 from .database import Base
@@ -9,6 +9,8 @@ class User(Base):
     id = Column(String, primary_key=True, index=True)
     name = Column(String, index=True)
     karma = Column(Integer, default=100)
+    strikes = Column(Integer, default=0)
+    is_read_only = Column(Boolean, default=False)
 
 class Incident(Base):
     __tablename__ = "incidents"
@@ -36,6 +38,7 @@ class Incident(Base):
 
     reported_by_id = Column(String, ForeignKey("users.id"))
     reporter_karma = Column(Integer, default=0)
+    fake_votes = Column(Integer, default=0)
 
     # For media, we can store it as a JSON string for simplicity, or in a separate table.
     # Let's use a separate table for cleaner relational mapping

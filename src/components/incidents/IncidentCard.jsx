@@ -2,7 +2,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { MapPin, Clock, Users, ChevronRight, Radio } from 'lucide-react';
+import { MapPin, Clock, Users, ChevronRight, Radio, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { TYPE_CONFIG, SEVERITY_CONFIG, STATUS_CONFIG } from '@/components/data/mockData';
 import VoteButtons from '@/components/incidents/VoteButtons';
@@ -105,8 +105,28 @@ export default function IncidentCard({ incident, distance, unread = false }) {
           </div>
 
           {/* Verifica community + affidabilità segnalatore */}
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <VoteButtons incident={incident} />
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 dark:border-gray-800 pt-2">
+            <div className="flex items-center gap-3">
+              <VoteButtons incident={incident} />
+              {incident.reported_by_id && (
+                <button 
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    try {
+                      await fetch(`http://localhost:8000/api/incidents/${incident.id}/report-fake`, { method: 'POST' });
+                      alert("Segnalazione Fake News registrata. Grazie!");
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                  className="text-[11px] text-gray-400 hover:text-red-500 flex items-center gap-1 transition-colors"
+                  title="Segnala come Fake News"
+                >
+                  <AlertTriangle className="w-3 h-3" /> Fake?
+                </button>
+              )}
+            </div>
             {incident.reported_by_id && (
               <ReliabilityBadge karma={incident.reporter_karma ?? 0} compact />
             )}

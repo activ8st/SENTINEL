@@ -20,6 +20,8 @@ class UserBase(BaseModel):
     id: str
     name: str
     karma: int = 100
+    strikes: int = 0
+    is_read_only: bool = False
 
 class UserCreate(UserBase):
     pass
@@ -41,6 +43,7 @@ class IncidentBase(BaseModel):
     status: str = "active"
     reported_by_id: Optional[str] = None
     reporter_karma: int = 0
+    fake_votes: int = 0
     media_urls: Optional[List[str]] = []
     
     # Bot tracking fields
