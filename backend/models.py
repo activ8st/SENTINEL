@@ -11,6 +11,7 @@ class User(Base):
     karma = Column(Integer, default=100)
     strikes = Column(Integer, default=0)
     is_read_only = Column(Boolean, default=False)
+    role = Column(String, default="user")
 
 class Incident(Base):
     __tablename__ = "incidents"
@@ -40,8 +41,6 @@ class Incident(Base):
     reporter_karma = Column(Integer, default=0)
     fake_votes = Column(Integer, default=0)
 
-    # For media, we can store it as a JSON string for simplicity, or in a separate table.
-    # Let's use a separate table for cleaner relational mapping
     media = relationship("Media", back_populates="incident", cascade="all, delete-orphan")
 
 class Media(Base):
@@ -53,3 +52,13 @@ class Media(Base):
     type = Column(String) # 'image', 'video', 'live'
     
     incident = relationship("Incident", back_populates="media")
+
+class ModerationAuditLog(Base):
+    __tablename__ = "moderation_audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, nullable=True)
+    action = Column(String, index=True) # "BLOCK", "FLAG_FOR_REVIEW"
+    reason = Column(String)
+    text = Column(String)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)

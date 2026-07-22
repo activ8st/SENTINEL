@@ -40,6 +40,7 @@ export default function Report() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1=type, 2=details, 3=confirm
   const [successId, setSuccessId] = useState(null);
+  const [pendingReview, setPendingReview] = useState(false);
   const [form, setForm] = useState({
     type: '', title: '', description: '', severity: 'medium',
     latitude: null, longitude: null, address: '', city: '',
@@ -123,10 +124,27 @@ export default function Report() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('API error');
+        
+        const resData = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          if (res.status === 400) {
+            toast.error(resData.detail || 'Segnalazione rifiutata: violazione delle linee guida della community.');
+            return;
+          }
+          if (res.status === 429) {
+            toast.error(resData.detail || 'Troppe segnalazioni inviate. Riprova tra 1 minuto.');
+            return;
+          }
+          throw new Error(resData.detail || 'Errore nella segnalazione');
+        }
+
+        if (resData.status === 'pending_review') {
+          setPendingReview(true);
+        }
         setSuccessId(incidentId);
       } catch (e) {
-        toast.error('Errore nella segnalazione. Riprova.');
+        toast.error(e.message || 'Errore nella segnalazione. Riprova.');
       }
     },
     isPending: false
@@ -146,13 +164,19 @@ export default function Report() {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-          className="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center mb-6"
+          className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 ${pendingReview ? 'bg-amber-500' : 'bg-green-500'}`}
         >
           <Check className="w-10 h-10 text-white" />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Segnalazione inviata!</h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-8">Grazie. La tua segnalazione aiuta la comunità a restare al sicuro.</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            {pendingReview ? 'Segnalazione in Revisione' : 'Segnalazione inviata!'}
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md">
+            {pendingReview
+              ? 'La tua segnalazione è stata ricevuta ed è in fase di verifica da parte dei moderatori. Diventerà visibile sulla mappa dopo l\'approvazione.'
+              : 'Grazie. La tua segnalazione aiuta la comunità a restare al sicuro.'}
+          </p>
           <div className="flex flex-col gap-3">
             <Button
               className="bg-orange-500 hover:bg-orange-600 text-white"
