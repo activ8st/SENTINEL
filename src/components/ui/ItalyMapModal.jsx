@@ -42,7 +42,19 @@ export default function ItalyMapModal({ isOpen, onClose }) {
           }}
           mapStyle="mapbox://styles/mapbox/dark-v11"
           style={{ width: '100%', height: '100%' }}
-          interactive={false} // Make it more like a background showcase
+          interactive={true}
+          dragPan={true}
+          dragRotate={true}
+          scrollZoom={true}
+          touchZoomRotate={true}
+          minZoom={15}
+          maxZoom={18.5}
+          minPitch={30}
+          maxPitch={75}
+          maxBounds={[
+            [9.1700, 45.4700], // Southwest bounds (Milan Garibaldi/Isola area)
+            [9.2100, 45.4950]  // Northeast bounds
+          ]}
           onLoad={(e) => {
             // Enable 3D buildings if available in the dark-v11 style
             const map = e.target;
