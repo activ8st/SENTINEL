@@ -21,11 +21,11 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="bg-[#050505] text-[#f5f5f5] min-h-screen overflow-x-hidden font-sans selection:bg-[#10b981] selection:text-black" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
+    <div className="relative w-full max-w-full bg-[#050505] text-[#f5f5f5] min-h-screen overflow-hidden font-sans selection:bg-[#10b981] selection:text-black" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
       {/* Solarsis Style: Ambient Glow Orbs */}
       <div className="absolute top-[-10%] left-[50%] -translate-x-1/2 w-[900px] h-[900px] bg-[#10b981] opacity-15 blur-[160px] rounded-full pointer-events-none" />
-      <div className="absolute top-[40%] right-[-10%] w-[600px] h-[600px] bg-emerald-700 opacity-10 blur-[180px] rounded-full pointer-events-none" />
+      <div className="absolute top-[40%] right-0 translate-x-1/3 w-[600px] h-[600px] bg-emerald-700 opacity-10 blur-[180px] rounded-full pointer-events-none" />
 
       {/* Navbar */}
       <MarketingNavbar />
