@@ -4,9 +4,11 @@ import { ShieldAlert, Map, BellRing, Users, ArrowRight, ShieldCheck, Lock, Eye, 
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import ItalyMapModal from '@/components/ui/ItalyMapModal';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
+import FeatureModal from '@/components/ui/FeatureModal';
 
 export default function LandingPage() {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [activeFeature, setActiveFeature] = useState(null);
 
   useEffect(() => {
     // Import Funnel Display font to match Solarsis aesthetic
@@ -231,39 +233,57 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Feature Card 1 */}
-            <div className="bg-white/[0.03] p-10 rounded-3xl border border-white/10 hover:border-[#10b981]/50 transition-all hover:bg-white/[0.05] group">
+            <div 
+              onClick={() => setActiveFeature('mappa')}
+              className="bg-white/[0.03] p-10 rounded-3xl border border-white/10 hover:border-[#10b981]/50 transition-all hover:bg-white/[0.05] group cursor-pointer"
+            >
               <Map className="w-12 h-12 text-[#10b981] mb-8 group-hover:scale-110 transition-transform" />
               <h3 className="text-2xl font-bold mb-4">La Mappa Viva</h3>
               <p className="text-white/60 font-light mb-8 leading-relaxed">
                 Osserva il battito della tua città in tempo reale. Mappe 3D dettagliate a zero latenza con visualizzazione dei palazzi e dei punti critici.
               </p>
-              <span className="text-[#10b981] font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setActiveFeature('mappa'); }}
+                className="text-[#10b981] font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all hover:underline"
+              >
                 Scopri di più &rarr;
-              </span>
+              </button>
             </div>
 
             {/* Feature Card 2 */}
-            <div className="bg-white/[0.03] p-10 rounded-3xl border border-white/10 hover:border-[#10b981]/50 transition-all hover:bg-white/[0.05] group">
+            <div 
+              onClick={() => setActiveFeature('allerte')}
+              className="bg-white/[0.03] p-10 rounded-3xl border border-white/10 hover:border-[#10b981]/50 transition-all hover:bg-white/[0.05] group cursor-pointer"
+            >
               <BellRing className="w-12 h-12 text-[#10b981] mb-8 group-hover:scale-110 transition-transform" />
               <h3 className="text-2xl font-bold mb-4">Allerte Preventive</h3>
               <p className="text-white/60 font-light mb-8 leading-relaxed">
                 Un radar intelligente in tasca. Notifiche geolocalizzate esclusive solo per le minacce che intersecano il tuo raggio di percorrenza.
               </p>
-              <span className="text-[#10b981] font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setActiveFeature('allerte'); }}
+                className="text-[#10b981] font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all hover:underline"
+              >
                 Scopri di più &rarr;
-              </span>
+              </button>
             </div>
 
             {/* Feature Card 3 */}
-            <div className="bg-white/[0.03] p-10 rounded-3xl border border-white/10 hover:border-[#10b981]/50 transition-all hover:bg-white/[0.05] group">
+            <div 
+              onClick={() => setActiveFeature('karma')}
+              className="bg-white/[0.03] p-10 rounded-3xl border border-white/10 hover:border-[#10b981]/50 transition-all hover:bg-white/[0.05] group cursor-pointer"
+            >
               <Users className="w-12 h-12 text-[#10b981] mb-8 group-hover:scale-110 transition-transform" />
               <h3 className="text-2xl font-bold mb-4">Karma & Affidabilità</h3>
               <p className="text-white/60 font-light mb-8 leading-relaxed">
                 Sistema di validazione incrociata. La community vota e attribuisce punti Karma ai segnalatori più autorevoli isolando i falsi allarmi.
               </p>
-              <span className="text-[#10b981] font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setActiveFeature('karma'); }}
+                className="text-[#10b981] font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all hover:underline"
+              >
                 Scopri di più &rarr;
-              </span>
+              </button>
             </div>
           </div>
         </div>
@@ -331,6 +351,9 @@ export default function LandingPage() {
 
       {/* Italy 3D Modal */}
       <ItalyMapModal isOpen={isMapModalOpen} onClose={() => setIsMapModalOpen(false)} />
+
+      {/* High-Converting Feature Modal */}
+      <FeatureModal featureId={activeFeature} onClose={() => setActiveFeature(null)} />
     </div>
   );
 }
