@@ -13,7 +13,6 @@ import { toast } from 'sonner';
 import { calcDistance } from '@/components/data/mockData';
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeDB } from '@/lib/db';
-import { ThemeProvider } from 'next-themes';
 import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -38,180 +37,94 @@ const loadNotifySettings = () => {
   }
 };
 
-const shouldNotifyIncident = (incident, location) => {
-  const settings = loadNotifySettings();
-  const enabled = settings[notifyKeyForType(incident.type)] ?? true;
-  if (!enabled) return false;
+const AuthenticatedApp = () => {
+  const { user } = useAuth();
+  const notifySettings = loadNotifySettings();
+  const prevIncidentIdsRef = useRef(new Set());
+  const isFirstFetchRef = useRef(true);
 
-  const useRadius = localStorage.getItem('sentinelUseRadius') === 'true';
-  if (!useRadius) return true;
-
-  const radius = Number(localStorage.getItem('sentinelRadiusKm') || settings.notification_radius || 200);
-  const distance = calcDistance(location.lat, location.lng, incident.latitude, incident.longitude);
-  return distance <= radius;
-};
-
-const AlertWatcher = ({ children }) => {
-  const navigate = useNavigate();
-  const [location, setLocation] = useState(DEFAULT_LOC);
-  const initializedRef = useRef(false);
-  const knownIdsRef = useRef(new Set());
-
-  useEffect(() => {
-    navigator.geolocation?.getCurrentPosition(
-      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {},
-      { timeout: 5000, maximumAge: 60000 }
-    );
-  }, []);
-
-  const { data: incidents = [] } = useQuery({
-    queryKey: ['incidents'],
+  // Poll backend for incidents every 30s
+  const { data: dbIncidents = [] } = useQuery({
+    queryKey: ['incidents-alerts'],
     queryFn: async () => {
-      const res = await fetch('http://localhost:8000/api/incidents');
-      if (!res.ok) return [];
-      return res.json();
+      try {
+        const res = await fetch('http://localhost:8000/api/incidents');
+        if (!res.ok) return [];
+        return await res.json();
+      } catch (e) {
+        return [];
+      }
     },
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 
-  useEffect(() => {
-    if (!incidents.length) return;
+  // User location for radar alerts
+  const userLat = user?.location?.lat ?? DEFAULT_LOC.lat;
+  const userLng = user?.location?.lng ?? DEFAULT_LOC.lng;
 
-    if (!initializedRef.current) {
-      knownIdsRef.current = new Set(incidents.map((incident) => incident.id));
-      initializedRef.current = true;
+  useEffect(() => {
+    if (!dbIncidents.length) return;
+
+    if (isFirstFetchRef.current) {
+      // First load: prime set of existing IDs, don't toast
+      dbIncidents.forEach((inc) => prevIncidentIdsRef.current.add(inc.id));
+      isFirstFetchRef.current = false;
       return;
     }
 
-    const newIncidents = incidents
-      .filter((incident) => !knownIdsRef.current.has(incident.id))
-      .filter((incident) => shouldNotifyIncident(incident, location))
-      .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    // Check for NEW incidents
+    dbIncidents.forEach((inc) => {
+      if (!prevIncidentIdsRef.current.has(inc.id)) {
+        prevIncidentIdsRef.current.add(inc.id);
 
-    incidents.forEach((incident) => knownIdsRef.current.add(incident.id));
+        // Check user notification preference for this type
+        const isEnabled = notifySettings[notifyKeyForType(inc.type)] !== false;
+        if (!isEnabled) return;
 
-    if (newIncidents.length === 0) return;
-
-    const incident = newIncidents[0];
-    const title = incident.severity === 'critical' ? 'Alert critico Sentinel' : 'Nuovo alert Sentinel';
-    const description = `${incident.title} - ${incident.city || incident.address || 'Italia'}`;
-
-    toast(title, {
-      description,
-      action: {
-        label: 'Apri',
-        onClick: () => navigate(`/IncidentDetail?id=${incident.id}`),
-      },
-    });
-
-    if ('Notification' in window) {
-      const showNotification = () => {
-        const notification = new Notification(title, {
-          body: description,
-          tag: incident.id,
-        });
-        notification.onclick = () => {
-          window.focus();
-          navigate(`/IncidentDetail?id=${incident.id}`);
-          notification.close();
-        };
-      };
-
-      if (Notification.permission === 'granted') {
-        showNotification();
-      } else if (Notification.permission === 'default') {
-        Notification.requestPermission().then((permission) => {
-          if (permission === 'granted') showNotification();
-        });
+        // Check if within 5km radius
+        const dist = calcDistance(userLat, userLng, inc.latitude, inc.longitude);
+        if (dist <= 5) {
+          toast.warning(`ALLERTA IN ZONA: ${inc.title}`, {
+            description: `${inc.address} (${dist.toFixed(1)} km da te)`,
+            duration: 8000,
+          });
+        }
       }
-    }
-  }, [incidents, location, navigate]);
-
-  return children || null;
-};
-
-const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
-
-  // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  // Handle authentication errors
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
-    }
-  }
+    });
+  }, [dbIncidents, userLat, userLng, notifySettings]);
 
   return (
     <Routes>
-      {/* Root Route alias */}
-      <Route
-        path="/"
-        element={
-          <LayoutWrapper currentPageName="LandingPage">
-            <Pages.LandingPage />
-          </LayoutWrapper>
-        }
-      />
-      {/* Explicit /Home route alias */}
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/Auth" replace />} />}>
-        <Route
-          path="/Home"
-          element={
-            <AlertWatcher>
-              <LayoutWrapper currentPageName="Home">
-                <Pages.Home />
-              </LayoutWrapper>
-            </AlertWatcher>
-          }
-        />
-      </Route>
+      <Route path="/" element={<LayoutWrapper currentPageName="LandingPage"><Pages.LandingPage /></LayoutWrapper>} />
+      <Route path="/Home" element={<LayoutWrapper currentPageName="Home"><Pages.Home /></LayoutWrapper>} />
+      <Route path="/LandingPage" element={<LayoutWrapper currentPageName="LandingPage"><Pages.LandingPage /></LayoutWrapper>} />
 
       {Object.entries(Pages).map(([pageName, PageComponent]) => {
-        const marketingPages = ['LandingPage', 'Platform', 'Manifesto', 'Contact', 'Auth'];
-        const isMarketing = marketingPages.includes(pageName);
-
-        if (isMarketing) {
-          return (
-            <Route
-              key={pageName}
-              path={`/${pageName}`}
-              element={
-                <LayoutWrapper currentPageName={pageName}>
-                  <PageComponent />
-                </LayoutWrapper>
-              }
-            />
-          );
-        }
+        if (pageName === 'LandingPage') return null;
+        const pageMeta = pagesConfig.meta?.[pageName] || {};
+        const isProtected = pageMeta.protected !== false;
 
         return (
-          <Route key={pageName} element={<ProtectedRoute unauthenticatedElement={<Navigate to="/Auth" replace />} />}>
-            <Route
-              path={`/${pageName}`}
-              element={
-                <AlertWatcher>
+          <Route
+            key={pageName}
+            path={`/${pageName}`}
+            element={
+              isProtected ? (
+                <ProtectedRoute>
                   <LayoutWrapper currentPageName={pageName}>
                     <PageComponent />
                   </LayoutWrapper>
-                </AlertWatcher>
-              }
-            />
-          </Route>
+                </ProtectedRoute>
+              ) : (
+                <LayoutWrapper currentPageName={pageName}>
+                  <PageComponent />
+                </LayoutWrapper>
+              )
+            }
+          />
         );
       })}
+
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
@@ -224,17 +137,15 @@ function App() {
 
   return (
     <LanguageThemeProvider>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-        <AuthProvider>
-          <QueryClientProvider client={queryClientInstance}>
-            <Router>
-              <AuthenticatedApp />
-            </Router>
-            <Toaster />
-            <SonnerToaster />
-          </QueryClientProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+          <SonnerToaster />
+        </QueryClientProvider>
+      </AuthProvider>
     </LanguageThemeProvider>
   )
 }
