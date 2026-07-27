@@ -151,8 +151,8 @@ export default function LandingPage() {
               <div className="text-xs text-white/50 uppercase tracking-widest font-semibold">Tempo Elaborazione Alert</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-[#10b981] mb-1">Attivo</div>
-              <div className="text-xs text-white/50 uppercase tracking-widest font-semibold">Filtro Anti-Discriminazione</div>
+              <div className="text-3xl md:text-4xl font-bold text-[#10b981] mb-1">100%</div>
+              <div className="text-xs text-white/50 uppercase tracking-widest font-semibold">Dati, Non Pregiudizi</div>
             </div>
             <div>
               <div className="text-3xl md:text-4xl font-bold text-white mb-1">Verificata</div>
@@ -263,9 +263,9 @@ export default function LandingPage() {
                 <div className="w-12 h-12 rounded-xl bg-[#10b981]/10 flex items-center justify-center text-[#10b981] mb-6">
                   <Eye className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Filtro anti-discriminazione</h3>
+                <h3 className="text-xl font-bold text-white mb-3">Dati reali, zero pregiudizi</h3>
                 <p className="text-sm text-white/60 font-light leading-relaxed">
-                  Nessuna generalizzazione su zone o gruppi. Pubblichiamo solo fatti verificabili: cosa, quando, dove — mai chi.
+                  Nessuna generalizzazione su zone o gruppi. Pubblichiamo solo fatti verificabili: cosa, quando e dove — mai opinioni o stereotipi.
                 </p>
               </div>
 
