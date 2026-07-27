@@ -387,3 +387,36 @@ def handle_send_otp(data: dict):
     success = send_resend_email(email, f"Codice OTP Sentinel: {otp_code}", html)
     return {"success": success, "otp": otp_code}
 
+@app.post("/api/contact")
+def handle_contact_submit(data: dict):
+    name = data.get("name", "Utente")
+    email = data.get("email", "")
+    message = data.get("message", "")
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Email non valida.")
+
+    admin_html = f"""
+    <div style="font-family: Arial, sans-serif; background-color: #050505; color: #ffffff; padding: 40px 20px;">
+      <div style="max-w: 600px; margin: 0 auto; background: #0c0c0c; border: 1px solid #333; padding: 30px; border-radius: 20px;">
+        <h2 style="color: #10b981; margin-bottom: 10px;">Nuovo Messaggio da {name} 📩</h2>
+        <p style="color: #aaa; font-size: 14px;"><strong>Email Mittente:</strong> {email}</p>
+        <div style="background: #111; border: 1px solid #333; padding: 20px; border-radius: 12px; margin: 20px 0; color: #fff;">
+          {message}
+        </div>
+      </div>
+    </div>
+    """
+    send_resend_email("sentinelappsecurity@gmail.com", f"Nuovo Messaggio Contatti da {name}", admin_html)
+    
+    user_html = f"""
+    <div style="font-family: Arial, sans-serif; background-color: #050505; color: #ffffff; padding: 40px 20px;">
+      <div style="max-w: 600px; margin: 0 auto; background: #0c0c0c; border: 1px solid #333; padding: 30px; border-radius: 20px;">
+        <h2 style="color: #10b981; margin-bottom: 10px;">Abbiamo ricevuto il tuo messaggio! 🛡️</h2>
+        <p style="color: #ccc; font-size: 14px; line-height: 1.6;">Ciao <strong>{name}</strong>,<br>grazie per aver contattato Sentinel. Il nostro team ha preso in carico la tua richiesta e ti risponderà al più presto su questo indirizzo.</p>
+      </div>
+    </div>
+    """
+    send_resend_email(email, "Conferma Ricezione Messaggio — Sentinel", user_html)
+    return {"success": True, "message": "Messaggio inviato con successo."}
+
+
