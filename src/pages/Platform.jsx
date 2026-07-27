@@ -1,41 +1,11 @@
-import React, { useEffect, useState, Component } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldAlert, Zap, Server, Smartphone, Database, MapPin, Compass } from 'lucide-react';
+import { ShieldAlert, Zap, Server, Smartphone, Database, MapPin, Compass, Radio, Activity } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import IncidentMap from '@/components/incidents/IncidentMap';
 import { MOCK_INCIDENTS } from '@/components/data/mockData';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
-
-class MapErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error("Map Error caught:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="w-full h-full bg-[#090b10] rounded-2xl flex flex-col items-center justify-center p-6 text-center text-white border border-white/10">
-          <Compass className="w-12 h-12 text-[#10b981] mb-3 animate-pulse" />
-          <h3 className="text-lg font-bold">Mappa Vettoriale Live Sentinel</h3>
-          <p className="text-xs text-gray-400 mt-1 max-w-sm">
-            Monitoraggio attivo su Milano · Piazza Duomo. Allerte e segnalazioni verificate in tempo reale.
-          </p>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
 
 export default function Platform() {
   const { t } = useLanguageTheme();
@@ -45,66 +15,86 @@ export default function Platform() {
   }, []);
 
   return (
-    <div className="bg-slate-50 dark:bg-[#050505] text-gray-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
+    <div className="bg-slate-50 dark:bg-[#050505] text-slate-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
       <MarketingNavbar />
 
-      {/* Hero */}
-      <section className="pt-28 pb-16">
+      {/* Hero Header */}
+      <section className="pt-28 pb-12">
         <div className="max-w-7xl mx-auto px-6">
-          <h1 className="text-5xl md:text-[80px] font-bold tracking-tight leading-[0.95] mb-8 text-gray-900 dark:text-white">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#10b981]/15 border border-[#10b981]/30 text-xs font-bold text-[#10b981] mb-6 backdrop-blur-md">
+            <Radio className="w-4 h-4 text-[#10b981] animate-pulse" />
+            <span>Piattaforma di Monitoraggio Live</span>
+          </div>
+
+          <h1 className="text-5xl md:text-[80px] font-extrabold tracking-tight leading-[0.95] mb-6 text-slate-900 dark:text-white">
             {t('platform_hero_title')}
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 dark:text-white/60 max-w-2xl mb-12">
+          <p className="text-lg md:text-xl text-slate-600 dark:text-white/70 max-w-3xl mb-12 font-normal">
             {t('platform_hero_sub')}
           </p>
 
-          {/* ULTRA PREMIUM 3D MAPBOX DISPLAY */}
-          <div className="bg-white dark:bg-[#0c0c0c] border border-gray-200 dark:border-white/10 rounded-[2.2rem] overflow-hidden p-6 md:p-8 shadow-2xl transition-colors duration-300">
+          {/* 1. ULTRA PREMIUM 3D DASHBOARD PREVIEW IMAGE */}
+          <div className="mb-12 rounded-[2.5rem] overflow-hidden bg-gray-950 border border-slate-200 dark:border-white/15 relative shadow-2xl group">
+            <img 
+              src="/sentinel_hero_map.png" 
+              alt="Sentinel 3D Command Radar Dashboard" 
+              className="w-full h-full object-cover opacity-95 transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute top-6 right-6 bg-[#090909]/90 border border-white/15 p-3.5 rounded-2xl backdrop-blur-xl flex items-center gap-3 shadow-xl text-white">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#10b981]"></span>
+              </span>
+              <span className="text-xs font-bold tracking-wide uppercase">Dashboard 3D Attiva</span>
+            </div>
+          </div>
+
+          {/* 2. LIVE INTERACTIVE MAP DISPLAY */}
+          <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 rounded-[2.2rem] overflow-hidden p-6 md:p-8 shadow-2xl transition-colors duration-300">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
               <div>
                 <div className="flex items-center gap-2">
                   <Compass className="w-5 h-5 text-[#10b981]" />
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('platform_map_title')}</h2>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('platform_map_title')}</h2>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-white/50 mt-1">{t('platform_map_sub')}</p>
+                <p className="text-xs text-slate-500 dark:text-white/50 mt-1">{t('platform_map_sub')}</p>
               </div>
               <span className="text-xs font-bold text-[#10b981] bg-[#10b981]/15 px-4 py-1.5 rounded-full border border-[#10b981]/30">
                 {t('platform_map_badge')}
               </span>
             </div>
             
-            <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 relative shadow-2xl">
-              <MapErrorBoundary>
-                <IncidentMap 
-                  incidents={MOCK_INCIDENTS} 
-                  userLocation={{ lat: 45.4642, lng: 9.1900 }} 
-                  zoom={13} 
-                />
-              </MapErrorBoundary>
+            <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 relative shadow-2xl">
+              <IncidentMap 
+                incidents={MOCK_INCIDENTS} 
+                userLocation={{ lat: 45.4642, lng: 9.1900 }} 
+                zoom={13} 
+              />
             </div>
           </div>
+
         </div>
       </section>
 
       {/* Features Grid */}
-      <section className="py-16">
+      <section className="py-16 bg-slate-100 dark:bg-[#0a0a0a]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="border-t border-gray-200 dark:border-white/10 pt-8">
+            <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 p-8 rounded-3xl shadow-lg">
               <Smartphone className="w-10 h-10 text-[#10b981] mb-6" />
-              <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">PWA Universale</h3>
-              <p className="text-gray-600 dark:text-white/60">Abbiamo bypassato i tempi morti degli app store. La nostra Progressive Web App si installa all'istante, garantendoti l'accesso al network ovunque tu sia.</p>
+              <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">PWA Universale</h3>
+              <p className="text-slate-600 dark:text-white/60 font-normal leading-relaxed">Abbiamo bypassato i tempi morti degli app store. La nostra Progressive Web App si installa all'istante, garantendoti l'accesso al network ovunque tu sia.</p>
             </div>
-            <div className="border-t border-gray-200 dark:border-white/10 pt-8">
+            <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 p-8 rounded-3xl shadow-lg">
               <Server className="w-10 h-10 text-[#10b981] mb-6" />
-              <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Calcolo Perimetrale</h3>
-              <p className="text-gray-600 dark:text-white/60">L'Edge Computing ci permette di elaborare i dati a un millisecondo da te. Ricevi le allerte critiche prima ancora che sfiorino i nostri database centrali.</p>
+              <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">Calcolo Perimetrale</h3>
+              <p className="text-slate-600 dark:text-white/60 font-normal leading-relaxed">L'Edge Computing ci permette di elaborare i dati a un millisecondo da te. Ricevi le allerte critiche prima ancora che sfiorino i nostri database centrali.</p>
             </div>
-            <div className="border-t border-gray-200 dark:border-white/10 pt-8">
+            <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 p-8 rounded-3xl shadow-lg">
               <Database className="w-10 h-10 text-[#10b981] mb-6" />
-              <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Zero Profilazione</h3>
-              <p className="text-gray-600 dark:text-white/60">Nessun tracciamento dell'identità personale. I dati di posizione vengono elaborati localmente sul dispositivo per mantenere la tua privacy impenetrabile.</p>
+              <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">Zero Profilazione</h3>
+              <p className="text-slate-600 dark:text-white/60 font-normal leading-relaxed">Nessun tracciamento dell'identità personale. I dati di posizione vengono elaborati localmente sul dispositivo per mantenere la tua privacy impenetrabile.</p>
             </div>
           </div>
         </div>
