@@ -5,6 +5,7 @@ import ItalyMapModal from '@/components/ui/ItalyMapModal';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import FeatureModal from '@/components/ui/FeatureModal';
 import WaitlistModal from '@/components/ui/WaitlistModal';
+import DualIPhoneHeroMockup from '@/components/ui/DualIPhoneHeroMockup';
 import { trackEvent, initScrollDepthTracking } from '@/lib/analytics';
 
 export default function LandingPage() {
@@ -133,41 +134,9 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Right Column: High Quality Product Graphic */}
+              {/* Right Column: Dual iPhone 17 Pro App Mockup */}
               <div className="relative animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
-                <div className="aspect-[4/3] sm:aspect-[4/3] lg:aspect-[4/5] rounded-[2.5rem] overflow-hidden bg-gray-950 border border-white/15 relative shadow-2xl group">
-                  <img 
-                    src="/sentinel_hero_map.png" 
-                    alt="Mappa Sentinel con segnalazioni verificate sulla rotta" 
-                    className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
-                    fetchpriority="high"
-                  />
-                  
-                  {/* Floating Radar Live Tag */}
-                  <div className="absolute top-6 right-6 bg-[#090909]/90 border border-white/15 p-3.5 rounded-2xl backdrop-blur-xl flex items-center gap-3 shadow-xl">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-[#10b981]"></span>
-                    </span>
-                    <span className="text-xs font-bold tracking-wide text-white uppercase">Allerte Live Attive</span>
-                  </div>
-
-                  {/* Overlapping Alert Card */}
-                  <div className="absolute bottom-6 left-6 right-6 bg-[#0d0d0d]/90 border border-white/15 p-4 sm:p-5 rounded-2xl shadow-2xl backdrop-blur-2xl flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-11 h-11 bg-[#f59e0b]/20 rounded-xl flex items-center justify-center border border-[#f59e0b]/40 shrink-0">
-                        <AlertTriangle className="w-5 h-5 text-[#f59e0b]" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-white">Lavori in Corso & Deviazione</div>
-                        <div className="text-xs text-white/60">Fonte Ufficiale · A 250m dal tuo percorso</div>
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-bold text-[#10b981] bg-[#10b981]/15 px-3 py-1.5 rounded-full border border-[#10b981]/30 shrink-0">
-                      VERIFICATO
-                    </span>
-                  </div>
-                </div>
+                <DualIPhoneHeroMockup />
               </div>
 
             </div>
@@ -319,7 +288,7 @@ export default function LandingPage() {
         <section id="prova-prodotto" className="py-28 relative border-t border-white/10">
           <div className="max-w-7xl mx-auto px-6">
             
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8">
               <div>
                 <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">Dimostrazione Prodotto /</div>
                 <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white">
@@ -334,6 +303,24 @@ export default function LandingPage() {
                 Esplora la Mappa 3D Live
                 <ArrowRight className="w-4 h-4" />
               </button>
+            </div>
+
+            {/* Shifted Command Radar Dashboard Visual (Moved here from Hero) */}
+            <div className="mb-16 aspect-[16/9] md:aspect-[21/9] rounded-[2.5rem] overflow-hidden bg-gray-950 border border-white/15 relative shadow-2xl group">
+              <img 
+                src="/sentinel_hero_map.png" 
+                alt="Sentinel 3D Command Radar Dashboard & Telemetry" 
+                className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+                decoding="async"
+              />
+              <div className="absolute top-6 right-6 bg-[#090909]/90 border border-white/15 p-3.5 rounded-2xl backdrop-blur-xl flex items-center gap-3 shadow-xl">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#10b981]"></span>
+                </span>
+                <span className="text-xs font-bold tracking-wide text-white uppercase">Infrastruttura di Monitoraggio Live</span>
+              </div>
             </div>
 
             {/* Feature Cards Grid */}
