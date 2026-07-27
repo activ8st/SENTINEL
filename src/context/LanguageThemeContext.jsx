@@ -73,7 +73,7 @@ export const translations = {
     // Platform Page
     platform_hero_title: "Ingegnerizzata per l'emergenza.",
     platform_hero_sub: "Un'architettura vettoriale progettata per latenza zero. Mappa vettoriale 3D ad alta definizione per navigare la città in tempo reale con totale consapevolezza.",
-    platform_map_title: "Mappa Vettoriale 3D Ultra HD · Live Radar",
+    platform_map_title: "Live Radar",
     platform_map_sub: "Dati vettoriali ad alta definizione con rilevamento preventivo degli incidenti urbani.",
     platform_map_badge: "● Live Feed Milano",
 
@@ -210,7 +210,7 @@ export const translations = {
     // Platform Page
     platform_hero_title: "Engineered for Emergency.",
     platform_hero_sub: "A zero-latency vector architecture. Ultra-HD 3D vector map to navigate the city in real-time with complete situational awareness.",
-    platform_map_title: "Ultra HD 3D Vector Map · Live Radar",
+    platform_map_title: "Live Radar",
     platform_map_sub: "High-definition vector data with preventive detection of urban incidents.",
     platform_map_badge: "● Live Feed Milan",
 
