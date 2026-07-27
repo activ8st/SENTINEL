@@ -70,6 +70,38 @@ export const translations = {
     card_3_text: "Il Karma misura l'autorevolezza del segnalatore. Le segnalazioni degli utenti con alto Karma (come i membri Founder con +100 Punti) vengono validate al volo con massima priorità sulla mappa.",
     card_learn_more: "Scopri di più →",
 
+    // Platform Page
+    platform_hero_title: "Ingegnerizzata per l'emergenza.",
+    platform_hero_sub: "Un'architettura vettoriale progettata per latenza zero. Mappa vettoriale 3D ad alta definizione per navigare la città in tempo reale con totale consapevolezza.",
+    platform_map_title: "Mappa Vettoriale 3D Ultra HD · Live Radar",
+    platform_map_sub: "Dati vettoriali ad alta definizione con rilevamento preventivo degli incidenti urbani.",
+    platform_map_badge: "● Live Feed Milano",
+
+    // Manifesto Page
+    manifesto_hero_title: "La Verità, Senza Filtri.",
+    manifesto_hero_sub: "I media arrivano quando è già successo. Noi ci siamo mentre accade.",
+    manifesto_stat_1_val: "+24%",
+    manifesto_stat_1_txt: "Aumento della criminalità urbana non documentata dai canali ufficiali nell'ultimo anno.",
+    manifesto_stat_2_val: "4.2 Min",
+    manifesto_stat_2_txt: "Tempo medio di risposta di Sentinel rispetto ai 15 minuti dei bollettini tradizionali sugli incidenti.",
+    manifesto_stat_3_val: "Imprevedibile",
+    manifesto_stat_3_txt: "Eventi climatici estremi locali sfuggono ai radar nazionali. Solo chi è sul posto sa cosa sta succedendo.",
+    manifesto_quote: "\"La sicurezza non è uno scudo concesso dall'alto. È una rete tessuta dal basso.\"",
+
+    // Contact Page
+    contact_hero_title: "Entra nel Network.",
+    contact_hero_sub: "Investitori, partner tecnologici o pionieri urbani. Il futuro della sicurezza si costruisce insieme.",
+    contact_form_title: "Inizia la conversazione",
+    contact_label_name: "Nome Completo",
+    contact_label_email: "Indirizzo Email",
+    contact_label_msg: "Messaggio",
+    contact_btn_send: "Invia Messaggio",
+    contact_sending: "Invio in corso...",
+    contact_direct_access: "Accesso Diretto",
+    contact_official_email: "Email Ufficiale",
+    contact_phone: "Telefono Headquarters",
+    contact_hq: "Sede Principale",
+
     // How it Works
     how_tag: "Semplicità d'Uso /",
     how_title: "Come funziona Sentinel",
@@ -175,6 +207,38 @@ export const translations = {
     card_3_text: "Karma measures contributor authority. Incident reports from high-Karma users (such as Founder members with +100 Points) are validated on-the-fly with top priority on the map.",
     card_learn_more: "Learn More →",
 
+    // Platform Page
+    platform_hero_title: "Engineered for Emergency.",
+    platform_hero_sub: "A zero-latency vector architecture. Ultra-HD 3D vector map to navigate the city in real-time with complete situational awareness.",
+    platform_map_title: "Ultra HD 3D Vector Map · Live Radar",
+    platform_map_sub: "High-definition vector data with preventive detection of urban incidents.",
+    platform_map_badge: "● Live Feed Milan",
+
+    // Manifesto Page
+    manifesto_hero_title: "The Truth, Unfiltered.",
+    manifesto_hero_sub: "Media arrives after it happens. We are there while it occurs.",
+    manifesto_stat_1_val: "+24%",
+    manifesto_stat_1_txt: "Increase in undocumented urban crime over the past year.",
+    manifesto_stat_2_val: "4.2 Min",
+    manifesto_stat_2_txt: "Sentinel average alert speed vs 15 minutes of traditional incident reports.",
+    manifesto_stat_3_val: "Unpredictable",
+    manifesto_stat_3_txt: "Local extreme weather events escape national radar. Only locals know what's occurring.",
+    manifesto_quote: "\"Safety is not a shield granted from above. It is a network woven from below.\"",
+
+    // Contact Page
+    contact_hero_title: "Join the Network.",
+    contact_hero_sub: "Investors, tech partners, or urban pioneers. Building the future of safety together.",
+    contact_form_title: "Start the Conversation",
+    contact_label_name: "Full Name",
+    contact_label_email: "Email Address",
+    contact_label_msg: "Message",
+    contact_btn_send: "Send Message",
+    contact_sending: "Sending...",
+    contact_direct_access: "Direct Access",
+    contact_official_email: "Official Email",
+    contact_phone: "Headquarters Phone",
+    contact_hq: "Main Office",
+
     // How it Works
     how_tag: "Ease of Use /",
     how_title: "How Sentinel Works",
@@ -225,10 +289,13 @@ export function LanguageThemeProvider({ children }) {
 
   useEffect(() => {
     localStorage.setItem('sentinel_theme', theme);
+    const root = document.documentElement;
     if (theme === 'light') {
-      document.documentElement.classList.add('light-theme');
+      root.classList.remove('dark');
+      root.classList.add('light');
     } else {
-      document.documentElement.classList.remove('light-theme');
+      root.classList.remove('light');
+      root.classList.add('dark');
     }
   }, [theme]);
 
@@ -236,8 +303,8 @@ export function LanguageThemeProvider({ children }) {
     return translations[lang]?.[key] || translations['it']?.[key] || key;
   };
 
-  const toggleTheme = (newTheme) => {
-    setTheme(newTheme);
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
   const changeLang = (newLang) => {

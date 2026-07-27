@@ -3,24 +3,27 @@ import { Link } from 'react-router-dom';
 import { ShieldAlert, AlertTriangle, CloudLightning, Activity } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
+import { useLanguageTheme } from '@/context/LanguageThemeContext';
 
 export default function Manifesto() {
+  const { t } = useLanguageTheme();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   return (
-    <div className="bg-[#050505] dark:bg-[#050505] light:bg-slate-50 text-gray-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
+    <div className="bg-slate-50 dark:bg-[#050505] text-gray-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
       <MarketingNavbar />
 
       {/* Hero Banner */}
-      <section className="pt-28 pb-16 bg-gray-100 dark:bg-[#111] border-b border-gray-200 dark:border-white/10 transition-colors duration-300">
+      <section className="pt-28 pb-16 bg-white dark:bg-[#111] border-b border-gray-200 dark:border-white/10 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <h1 className="text-5xl md:text-[80px] font-bold tracking-tight mb-6 text-gray-900 dark:text-white">
-            La Verità, <span className="text-[#10b981]">Senza Filtri.</span>
+            {t('manifesto_hero_title')}
           </h1>
-          <p className="text-xl text-gray-600 dark:text-white/50 max-w-2xl mx-auto">I media arrivano quando è già successo. Noi ci siamo mentre accade.</p>
+          <p className="text-xl text-gray-600 dark:text-white/50 max-w-2xl mx-auto">{t('manifesto_hero_sub')}</p>
         </div>
       </section>
 
@@ -33,18 +36,18 @@ export default function Manifesto() {
             <div className="lg:col-span-4 flex flex-col gap-8">
               <div className="bg-white dark:bg-[#111] border border-red-500/30 dark:border-red-500/20 p-8 rounded-[2rem] shadow-xl transition-colors duration-300">
                 <AlertTriangle className="w-8 h-8 text-red-500 mb-4" />
-                <h3 className="text-4xl font-bold mb-2 text-red-600 dark:text-red-400">+24%</h3>
-                <p className="text-gray-700 dark:text-white/60 font-medium">Aumento della criminalità urbana non documentata dai canali ufficiali nell'ultimo anno.</p>
+                <h3 className="text-4xl font-bold mb-2 text-red-600 dark:text-red-400">{t('manifesto_stat_1_val')}</h3>
+                <p className="text-gray-700 dark:text-white/60 font-medium">{t('manifesto_stat_1_txt')}</p>
               </div>
               <div className="bg-white dark:bg-[#111] border border-orange-500/30 dark:border-orange-500/20 p-8 rounded-[2rem] shadow-xl transition-colors duration-300">
                 <Activity className="w-8 h-8 text-orange-500 mb-4" />
-                <h3 className="text-4xl font-bold mb-2 text-orange-600 dark:text-orange-400">4.2 Min</h3>
-                <p className="text-gray-700 dark:text-white/60 font-medium">Tempo medio di risposta di Sentinel rispetto ai 15 minuti dei bollettini tradizionali sugli incidenti.</p>
+                <h3 className="text-4xl font-bold mb-2 text-orange-600 dark:text-orange-400">{t('manifesto_stat_2_val')}</h3>
+                <p className="text-gray-700 dark:text-white/60 font-medium">{t('manifesto_stat_2_txt')}</p>
               </div>
               <div className="bg-white dark:bg-[#111] border border-blue-500/30 dark:border-blue-500/20 p-8 rounded-[2rem] shadow-xl transition-colors duration-300">
                 <CloudLightning className="w-8 h-8 text-blue-500 mb-4" />
-                <h3 className="text-4xl font-bold mb-2 text-blue-600 dark:text-blue-400">Imprevedibile</h3>
-                <p className="text-gray-700 dark:text-white/60 font-medium">Eventi climatici estremi locali sfuggono ai radar nazionali. Solo chi è sul posto sa cosa sta succedendo.</p>
+                <h3 className="text-4xl font-bold mb-2 text-blue-600 dark:text-blue-400">{t('manifesto_stat_3_val')}</h3>
+                <p className="text-gray-700 dark:text-white/60 font-medium">{t('manifesto_stat_3_txt')}</p>
               </div>
             </div>
 
@@ -66,7 +69,7 @@ export default function Manifesto() {
               </p>
 
               <div className="bg-[#10b981]/15 border-l-4 border-[#10b981] p-6 rounded-r-2xl my-8">
-                <p className="text-emerald-700 dark:text-[#10b981] font-bold text-xl m-0 italic">"La sicurezza non è uno scudo concesso dall'alto. È una rete tessuta dal basso."</p>
+                <p className="text-emerald-700 dark:text-[#10b981] font-bold text-xl m-0 italic">{t('manifesto_quote')}</p>
               </div>
             </div>
 

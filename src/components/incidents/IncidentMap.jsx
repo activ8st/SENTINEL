@@ -53,7 +53,6 @@ export default function IncidentMap({
   const mapRef = useRef(null);
   const containerRef = useRef(null);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
-  const [mapError, setMapError] = useState(false);
 
   // Watch for theme changes (Light/Dark mode)
   useEffect(() => {
@@ -94,9 +93,10 @@ export default function IncidentMap({
     }
   }, [center, zoom]);
 
+  // Mapbox HD Vector Styles
   const mapStyle = isDark 
     ? 'mapbox://styles/mapbox/dark-v11' 
-    : 'mapbox://styles/mapbox/light-v11';
+    : 'mapbox://styles/mapbox/navigation-day-v1';
 
   // GeoJSON for Route
   const routeGeoJSON = useMemo(() => {
@@ -114,37 +114,11 @@ export default function IncidentMap({
   const visibleMarkers = useMemo(() => spreadOverlappingIncidents(incidents), [incidents]);
 
   const containerStyle = height === '100%' 
-    ? { position: 'relative', width: '100%', height: '100%', minHeight: '350px' } 
-    : { height, width: '100%', minHeight: '350px', position: 'relative' };
-
-  if (mapError) {
-    // OpenStreetMap Fallback iframe if Mapbox Token is domain restricted
-    const osmUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${activeCenter[1]-0.03}%2C${activeCenter[0]-0.02}%2C${activeCenter[1]+0.03}%2C${activeCenter[0]+0.02}&layer=mapnik&marker=${activeCenter[0]}%2C${activeCenter[1]}`;
-    return (
-      <div style={containerStyle} className={`overflow-hidden bg-[#0a0a0a] border border-white/10 rounded-xl ${className}`}>
-        <iframe 
-          title="Incident Map Fallback"
-          width="100%" 
-          height="100%" 
-          style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg)' }} 
-          src={osmUrl}
-        />
-      </div>
-    );
-  }
+    ? { position: 'relative', width: '100%', height: '100%', minHeight: '380px' } 
+    : { height, width: '100%', minHeight: '380px', position: 'relative' };
 
   return (
-    <div ref={containerRef} style={containerStyle} className={`overflow-hidden ${className}`}>
-      <style>{`
-        @keyframes mapbox-pulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.1); opacity: 0.8; }
-        }
-        .mapboxgl-[#10b981]-pulse {
-          animation: mapbox-pulse 2s infinite ease-in-out;
-        }
-      `}</style>
-      
+    <div ref={containerRef} style={containerStyle} className={`overflow-hidden bg-[#090b10] border border-white/10 ${className}`}>
       <Map
         ref={mapRef}
         {...viewState}
@@ -153,10 +127,7 @@ export default function IncidentMap({
         mapStyle={mapStyle}
         style={{ width: '100%', height: '100%' }}
         attributionControl={false}
-        onError={(e) => {
-          console.error("Mapbox load error:", e);
-          setMapError(true);
-        }}
+        reuseMaps
       >
         <NavigationControl position="bottom-right" />
 
@@ -165,8 +136,8 @@ export default function IncidentMap({
           <Marker latitude={userLocation.lat} longitude={userLocation.lng} anchor="center">
             <div className="relative flex items-center justify-center">
               <div className="w-8 h-8 rounded-full bg-[#10b981]/30 animate-ping absolute" />
-              <div className="w-5 h-5 rounded-full bg-[#10b981] border-2 border-white shadow-lg flex items-center justify-center text-[10px]">
-                👤
+              <div className="w-6 h-6 rounded-full bg-[#10b981] border-2 border-white shadow-xl flex items-center justify-center text-xs font-bold">
+                📍
               </div>
             </div>
           </Marker>
@@ -208,15 +179,15 @@ export default function IncidentMap({
               }}
             >
               <div className={`cursor-pointer group relative transition-transform duration-200 hover:scale-125 ${isTarget ? 'scale-125 z-30' : 'z-10'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-xl border-2 transition-all ${
-                  isTarget ? 'bg-[#10b981] border-white ring-4 ring-[#10b981]/40' : 'bg-[#111] border-white/20 hover:border-[#10b981]'
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm shadow-2xl border-2 transition-all ${
+                  isTarget ? 'bg-[#10b981] border-white ring-4 ring-[#10b981]/40' : 'bg-[#0f1117] border-white/30 hover:border-[#10b981]'
                 }`}>
                   {typeConf.icon || '⚠️'}
                 </div>
                 
                 {/* Tooltip on Hover */}
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center pointer-events-none z-50">
-                  <div className="bg-[#0c0c0c] border border-white/20 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap shadow-2xl font-semibold">
+                  <div className="bg-[#0c0c0c] border border-white/20 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap shadow-2xl font-bold">
                     {incident.title}
                   </div>
                   <div className="w-2 h-2 bg-[#0c0c0c] rotate-45 -mt-1 border-r border-b border-white/20" />

@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Mail, MapPin, Phone, CheckCircle2, ArrowRight } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
+import { useLanguageTheme } from '@/context/LanguageThemeContext';
 import { toast } from 'sonner';
 
 export default function Contact() {
+  const { t } = useLanguageTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -46,7 +48,7 @@ export default function Contact() {
   };
 
   return (
-    <div className="bg-[#050505] dark:bg-[#050505] light:bg-slate-50 text-gray-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
+    <div className="bg-slate-50 dark:bg-[#050505] text-gray-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
       <MarketingNavbar />
 
@@ -55,10 +57,10 @@ export default function Contact() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h1 className="text-5xl md:text-[75px] font-bold tracking-tight mb-6 text-gray-900 dark:text-white">
-              Entra nel <span className="text-[#10b981]">Network.</span>
+              {t('contact_hero_title')}
             </h1>
             <p className="text-lg md:text-xl text-gray-600 dark:text-white/50 max-w-2xl mx-auto">
-              Investitori, partner tecnologici o pionieri urbani. Il futuro della sicurezza si costruisce insieme.
+              {t('contact_hero_sub')}
             </p>
           </div>
 
@@ -70,10 +72,10 @@ export default function Contact() {
 
               {!submitted ? (
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-900 dark:text-white">Inizia la conversazione</h2>
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-900 dark:text-white">{t('contact_form_title')}</h2>
                   <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                     <div className="flex flex-col gap-2">
-                      <label className="text-xs font-bold text-gray-700 dark:text-white/70">Nome Completo</label>
+                      <label className="text-xs font-bold text-gray-700 dark:text-white/70">{t('contact_label_name')}</label>
                       <input 
                         type="text" 
                         value={name}
@@ -85,7 +87,7 @@ export default function Contact() {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <label className="text-xs font-bold text-gray-700 dark:text-white/70">Indirizzo Email</label>
+                      <label className="text-xs font-bold text-gray-700 dark:text-white/70">{t('contact_label_email')}</label>
                       <input 
                         type="email" 
                         value={email}
@@ -97,7 +99,7 @@ export default function Contact() {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <label className="text-xs font-bold text-gray-700 dark:text-white/70">Messaggio</label>
+                      <label className="text-xs font-bold text-gray-700 dark:text-white/70">{t('contact_label_msg')}</label>
                       <textarea 
                         rows="4" 
                         value={message}
@@ -113,7 +115,7 @@ export default function Contact() {
                       disabled={loading}
                       className="bg-[#10b981] hover:bg-[#059669] text-black font-bold text-base py-4 rounded-xl mt-2 transition-all hover:scale-[1.01] shadow-[0_0_30px_rgba(16,185,129,0.3)] inline-flex items-center justify-center gap-2"
                     >
-                      {loading ? "Invio in corso..." : "Invia Messaggio"}
+                      {loading ? t('contact_sending') : t('contact_btn_send')}
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   </form>
@@ -146,35 +148,35 @@ export default function Contact() {
             {/* Contact Info */}
             <div className="flex flex-col justify-center gap-10">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Accesso Diretto</h3>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">{t('contact_direct_access')}</h3>
                 <div className="flex flex-col gap-8">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-[#10b981]/15 border border-[#10b981]/30 flex items-center justify-center shrink-0">
                       <Mail className="w-5 h-5 text-[#10b981]" />
                     </div>
                     <div>
-                      <h4 className="text-gray-900 dark:text-white font-bold text-base mb-1">Email Ufficiale</h4>
+                      <h4 className="text-gray-900 dark:text-white font-bold text-base mb-1">{t('contact_official_email')}</h4>
                       <p className="text-gray-700 dark:text-white/60 text-sm font-mono">sentinelappsecurity@gmail.com</p>
                       <p className="text-gray-500 dark:text-white/40 text-xs mt-0.5">partnership@sentinel-app.it</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-gray-200 dark:bg-white/5 border border-gray-300 dark:border-white/10 flex items-center justify-center shrink-0">
                       <Phone className="w-5 h-5 text-[#10b981]" />
                     </div>
                     <div>
-                      <h4 className="text-gray-900 dark:text-white font-bold text-base mb-1">Telefono Headquarters</h4>
+                      <h4 className="text-gray-900 dark:text-white font-bold text-base mb-1">{t('contact_phone')}</h4>
                       <p className="text-gray-700 dark:text-white/60 text-sm">+39 02 1234 5678</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-gray-200 dark:bg-white/5 border border-gray-300 dark:border-white/10 flex items-center justify-center shrink-0">
                       <MapPin className="w-5 h-5 text-[#10b981]" />
                     </div>
                     <div>
-                      <h4 className="text-gray-900 dark:text-white font-bold text-base mb-1">Sede Principale</h4>
+                      <h4 className="text-gray-900 dark:text-white font-bold text-base mb-1">{t('contact_hq')}</h4>
                       <p className="text-gray-700 dark:text-white/60 text-sm">Piazza Gae Aulenti, Milano, Italia</p>
                     </div>
                   </div>
