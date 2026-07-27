@@ -14,6 +14,7 @@ import { calcDistance } from '@/components/data/mockData';
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeDB } from '@/lib/db';
 import { ThemeProvider } from 'next-themes';
+import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -200,17 +201,19 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <AuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-          <SonnerToaster />
-        </QueryClientProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <LanguageThemeProvider>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <AuthProvider>
+          <QueryClientProvider client={queryClientInstance}>
+            <Router>
+              <AuthenticatedApp />
+            </Router>
+            <Toaster />
+            <SonnerToaster />
+          </QueryClientProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </LanguageThemeProvider>
   )
 }
 

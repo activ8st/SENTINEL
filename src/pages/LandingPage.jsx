@@ -6,9 +6,12 @@ import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import FeatureModal from '@/components/ui/FeatureModal';
 import WaitlistModal from '@/components/ui/WaitlistModal';
 import DualIPhoneHeroMockup from '@/components/ui/DualIPhoneHeroMockup';
+import { useLanguageTheme } from '@/context/LanguageThemeContext';
 import { trackEvent, initScrollDepthTracking } from '@/lib/analytics';
 
 export default function LandingPage() {
+  const { t, lang } = useLanguageTheme();
+
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   const [activeFeature, setActiveFeature] = useState(null);
@@ -21,10 +24,12 @@ export default function LandingPage() {
     link.href = 'https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300;400;500;600;700;800&display=swap';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
-    document.title = "Sentinel — Sicurezza verificata, prima di uscire";
+    document.title = lang === 'it' 
+      ? "Sentinel — Sicurezza verificata, prima di uscire" 
+      : "Sentinel — Verified Safety, Before Stepping Outside";
 
     // Track page view and scroll depth
-    trackEvent('page_view', { page: 'LandingPage' });
+    trackEvent('page_view', { page: 'LandingPage', lang });
     const cleanupScroll = initScrollDepthTracking();
 
     // Handle sticky mobile bar on scroll
@@ -42,14 +47,35 @@ export default function LandingPage() {
       cleanupScroll();
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [lang]);
 
   const handleOpenWaitlist = (source) => {
     trackEvent('cta_click', { button: 'download_sentinel', source });
     setIsWaitlistOpen(true);
   };
 
-  const FAQS = [
+  const FAQS = lang === 'en' ? [
+    {
+      question: "Is my location data safe?",
+      answer: "Absolutely. Sentinel processes your GPS location strictly locally on your device to calculate which alerts intersect your path. No movement history is ever stored on central servers."
+    },
+    {
+      question: "How are false or spam reports moderated?",
+      answer: "Every report passes a 2-tier automated check before going live. In addition, the community awards Karma points to authoritative contributors and flags false alarms immediately."
+    },
+    {
+      question: "Is the application free to use?",
+      answer: "Yes, Sentinel is and will always remain free for citizens. Personal safety and verified news should never be a paid privilege."
+    },
+    {
+      question: "Does it work in smaller towns or only major cities?",
+      answer: "Government and official alerts (earthquakes, Protezione Civile weather warnings, and highway roadworks) cover the entire national territory. In populated areas, crowd-verified neighborhood alerts add localized depth."
+    },
+    {
+      question: "Can reports discriminate against specific groups?",
+      answer: "No. Sentinel incorporates a strict anti-bias filter that blocks hate speech or generalizations at the source. We publish verified facts only: what, where, and when."
+    }
+  ] : [
     {
       question: "I miei dati di localizzazione sono al sicuro?",
       answer: "Assolutamente sì. Sentinel utilizza la tua posizione esclusivamente in locale sul tuo dispositivo per calcolare quali allarmi intersecano il tuo raggio di percorrenza. Nessuno storico degli spostamenti viene memorizzato nei nostri server."
@@ -73,7 +99,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="relative w-full max-w-full bg-[#050505] text-[#f5f5f5] min-h-screen overflow-x-hidden font-sans selection:bg-[#10b981] selection:text-black" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
+    <div className="relative w-full max-w-full bg-[#050505] text-[#f5f5f5] min-h-screen overflow-x-hidden font-sans selection:bg-[#10b981] selection:text-black transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
       {/* Ambient Glow Orbs */}
       <div className="absolute top-[-5%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] bg-[#10b981] opacity-10 blur-[180px] rounded-full pointer-events-none" />
@@ -83,7 +109,7 @@ export default function LandingPage() {
       <MarketingNavbar onOpenWaitlist={() => handleOpenWaitlist('navbar')} />
 
       <main>
-        {/* 2. HERO SECTION — Persona-Centrica (Zero parole su "città") */}
+        {/* 2. HERO SECTION */}
         <section className="relative z-10 pt-12 pb-24 md:pt-20 md:pb-32 overflow-hidden">
           <div className="max-w-7xl mx-auto px-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -94,18 +120,18 @@ export default function LandingPage() {
                 {/* Eyebrow Badge */}
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#10b981]/10 border border-[#10b981]/25 text-xs font-semibold text-[#10b981] mb-6 backdrop-blur-md">
                   <ShieldCheck className="w-4 h-4 text-[#10b981]" />
-                  Sicurezza verificata, non allarmismo
+                  {t('hero_eyebrow')}
                 </div>
 
                 {/* H1 Headline */}
-                <h1 className="text-5xl sm:text-6xl lg:text-[76px] leading-[0.98] font-bold tracking-tight mb-6 text-white">
-                  Sai se è sicuro, <br className="hidden sm:inline" />
-                  <span className="text-[#10b981]">prima di uscirci.</span>
+                <h1 className="text-5xl sm:text-6xl lg:text-[76px] leading-[0.98] font-bold tracking-tight mb-6">
+                  {t('hero_title_1')} <br className="hidden sm:inline" />
+                  <span className="text-[#10b981]">{t('hero_title_2')}</span>
                 </h1>
                 
-                {/* Subtitle - Personal & Non-Absolute */}
-                <p className="text-lg md:text-xl text-white/70 mb-10 max-w-xl leading-relaxed font-light">
-                  Sentinel ti mostra esattamente cosa c'è sulla tua strada prima che tu esca di casa — dati ufficiali, segnalazioni verificate dalla community, mai stereotipi. Per farti muovere sempre con più serenità.
+                {/* Subtitle */}
+                <p className="text-lg md:text-xl opacity-70 mb-10 max-w-xl leading-relaxed font-light">
+                  {t('hero_subtitle')}
                 </p>
                 
                 {/* CTAs */}
@@ -114,23 +140,23 @@ export default function LandingPage() {
                     onClick={() => handleOpenWaitlist('hero_primary')}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-[#10b981] hover:bg-[#059669] text-black px-9 py-4 rounded-full font-bold text-lg transition-all hover:scale-105 shadow-[0_0_35px_rgba(16,185,129,0.35)]"
                   >
-                    Scarica Sentinel
+                    {t('hero_cta_primary')}
                     <ArrowRight className="w-5 h-5" />
                   </button>
 
                   <a 
                     href="#prova-prodotto"
                     onClick={() => trackEvent('cta_click', { button: 'hero_secondary_scroll' })}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-full font-semibold text-lg transition-colors border border-white/10 backdrop-blur-md"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-current px-8 py-4 rounded-full font-semibold text-lg transition-colors border border-white/10 backdrop-blur-md"
                   >
-                    Guarda come funziona
+                    {t('hero_cta_secondary')}
                   </a>
                 </div>
 
                 {/* Trust Badge */}
-                <div className="mt-10 flex items-center gap-3 text-xs text-white/50 font-light">
+                <div className="mt-10 flex items-center gap-3 text-xs opacity-50 font-light">
                   <Lock className="w-4 h-4 text-[#10b981]" />
-                  <span>Gratuito · Zero profilazione dati · Fonti ufficiali verificate</span>
+                  <span>{t('hero_trust_badge')}</span>
                 </div>
               </div>
 
@@ -143,39 +169,39 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 3. STAT BAR — Prova Oggettiva Non-Assoluta */}
+        {/* 3. STAT BAR */}
         <section className="py-10 border-y border-white/10 bg-white/[0.02]">
           <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-white mb-1">&lt; 15 sec</div>
-              <div className="text-xs text-white/50 uppercase tracking-widest font-semibold">Tempo Elaborazione Alert</div>
+              <div className="text-3xl md:text-4xl font-bold mb-1">{t('stat_1_val')}</div>
+              <div className="text-xs opacity-50 uppercase tracking-widest font-semibold">{t('stat_1_lbl')}</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-[#10b981] mb-1">100%</div>
-              <div className="text-xs text-white/50 uppercase tracking-widest font-semibold">Dati, Non Pregiudizi</div>
+              <div className="text-3xl md:text-4xl font-bold text-[#10b981] mb-1">{t('stat_2_val')}</div>
+              <div className="text-xs opacity-50 uppercase tracking-widest font-semibold">{t('stat_2_lbl')}</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-white mb-1">Verificata</div>
-              <div className="text-xs text-white/50 uppercase tracking-widest font-semibold">Moderazione Preventiva</div>
+              <div className="text-3xl md:text-4xl font-bold mb-1">{t('stat_3_val')}</div>
+              <div className="text-xs opacity-50 uppercase tracking-widest font-semibold">{t('stat_3_lbl')}</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-[#10b981] mb-1">30+</div>
-              <div className="text-xs text-white/50 uppercase tracking-widest font-semibold">Fonti Ufficiali Istituzionali</div>
+              <div className="text-3xl md:text-4xl font-bold text-[#10b981] mb-1">{t('stat_4_val')}</div>
+              <div className="text-xs opacity-50 uppercase tracking-widest font-semibold">{t('stat_4_lbl')}</div>
             </div>
           </div>
         </section>
 
-        {/* 4. SEZIONE PERSONA — "Pensato per la tua serenità quando ti sposti" */}
+        {/* 4. SEZIONE PERSONA */}
         <section className="py-28 relative border-b border-white/10">
           <div className="max-w-7xl mx-auto px-6">
             
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">Casi d'Uso Reali /</div>
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
-                Pensato per la tua serenità quando ti sposti
+              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('persona_tag')}</div>
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+                {t('persona_title')}
               </h2>
-              <p className="text-base md:text-lg text-white/60 font-light">
-                Sentinel risolve il dubbio prima che si trasformi in preoccupazione.
+              <p className="text-base md:text-lg opacity-60 font-light">
+                {t('persona_sub')}
               </p>
             </div>
 
@@ -187,20 +213,20 @@ export default function LandingPage() {
                     <Compass className="w-7 h-7" />
                   </div>
                   <div className="inline-block text-xs font-semibold uppercase tracking-wider text-[#10b981] bg-[#10b981]/10 px-3 py-1 rounded-full mb-4">
-                    In viaggio in Italia?
+                    {t('persona_1_badge')}
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">
-                    Non conosci la zona e non sai di chi fidarti?
+                  <h3 className="text-2xl font-bold mb-4">
+                    {t('persona_1_title')}
                   </h3>
-                  <p className="text-sm md:text-base text-white/60 font-light leading-relaxed mb-6">
-                    Sentinel ti mostra gli allarmi reali sul tuo percorso nella tua lingua: quali strade evitare, cosa sta succedendo intorno a te — dati verificati dalle autorità e dai cittadini, zero voci di corridoio.
+                  <p className="text-sm md:text-base opacity-60 font-light leading-relaxed mb-6">
+                    {t('persona_1_text')}
                   </p>
                 </div>
                 <button 
                   onClick={() => handleOpenWaitlist('persona_turista')}
                   className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] group-hover:gap-3 transition-all text-left"
                 >
-                  Scopri la protezione per chi viaggia &rarr;
+                  {t('persona_1_cta')}
                 </button>
               </div>
 
@@ -211,20 +237,20 @@ export default function LandingPage() {
                     <Moon className="w-7 h-7" />
                   </div>
                   <div className="inline-block text-xs font-semibold uppercase tracking-wider text-[#f59e0b] bg-[#f59e0b]/10 px-3 py-1 rounded-full mb-4">
-                    Torni a casa tardi?
+                    {t('persona_2_badge')}
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">
-                    Vuoi sapere com'è la situazione sulla tua strada prima di metterti in cammino?
+                  <h3 className="text-2xl font-bold mb-4">
+                    {t('persona_2_title')}
                   </h3>
-                  <p className="text-sm md:text-base text-white/60 font-light leading-relaxed mb-6">
-                    Guarda cosa è accaduto davvero sulla tua rotta prima di uscire: orari, frequenza ed eventi reali per scegliere il percorso migliore senza ansia e senza basarti su supposizioni.
+                  <p className="text-sm md:text-base opacity-60 font-light leading-relaxed mb-6">
+                    {t('persona_2_text')}
                   </p>
                 </div>
                 <button 
                   onClick={() => handleOpenWaitlist('persona_sera')}
                   className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] group-hover:gap-3 transition-all text-left"
                 >
-                  Scopri la funzione Rientro Sicuro &rarr;
+                  {t('persona_2_cta')}
                 </button>
               </div>
             </div>
@@ -232,17 +258,17 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 5. SEZIONE DIFFERENZIAZIONE — "La tua tranquillità, protetta da dati reali e zero allarmismo" */}
+        {/* 5. SEZIONE DIFFERENZIAZIONE */}
         <section className="py-28 bg-[#0a0a0a]">
           <div className="max-w-7xl mx-auto px-6">
             
             <div className="max-w-3xl mb-16">
-              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">I Nostri Principi /</div>
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-6">
-                La tua tranquillità, protetta da dati reali e zero allarmismo
+              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('princ_tag')}</div>
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                {t('princ_title')}
               </h2>
-              <p className="text-lg text-white/60 font-light leading-relaxed">
-                Abbiamo progettato Sentinel ponendo l'etica e la veridicità al primo posto per eliminare il sensazionalismo e l'odio in rete.
+              <p className="text-lg opacity-60 font-light leading-relaxed">
+                {t('princ_sub')}
               </p>
             </div>
 
@@ -252,9 +278,9 @@ export default function LandingPage() {
                 <div className="w-12 h-12 rounded-xl bg-[#10b981]/10 flex items-center justify-center text-[#10b981] mb-6">
                   <ShieldCheck className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Moderazione prima, non dopo</h3>
-                <p className="text-sm text-white/60 font-light leading-relaxed">
-                  Ogni segnalazione passa un controllo prima di diventare pubblica. Nessun contenuto non verificato finisce sulla tua mappa.
+                <h3 className="text-xl font-bold mb-3">{t('princ_1_title')}</h3>
+                <p className="text-sm opacity-60 font-light leading-relaxed">
+                  {t('princ_1_text')}
                 </p>
               </div>
 
@@ -263,9 +289,9 @@ export default function LandingPage() {
                 <div className="w-12 h-12 rounded-xl bg-[#10b981]/10 flex items-center justify-center text-[#10b981] mb-6">
                   <Eye className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Dati reali, zero pregiudizi</h3>
-                <p className="text-sm text-white/60 font-light leading-relaxed">
-                  Nessuna generalizzazione su zone o gruppi. Pubblichiamo solo fatti verificabili: cosa, quando e dove — mai opinioni o stereotipi.
+                <h3 className="text-xl font-bold mb-3">{t('princ_2_title')}</h3>
+                <p className="text-sm opacity-60 font-light leading-relaxed">
+                  {t('princ_2_text')}
                 </p>
               </div>
 
@@ -274,9 +300,9 @@ export default function LandingPage() {
                 <div className="w-12 h-12 rounded-xl bg-[#10b981]/10 flex items-center justify-center text-[#10b981] mb-6">
                   <Radio className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Fonti ufficiali, sempre citate</h3>
-                <p className="text-sm text-white/60 font-light leading-relaxed">
-                  Terremoti, allerte meteo, viabilità — direttamente dalle fonti istituzionali (INGV, Protezione Civile) sul tuo schermo.
+                <h3 className="text-xl font-bold mb-3">{t('princ_3_title')}</h3>
+                <p className="text-sm opacity-60 font-light leading-relaxed">
+                  {t('princ_3_text')}
                 </p>
               </div>
             </div>
@@ -284,28 +310,28 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 6. PROVA PRODOTTO — Dashboard & Radar 3D */}
+        {/* 6. PROVA PRODOTTO */}
         <section id="prova-prodotto" className="py-28 relative border-t border-white/10">
           <div className="max-w-7xl mx-auto px-6">
             
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8">
               <div>
-                <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">Dimostrazione Prodotto /</div>
-                <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white">
-                  La tecnologia al servizio <br/>
-                  <span className="text-[#10b981]">dei tuoi spostamenti</span>
+                <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('demo_tag')}</div>
+                <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
+                  {t('demo_title_1')} <br/>
+                  <span className="text-[#10b981]">{t('demo_title_2')}</span>
                 </h2>
               </div>
               <button 
                 onClick={() => setIsMapModalOpen(true)}
-                className="inline-flex items-center gap-3 bg-white hover:bg-gray-200 text-black px-7 py-3.5 rounded-full font-bold text-sm transition-transform hover:scale-105"
+                className="inline-flex items-center gap-3 bg-white hover:bg-gray-200 text-black px-7 py-3.5 rounded-full font-bold text-sm transition-transform hover:scale-105 shadow-md"
               >
-                Esplora la Mappa 3D Live
+                {t('demo_cta')}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Shifted Command Radar Dashboard Visual (Moved here from Hero) */}
+            {/* Shifted Command Radar Dashboard Visual */}
             <div className="mb-16 aspect-[16/9] md:aspect-[21/9] rounded-[2.5rem] overflow-hidden bg-gray-950 border border-white/15 relative shadow-2xl group">
               <img 
                 src="/sentinel_hero_map.png" 
@@ -319,7 +345,7 @@ export default function LandingPage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-[#10b981]"></span>
                 </span>
-                <span className="text-xs font-bold tracking-wide text-white uppercase">Infrastruttura di Monitoraggio Live</span>
+                <span className="text-xs font-bold tracking-wide uppercase">{t('demo_infra_badge')}</span>
               </div>
             </div>
 
@@ -330,12 +356,12 @@ export default function LandingPage() {
                 className="bg-[#0c0c0c] p-8 rounded-3xl border border-white/10 hover:border-[#10b981]/50 transition-all hover:bg-white/[0.04] group cursor-pointer"
               >
                 <Map className="w-10 h-10 text-[#10b981] mb-6 group-hover:scale-110 transition-transform" />
-                <h3 className="text-xl font-bold text-white mb-3">La Mappa Viva 3D</h3>
-                <p className="text-sm text-white/60 font-light mb-6 leading-relaxed">
-                  Mappe 3D dettagliate a zero latenza con visualizzazione tridimensionale dei fabbricati sul tuo tragitto.
+                <h3 className="text-xl font-bold mb-3">{t('card_1_title')}</h3>
+                <p className="text-sm opacity-60 font-light mb-6 leading-relaxed">
+                  {t('card_1_text')}
                 </p>
                 <span className="text-[#10b981] font-bold text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
-                  Scopri di più &rarr;
+                  {t('card_learn_more')}
                 </span>
               </div>
 
@@ -344,12 +370,12 @@ export default function LandingPage() {
                 className="bg-[#0c0c0c] p-8 rounded-3xl border border-white/10 hover:border-[#10b981]/50 transition-all hover:bg-white/[0.04] group cursor-pointer"
               >
                 <BellRing className="w-10 h-10 text-[#10b981] mb-6 group-hover:scale-110 transition-transform" />
-                <h3 className="text-xl font-bold text-white mb-3">Allerte Preventive</h3>
-                <p className="text-sm text-white/60 font-light mb-6 leading-relaxed">
-                  Radar intelligente geolocalizzato. Ricevi notifiche esclusive solo per le minacce sui tuoi percorsi quotidiani.
+                <h3 className="text-xl font-bold mb-3">{t('card_2_title')}</h3>
+                <p className="text-sm opacity-60 font-light mb-6 leading-relaxed">
+                  {t('card_2_text')}
                 </p>
                 <span className="text-[#10b981] font-bold text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
-                  Scopri di più &rarr;
+                  {t('card_learn_more')}
                 </span>
               </div>
 
@@ -358,12 +384,12 @@ export default function LandingPage() {
                 className="bg-[#0c0c0c] p-8 rounded-3xl border border-white/10 hover:border-[#10b981]/50 transition-all hover:bg-white/[0.04] group cursor-pointer"
               >
                 <Users className="w-10 h-10 text-[#10b981] mb-6 group-hover:scale-110 transition-transform" />
-                <h3 className="text-xl font-bold text-white mb-3">Karma & Reputazione</h3>
-                <p className="text-sm text-white/60 font-light mb-6 leading-relaxed">
-                  Sistema di validazione incrociata. La community vota e attribuisce punti Karma ai segnalatori autorevoli.
+                <h3 className="text-xl font-bold mb-3">{t('card_3_title')}</h3>
+                <p className="text-sm opacity-60 font-light mb-6 leading-relaxed">
+                  {t('card_3_text')}
                 </p>
                 <span className="text-[#10b981] font-bold text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
-                  Scopri di più &rarr;
+                  {t('card_learn_more')}
                 </span>
               </div>
             </div>
@@ -376,34 +402,34 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-6">
             
             <div className="mb-16">
-              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">Semplicità d'Uso /</div>
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white">
-                Come funziona Sentinel
+              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('how_tag')}</div>
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
+                {t('how_title')}
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 relative">
                 <div className="text-5xl font-bold text-[#10b981]/30 mb-4">01.</div>
-                <h3 className="text-xl font-bold text-white mb-3">Apri la Mappa</h3>
-                <p className="text-sm text-white/60 font-light leading-relaxed">
-                  Apri l'app in un istante. Vedi subito gli allarmi reali sulla tua strada e controlla se il tuo percorso è libero da pericoli.
+                <h3 className="text-xl font-bold mb-3">{t('step_1_title')}</h3>
+                <p className="text-sm opacity-60 font-light leading-relaxed">
+                  {t('step_1_text')}
                 </p>
               </div>
 
               <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 relative">
                 <div className="text-5xl font-bold text-[#10b981]/30 mb-4">02.</div>
-                <h3 className="text-xl font-bold text-white mb-3">Ricevi Alert Chirurgici</h3>
-                <p className="text-sm text-white/60 font-light leading-relaxed">
-                  Anticipa ingorghi, deviazioni o eventi critici solo quando un pericolo incrocia direttamente i tuoi spostamenti.
+                <h3 className="text-xl font-bold mb-3">{t('step_2_title')}</h3>
+                <p className="text-sm opacity-60 font-light leading-relaxed">
+                  {t('step_2_text')}
                 </p>
               </div>
 
               <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 relative">
                 <div className="text-5xl font-bold text-[#10b981]/30 mb-4">03.</div>
-                <h3 className="text-xl font-bold text-white mb-3">Segnala in 1-Tap</h3>
-                <p className="text-sm text-white/60 font-light leading-relaxed">
-                  Vedi un ostacolo? Segnalalo o rassicura chi ti aspetta con un solo tap. Il filtro verificherà il contenuto prima della pubblicazione.
+                <h3 className="text-xl font-bold mb-3">{t('step_3_title')}</h3>
+                <p className="text-sm opacity-60 font-light leading-relaxed">
+                  {t('step_3_text')}
                 </p>
               </div>
             </div>
@@ -411,17 +437,17 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 8. FAQ & OBIEZIONI REALI */}
+        {/* 8. FAQ */}
         <section className="py-28 border-t border-white/10">
           <div className="max-w-4xl mx-auto px-6">
             
             <div className="text-center mb-16">
-              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">Trasparenza Totale /</div>
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
-                Domande frequenti
+              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('faq_tag')}</div>
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+                {t('faq_title')}
               </h2>
-              <p className="text-base text-white/60 font-light">
-                Risposte chiare ed oneste a tutti i tuoi dubbi.
+              <p className="text-base opacity-60 font-light">
+                {t('faq_sub')}
               </p>
             </div>
 
@@ -434,14 +460,14 @@ export default function LandingPage() {
                       setOpenFaqIndex(next);
                       trackEvent('faq_toggle', { question: faq.question, open: next !== null });
                     }}
-                    className="w-full flex items-center justify-between text-left font-bold text-lg md:text-xl text-white hover:text-[#10b981] transition-colors gap-4"
+                    className="w-full flex items-center justify-between text-left font-bold text-lg md:text-xl hover:text-[#10b981] transition-colors gap-4"
                   >
                     <span>{faq.question}</span>
-                    <ChevronDown className={`w-5 h-5 shrink-0 transition-transform ${openFaqIndex === idx ? 'rotate-180 text-[#10b981]' : 'text-white/40'}`} />
+                    <ChevronDown className={`w-5 h-5 shrink-0 transition-transform ${openFaqIndex === idx ? 'rotate-180 text-[#10b981]' : 'opacity-40'}`} />
                   </button>
 
                   {openFaqIndex === idx && (
-                    <div className="mt-4 text-sm md:text-base text-white/70 font-light leading-relaxed animate-in fade-in duration-200">
+                    <div className="mt-4 text-sm md:text-base opacity-70 font-light leading-relaxed animate-in fade-in duration-200">
                       {faq.answer}
                     </div>
                   )}
@@ -452,20 +478,20 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 9. FINAL CTA — Personal & Non-Absolute */}
+        {/* 9. FINAL CTA */}
         <section className="py-24 bg-gradient-to-b from-[#0a0a0a] to-[#050505] border-t border-white/10 text-center relative overflow-hidden">
           <div className="max-w-3xl mx-auto px-6 relative z-10">
-            <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-6">
-              Pronto a uscire di casa sapendo cosa ti aspetta?
+            <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+              {t('final_title')}
             </h2>
-            <p className="text-lg text-white/60 mb-10 max-w-xl mx-auto font-light leading-relaxed">
-              Unisciti alla prima rete partecipata di sicurezza e informazione verificata in Italia.
+            <p className="text-lg opacity-60 mb-10 max-w-xl mx-auto font-light leading-relaxed">
+              {t('final_sub')}
             </p>
             <button 
               onClick={() => handleOpenWaitlist('final_cta')}
               className="inline-flex items-center gap-3 bg-[#10b981] hover:bg-[#059669] text-black px-12 py-5 rounded-full font-bold text-xl transition-all hover:scale-105 shadow-[0_0_40px_rgba(16,185,129,0.4)]"
             >
-              Scarica Sentinel
+              {t('final_cta')}
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>
@@ -483,8 +509,8 @@ export default function LandingPage() {
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xs font-bold text-white">Sentinel</div>
-              <div className="text-[10px] text-white/50">Sicurezza Verificata</div>
+              <div className="text-xs font-bold">Sentinel</div>
+              <div className="text-[10px] opacity-50">Sicurezza Verificata</div>
             </div>
           </div>
 
@@ -493,7 +519,7 @@ export default function LandingPage() {
             className="flex items-center gap-2 bg-[#10b981] text-black px-5 py-2.5 rounded-full font-bold text-xs shadow-lg"
           >
             <Download className="w-3.5 h-3.5" />
-            Scarica Ora
+            {t('hero_cta_primary')}
           </button>
         </div>
       )}
