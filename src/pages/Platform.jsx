@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldAlert, Zap, Server, Smartphone, Database, MapPin, Compass, Radio, Activity } from 'lucide-react';
+import { ShieldAlert, Zap, Server, Smartphone, Database, MapPin, Compass, Radio } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import IncidentMap from '@/components/incidents/IncidentMap';
