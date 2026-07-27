@@ -23,7 +23,7 @@ const LayoutWrapper = ({ children, currentPageName }) => {
   return Layout ? <Layout currentPageName={currentPageName}>{children}</Layout> : <>{children}</>;
 };
 
-const DEFAULT_LOC = { lat: 41.9028, lng: 12.4964 };
+const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
 const notifyKeyForType = (type) => `notify_${type}`;
 

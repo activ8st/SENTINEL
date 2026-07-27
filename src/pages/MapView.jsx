@@ -13,7 +13,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 
 const IncidentMap = lazy(() => import('@/components/incidents/IncidentMap'));
 
-const DEFAULT_LOC = { lat: 41.9028, lng: 12.4964 };
+const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
 const TIME_WINDOWS = [
   ...Array.from({ length: 8 }, (_, i) => ({

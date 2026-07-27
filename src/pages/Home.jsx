@@ -29,8 +29,8 @@ const TYPE_ICONS = {
   suspicious: Eye, traffic: Radio, weather: CloudLightning, other: HelpCircle,
 };
 
-// Default center: Rome
-const DEFAULT_LOC = { lat: 41.9028, lng: 12.4964 };
+// Default center: Milan (where active live incidents are located)
+const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
 export default function Home() {
   const [location, setLocation] = useState(DEFAULT_LOC);
