@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, MapPin, Phone, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Mail, MapPin, Phone, CheckCircle2, ArrowRight, Compass } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
+import IncidentMap from '@/components/incidents/IncidentMap';
 import { toast } from 'sonner';
 
 export default function Contact() {
@@ -40,7 +41,6 @@ export default function Contact() {
       }
     } catch (err) {
       setLoading(false);
-      // Fallback UI display even if offline
       setSubmitted(true);
       toast.success("Messaggio registrato con successo!");
     }
@@ -63,7 +63,7 @@ export default function Contact() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mb-20">
             
             {/* Contact Form */}
             <div className="bg-[#0c0c0c] border border-white/10 p-8 md:p-12 rounded-[2.2rem] shadow-2xl relative overflow-hidden">
@@ -184,6 +184,23 @@ export default function Contact() {
             </div>
 
           </div>
+
+          {/* HEADQUARTERS INTERACTIVE MAP CARD */}
+          <div className="bg-[#0c0c0c] border border-white/10 rounded-[2.2rem] overflow-hidden p-6 md:p-8 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Compass className="w-5 h-5 text-[#10b981]" />
+                <h3 className="text-xl font-bold text-white">Headquarters Sentinel · Milano</h3>
+              </div>
+              <span className="text-xs font-bold text-[#10b981] bg-[#10b981]/15 px-3 py-1 rounded-full border border-[#10b981]/30">
+                Piazza Gae Aulenti
+              </span>
+            </div>
+            <div className="w-full h-80 rounded-2xl overflow-hidden border border-white/10 relative">
+              <IncidentMap incidents={[]} userLocation={{ lat: 45.4838, lng: 9.1897 }} zoom={14} />
+            </div>
+          </div>
+
         </div>
       </section>
 
