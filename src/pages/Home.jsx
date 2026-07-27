@@ -131,9 +131,9 @@ export default function Home() {
         <div className="px-4 pt-4 pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <img src="/logo.png" alt="Sentinel Logo" className="w-9 h-9 rounded-xl object-cover" />
+              <img src="/logo.svg" alt="Sentinel Logo" className="w-9 h-9 rounded-xl object-cover shadow-sm" />
               <div>
-                <h1 className="text-lg font-bold text-white leading-none">Sentinel</h1>
+                <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-none">Sentinel</h1>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <Navigation className="w-3 h-3 text-blue-400" />
                   <span className="text-xs text-gray-400">{locLabel}</span>
@@ -170,7 +170,7 @@ export default function Home() {
               aria-label={`Ordina per ${opt.label}`}
               className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors
                 ${sortBy === opt.value
-                  ? 'bg-orange-500 text-white'
+                  ? 'bg-[#10b981] text-black font-bold'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
             >
               {opt.label}
