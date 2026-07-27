@@ -14,6 +14,7 @@ import { calcDistance } from '@/components/data/mockData';
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeDB } from '@/lib/db';
 import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
+import { Analytics } from '@vercel/analytics/react';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 
@@ -138,6 +139,7 @@ function App() {
           </Router>
           <Toaster />
           <SonnerToaster />
+          <Analytics />
         </QueryClientProvider>
       </AuthProvider>
     </LanguageThemeProvider>
