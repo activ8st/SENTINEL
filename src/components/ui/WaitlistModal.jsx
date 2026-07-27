@@ -21,7 +21,6 @@ export default function WaitlistModal({ isOpen, onClose }) {
     { name: "Altra Città...", custom: true, badge: "Sblocca con gli amici" }
   ];
 
-  const activeCityObj = PRIORITY_CITIES.find(c => c.name === city) || PRIORITY_CITIES[0];
   const selectedCityName = city === 'Altra Città...' ? (customCity || 'la tua città') : city;
 
   const handleSubmit = async (e) => {
@@ -62,12 +61,12 @@ export default function WaitlistModal({ isOpen, onClose }) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-2xl animate-in fade-in duration-300 font-sans"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-300 font-sans"
       style={{ fontFamily: "'Funnel Display', sans-serif" }}
       onClick={onClose}
     >
       <div 
-        className="relative w-full max-w-lg bg-[#0c0c0c] border border-white/15 rounded-[2.2rem] p-6 sm:p-8 shadow-2xl overflow-hidden text-white"
+        className="relative w-full max-w-lg bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/15 rounded-[2.2rem] p-6 sm:p-8 shadow-2xl overflow-hidden text-slate-900 dark:text-white"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Ambient Glow */}
@@ -76,7 +75,7 @@ export default function WaitlistModal({ isOpen, onClose }) {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors border border-white/10 z-20"
+          className="absolute top-5 right-5 w-10 h-10 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-full flex items-center justify-center text-slate-900 dark:text-white transition-colors border border-slate-200 dark:border-white/10 z-20"
         >
           <X className="w-5 h-5" />
         </button>
@@ -84,23 +83,23 @@ export default function WaitlistModal({ isOpen, onClose }) {
         {!submitted ? (
           <div>
             {/* Header Eyebrow */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#10b981]/15 border border-[#10b981]/30 text-[11px] font-semibold text-[#10b981] mb-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#10b981]/15 border border-[#10b981]/30 text-[11px] font-bold text-[#10b981] mb-4">
               <Sparkles className="w-3.5 h-3.5" />
               {lang === 'en' ? 'Revolut-Style City Unlock Waitlist' : 'Sblocca la tua Città in Priorità'}
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2 leading-tight">
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-2 leading-tight">
               {lang === 'en' ? 'Where do you want Sentinel first?' : 'Dove vuoi attivare Sentinel prima?'}
             </h3>
-            <p className="text-xs sm:text-sm text-white/60 font-light mb-6 leading-relaxed">
-              Sentinel attiva la copertura prioritario delle segnalazioni nelle città che raggiungono prima la quota di iscritti. **Milano, Roma e Verona** hanno priorità assoluta di lancio!
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-white/70 font-normal mb-6 leading-relaxed">
+              Sentinel attiva la copertura prioritaria nelle città che raggiungono prima la quota di iscritti. Milano, Roma e Verona hanno priorità di lancio!
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               
               {/* City Selection Buttons */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold opacity-70 block">
+                <label className="text-xs font-bold text-slate-700 dark:text-white/70 block">
                   {lang === 'en' ? 'Select your City:' : 'Seleziona la tua Città:'}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -112,7 +111,7 @@ export default function WaitlistModal({ isOpen, onClose }) {
                       className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
                         city === c.name 
                           ? 'bg-[#10b981]/15 border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
-                          : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.06]'
+                          : 'bg-slate-100 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/[0.06] text-slate-900 dark:text-white'
                       }`}
                     >
                       <div className="flex items-center justify-between w-full mb-1">
@@ -124,7 +123,7 @@ export default function WaitlistModal({ isOpen, onClose }) {
                       </div>
                       
                       {!c.custom && (
-                        <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden mt-1">
+                        <div className="w-full bg-slate-200 dark:bg-white/10 h-1.5 rounded-full overflow-hidden mt-1">
                           <div 
                             className="bg-[#10b981] h-full rounded-full" 
                             style={{ width: `${c.percent}%` }}
@@ -136,7 +135,7 @@ export default function WaitlistModal({ isOpen, onClose }) {
                 </div>
               </div>
 
-              {/* Custom City Input if selected */}
+              {/* Custom City Input */}
               {city === 'Altra Città...' && (
                 <div className="relative">
                   <MapPin className="w-4 h-4 text-[#10b981] absolute left-4 top-1/2 -translate-y-1/2" />
@@ -144,7 +143,7 @@ export default function WaitlistModal({ isOpen, onClose }) {
                     type="text"
                     value={customCity}
                     onChange={(e) => setCustomCity(e.target.value)}
-                    className="w-full bg-[#050505] border border-[#10b981]/50 rounded-xl pl-11 pr-4 py-3 text-white text-xs focus:outline-none focus:border-[#10b981]"
+                    className="w-full bg-slate-100 dark:bg-[#050505] border border-[#10b981]/50 rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-[#10b981]"
                     placeholder="Scrivi il nome della tua città (es. Firenze, Bologna...)"
                     required
                   />
@@ -153,12 +152,12 @@ export default function WaitlistModal({ isOpen, onClose }) {
 
               {/* Email Input */}
               <div className="relative">
-                <Mail className="w-4 h-4 text-white/40 absolute left-4 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-slate-400 dark:text-white/40 absolute left-4 top-1/2 -translate-y-1/2" />
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#050505] border border-white/15 rounded-xl pl-11 pr-4 py-3.5 text-white text-xs sm:text-sm focus:outline-none focus:border-[#10b981] transition-colors"
+                  className="w-full bg-slate-100 dark:bg-[#050505] border border-slate-300 dark:border-white/15 rounded-xl pl-11 pr-4 py-3.5 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-[#10b981] transition-colors"
                   placeholder="Inserisci la tua email..."
                   required
                 />
@@ -175,34 +174,34 @@ export default function WaitlistModal({ isOpen, onClose }) {
 
             </form>
 
-            <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between text-[10px] text-white/50">
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between text-[10px] text-slate-500 dark:text-white/50">
               <span> iOS TestFlight & Android Beta</span>
               <span>100% Gratuito · No Spam</span>
             </div>
           </div>
         ) : (
-          /* REVOLUT-STYLE SUCCESS & VIRAL SHARE SCREEN */
+          /* REVOLUT-STYLE SUCCESS SCREEN */
           <div className="text-center py-2 animate-in zoom-in-95 duration-300">
             
             <div className="w-16 h-16 bg-[#10b981]/20 border border-[#10b981]/40 rounded-full flex items-center justify-center mx-auto mb-4 text-[#10b981]">
               <CheckCircle2 className="w-9 h-9" />
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-1">
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-1">
               Sei Ufficialmente in Lista!
             </h3>
-            <p className="text-xs sm:text-sm text-white/70 font-light mb-6">
-              Hai riservato la tua priorità per <strong className="text-[#10b981]">{selectedCityName}</strong> e sbloccato il **Founder Badge (+100 Karma)**!
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-white/70 font-normal mb-6">
+              Hai riservato la tua priorità per <strong className="text-[#10b981]">{selectedCityName}</strong> e sbloccato il Founder Badge (+100 Karma)!
             </p>
 
             {/* VIRAL SHARE BOX */}
-            <div className="bg-[#050505] border border-[#10b981]/30 p-5 rounded-2xl mb-6 text-left relative overflow-hidden">
+            <div className="bg-slate-100 dark:bg-[#050505] border border-[#10b981]/30 p-5 rounded-2xl mb-6 text-left relative overflow-hidden text-slate-900 dark:text-white">
               <div className="flex items-center gap-2 text-xs font-bold text-[#10b981] uppercase tracking-wider mb-2">
                 <Trophy className="w-4 h-4 text-[#10b981]" />
                 Fai Scalare la Tua Città (+5 Posizioni)
               </div>
-              <p className="text-xs text-white/60 font-light mb-4 leading-relaxed">
-                Condividi il tuo link personale con i tuoi amici di {selectedCityName}. Per ogni amico che si iscrive col tuo link, fai scalare la tua città nella classifica di lancio ed accumuli 100 Punti Karma aggiuntivi.
+              <p className="text-xs text-slate-600 dark:text-white/60 font-normal mb-4 leading-relaxed">
+                Condividi il tuo link personale con i tuoi amici di {selectedCityName}. Per ogni amico che si iscrive col tuo link, fai scalare la tua città nella classifica di lancio.
               </p>
 
               {/* Share Buttons */}
@@ -217,7 +216,7 @@ export default function WaitlistModal({ isOpen, onClose }) {
 
                 <button
                   onClick={handleCopy}
-                  className="w-full bg-white/10 hover:bg-white/15 text-white font-medium text-xs py-2.5 rounded-xl flex items-center justify-center gap-2 border border-white/10 transition-colors"
+                  className="w-full bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/15 text-slate-900 dark:text-white font-medium text-xs py-2.5 rounded-xl flex items-center justify-center gap-2 border border-slate-300 dark:border-white/10 transition-colors"
                 >
                   <Copy className="w-3.5 h-3.5 text-[#10b981]" />
                   {copied ? 'Link Copiato!' : 'Copia Link Personale'}
@@ -227,7 +226,7 @@ export default function WaitlistModal({ isOpen, onClose }) {
 
             <button
               onClick={onClose}
-              className="text-xs text-white/50 hover:text-white underline transition-colors"
+              className="text-xs text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white underline transition-colors"
             >
               Chiudi e torna alla Landing Page
             </button>

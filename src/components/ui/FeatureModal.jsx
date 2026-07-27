@@ -49,31 +49,31 @@ const FEATURE_DETAILS = {
         desc: 'In caso di calamità o grandi emergenze, rassicura istantaneamente i tuoi cari e la rete con la modalità "Sono al Sicuro".'
       }
     ],
-    ctaText: 'Attiva le Allerte sulla tua Zona',
+    ctaText: 'Attiva Notifiche Live',
     ctaLink: '/Auth'
   },
   karma: {
     id: 'karma',
     icon: Users,
-    badge: 'Crowdsourced Trust & Integrity',
-    title: 'Karma & Affidabilità',
-    subtitle: 'L\'intelligenza collettiva schermata da una moderazione automatica a 2 livelli.',
-    description: `Il crowdsourcing funziona solo se protetto dalla verità. Sentinel combina un motore di moderazione algoritmica preventiva con un sistema di reputazione (Karma) distribuito tra i cittadini.`,
+    badge: 'Proof of Reputation System',
+    title: 'Karma & Reputazione Founder',
+    subtitle: 'Il primo algoritmo meritocratico che premia la veridicità ed azzera l\'allarmismo.',
+    description: `Sul web tradizionale, le notizie sensazionalistiche prendono il sopravvento. Su Sentinel vige la legge della veridicità. Ogni utente accumula un punteggio Karma pubblico basato sulla precisione delle sue segnalazioni.`,
     bullets: [
       {
-        title: 'Filtro Anti-Discrimine & Moderazione 2-Step',
-        desc: 'L\'algoritmo intercetta e blocca all\'origine tentativi di spamm, fake news o generalizzazioni discriminatorie prima che raggiungano la mappa.'
+        title: 'Validazione Prioritaria delle Segnalazioni',
+        desc: 'Le segnalazioni effettuate dagli utenti ad alto Karma (come i membri Founder con +100 Punti) saltano la coda di moderazione.'
       },
       {
-        title: 'Reputazione Evolutiva (Tiers Karma)',
-        desc: 'Da "Nuovo" fino a "Guardiano della Città". Ogni segnalazione corretta e confermata dalla community ti fa salire di grado regalando maggior peso ai tuoi allarmi.'
+        title: 'Filtro Anti-Fake News & Odio',
+        desc: 'Gli utenti che inviano informazioni false o sensazionalistiche perdono Karma fino al blocco permanente dell\'account.'
       },
       {
-        title: 'Autoprotezione della Community',
-        desc: 'Sistema di upvote e downvote incrociato che isola e neutralizza i falsi allarmi in tempo reale senza bisogno di censura manuale.'
+        title: 'Badge Founder Esclusivo',
+        desc: 'I primi iscritti alla piattaforma ottengono lo status di Founder permanente e il diritto di voto sulla moderazione comunitaria.'
       }
     ],
-    ctaText: 'Diventa un Guardiano della Città',
+    ctaText: 'Riserva il tuo Karma Founder',
     ctaLink: '/Auth'
   }
 };
@@ -92,7 +92,7 @@ export default function FeatureModal({ featureId, onClose }) {
         onClick={onClose}
       >
         <div 
-          className="relative w-full max-w-xl max-h-[85vh] my-auto bg-[#0d0d0d] border border-white/15 rounded-[2rem] p-6 md:p-8 shadow-2xl overflow-hidden text-white flex flex-col"
+          className="relative w-full max-w-xl max-h-[85vh] my-auto bg-white dark:bg-[#0d0d0d] border border-slate-200 dark:border-white/15 rounded-[2rem] p-6 md:p-8 shadow-2xl overflow-hidden text-slate-900 dark:text-white flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Ambient Glow */}
@@ -101,44 +101,44 @@ export default function FeatureModal({ featureId, onClose }) {
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors border border-white/10 z-20"
+            className="absolute top-5 right-5 w-10 h-10 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-full flex items-center justify-center text-slate-900 dark:text-white transition-colors border border-slate-200 dark:border-white/10 z-20"
           >
             <X className="w-5 h-5" />
           </button>
 
           {/* Header Area */}
           <div className="shrink-0 pr-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#10b981]/10 border border-[#10b981]/30 text-[11px] font-bold text-[#10b981] mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#10b981]/15 border border-[#10b981]/30 text-[11px] font-bold text-[#10b981] mb-4">
               <Activity className="w-3 h-3 animate-pulse" />
               {data.badge}
             </div>
 
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-[#10b981]/10 border border-[#10b981]/25 flex items-center justify-center text-[#10b981] flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-[#10b981]/15 border border-[#10b981]/30 flex items-center justify-center text-[#10b981] flex-shrink-0">
                 <IconComponent className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">{data.title}</h2>
-                <p className="text-xs text-white/60 font-light leading-snug">{data.subtitle}</p>
+                <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{data.title}</h2>
+                <p className="text-xs text-slate-500 dark:text-white/60 font-normal leading-snug">{data.subtitle}</p>
               </div>
             </div>
           </div>
 
           {/* Scrollable Content Body */}
-          <div className="flex-1 overflow-y-auto pr-1 my-2 space-y-4 text-xs font-light text-white/70">
-            <p className="leading-relaxed border-b border-white/10 pb-4">
+          <div className="flex-1 overflow-y-auto pr-1 my-2 space-y-4 text-xs font-normal text-slate-600 dark:text-white/70">
+            <p className="leading-relaxed border-b border-slate-200 dark:border-white/10 pb-4">
               {data.description}
             </p>
 
             <div className="space-y-3 pt-1">
               {data.bullets.map((bullet, idx) => (
-                <div key={idx} className="flex items-start gap-3 bg-white/[0.02] p-3 rounded-xl border border-white/5">
+                <div key={idx} className="flex items-start gap-3 bg-slate-50 dark:bg-white/[0.02] p-3 rounded-xl border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white">
                   <div className="w-5 h-5 rounded-full bg-[#10b981]/20 flex items-center justify-center text-[#10b981] flex-shrink-0 mt-0.5">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-white mb-0.5">{bullet.title}</h4>
-                    <p className="text-[11px] text-white/60 leading-relaxed font-light">{bullet.desc}</p>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white mb-0.5">{bullet.title}</h4>
+                    <p className="text-[11px] text-slate-600 dark:text-white/60 leading-relaxed font-normal">{bullet.desc}</p>
                   </div>
                 </div>
               ))}
@@ -146,8 +146,8 @@ export default function FeatureModal({ featureId, onClose }) {
           </div>
 
           {/* Fixed Footer CTA */}
-          <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/10 mt-2">
-            <div className="text-[11px] text-white/40 font-light text-center sm:text-left">
+          <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200 dark:border-white/10 mt-2">
+            <div className="text-[11px] text-slate-500 dark:text-white/40 font-normal text-center sm:text-left">
               🔒 Accesso immediato al network.
             </div>
             <Link
