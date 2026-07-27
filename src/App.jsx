@@ -156,16 +156,38 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
+      {/* Root Route alias */}
+      <Route
+        path="/"
+        element={
+          <LayoutWrapper currentPageName="LandingPage">
+            <Pages.LandingPage />
+          </LayoutWrapper>
+        }
+      />
+      {/* Explicit /Home route alias */}
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/Auth" replace />} />}>
+        <Route
+          path="/Home"
+          element={
+            <AlertWatcher>
+              <LayoutWrapper currentPageName="Home">
+                <Pages.Home />
+              </LayoutWrapper>
+            </AlertWatcher>
+          }
+        />
+      </Route>
+
       {Object.entries(Pages).map(([pageName, PageComponent]) => {
         const marketingPages = ['LandingPage', 'Platform', 'Manifesto', 'Contact', 'Auth'];
         const isMarketing = marketingPages.includes(pageName);
-        const path = pageName === mainPageKey ? "/" : `/${pageName}`;
 
         if (isMarketing) {
           return (
             <Route
               key={pageName}
-              path={path}
+              path={`/${pageName}`}
               element={
                 <LayoutWrapper currentPageName={pageName}>
                   <PageComponent />
@@ -178,7 +200,7 @@ const AuthenticatedApp = () => {
         return (
           <Route key={pageName} element={<ProtectedRoute unauthenticatedElement={<Navigate to="/Auth" replace />} />}>
             <Route
-              path={path}
+              path={`/${pageName}`}
               element={
                 <AlertWatcher>
                   <LayoutWrapper currentPageName={pageName}>
