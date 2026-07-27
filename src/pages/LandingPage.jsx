@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ShieldAlert, ShieldCheck, Map, BellRing, Users, ArrowRight, Lock, Eye, CheckCircle2, ChevronDown, Download, Compass, Moon, AlertTriangle, Radio } from 'lucide-react';
+import { ShieldCheck, Map, BellRing, Users, ArrowRight, Lock, Eye, ChevronDown, Download, Compass, Moon, AlertTriangle, Radio } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import ItalyMapModal from '@/components/ui/ItalyMapModal';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
@@ -20,7 +20,7 @@ export default function LandingPage() {
     link.href = 'https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300;400;500;600;700;800&display=swap';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
-    document.title = "Sentinel — Sicurezza urbana in tempo reale, verificata";
+    document.title = "Sentinel — Sicurezza verificata, prima di uscire";
 
     // Track page view and scroll depth
     trackEvent('page_view', { page: 'LandingPage' });
@@ -59,11 +59,11 @@ export default function LandingPage() {
     },
     {
       question: "L'applicazione è gratuita?",
-      answer: "Sì, Sentinel è e rimarrà sempre gratuita per i cittadini. La sicurezza pubblica e l'informazione verificata non devono mai essere un privilegio a pagamento."
+      answer: "Sì, Sentinel è e rimarrà sempre gratuita per i cittadini. La sicurezza personale e l'informazione verificata non devono mai essere un privilegio a pagamento."
     },
     {
-      question: "Funziona anche nelle città più piccole o solo nelle grandi metropoli?",
-      answer: "Le allerte istituzionali (come INGV per i terremoti, allerte meteo della Protezione Civile e traffico) coprono l'intero territorio nazionale italiano. Nelle grandi città si aggiunge la rete di segnalazione capillare dei cittadini."
+      question: "Funziona anche nelle zone più piccole o solo nei grandi centri?",
+      answer: "Le allerte istituzionali (come INGV per i terremoti, allerte meteo della Protezione Civile e viabilità) coprono l'intero territorio nazionale. Nelle zone più frequentate si aggiunge la rete di segnalazione capillare degli utenti."
     },
     {
       question: "Le segnalazioni possono discriminare persone o quartieri?",
@@ -82,7 +82,7 @@ export default function LandingPage() {
       <MarketingNavbar onOpenWaitlist={() => handleOpenWaitlist('navbar')} />
 
       <main>
-        {/* 2. HERO SECTION — Persona-Centrica */}
+        {/* 2. HERO SECTION — Persona-Centrica (Zero parole su "città") */}
         <section className="relative z-10 pt-12 pb-24 md:pt-20 md:pb-32 overflow-hidden">
           <div className="max-w-7xl mx-auto px-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -102,9 +102,9 @@ export default function LandingPage() {
                   <span className="text-[#10b981]">prima di uscirci.</span>
                 </h1>
                 
-                {/* Subtitle */}
+                {/* Subtitle - Personal & Non-Absolute */}
                 <p className="text-lg md:text-xl text-white/70 mb-10 max-w-xl leading-relaxed font-light">
-                  Sentinel mostra cosa succede davvero nella tua città — dati ufficiali, segnalazioni verificate dalla community, mai stereotipi. Prima che tu debba chiederlo.
+                  Sentinel ti mostra esattamente cosa c'è sulla tua strada prima che tu esca di casa — dati ufficiali, segnalazioni verificate dalla community, mai stereotipi. Per farti muovere sempre con più serenità.
                 </p>
                 
                 {/* CTAs */}
@@ -129,7 +129,7 @@ export default function LandingPage() {
                 {/* Trust Badge */}
                 <div className="mt-10 flex items-center gap-3 text-xs text-white/50 font-light">
                   <Lock className="w-4 h-4 text-[#10b981]" />
-                  <span>Gratuito · Zero profilazione dati · Fonti ufficiali italiane</span>
+                  <span>Gratuito · Zero profilazione dati · Fonti ufficiali verificate</span>
                 </div>
               </div>
 
@@ -138,7 +138,7 @@ export default function LandingPage() {
                 <div className="aspect-[4/3] sm:aspect-[4/3] lg:aspect-[4/5] rounded-[2.5rem] overflow-hidden bg-gray-950 border border-white/15 relative shadow-2xl group">
                   <img 
                     src="/sentinel_hero_map.png" 
-                    alt="Mappa Sentinel con segnalazioni verificate a Milano" 
+                    alt="Mappa Sentinel con segnalazioni verificate sulla rotta" 
                     className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
                     fetchpriority="high"
                   />
@@ -149,7 +149,7 @@ export default function LandingPage() {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-[#10b981]"></span>
                     </span>
-                    <span className="text-xs font-bold tracking-wide text-white uppercase">Radar Live Milano</span>
+                    <span className="text-xs font-bold tracking-wide text-white uppercase">Allerte Live Attive</span>
                   </div>
 
                   {/* Overlapping Alert Card */}
@@ -160,7 +160,7 @@ export default function LandingPage() {
                       </div>
                       <div>
                         <div className="text-sm font-bold text-white">Lavori in Corso & Deviazione</div>
-                        <div className="text-xs text-white/60">Fonte Ufficiale · Via Manzoni (250m)</div>
+                        <div className="text-xs text-white/60">Fonte Ufficiale · A 250m dal tuo percorso</div>
                       </div>
                     </div>
                     <span className="text-[11px] font-bold text-[#10b981] bg-[#10b981]/15 px-3 py-1.5 rounded-full border border-[#10b981]/30 shrink-0">
@@ -196,14 +196,14 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 4. SEZIONE PERSONA — "Costruito per chi si muove davvero in città" */}
+        {/* 4. SEZIONE PERSONA — "Pensato per la tua serenità quando ti sposti" */}
         <section className="py-28 relative border-b border-white/10">
           <div className="max-w-7xl mx-auto px-6">
             
             <div className="text-center max-w-3xl mx-auto mb-16">
               <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">Casi d'Uso Reali /</div>
               <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
-                Costruito per chi si muove davvero in città
+                Pensato per la tua serenità quando ti sposti
               </h2>
               <p className="text-base md:text-lg text-white/60 font-light">
                 Sentinel risolve il dubbio prima che si trasformi in preoccupazione.
@@ -221,15 +221,15 @@ export default function LandingPage() {
                     In viaggio in Italia?
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-4">
-                    Non conosci la zona e non sai dove cercare informazioni affidabili.
+                    Non conosci la zona e non sai di chi fidarti?
                   </h3>
                   <p className="text-sm md:text-base text-white/60 font-light leading-relaxed mb-6">
-                    Sentinel ti mostra la situazione della città in tempo reale e nella tua lingua: quali strade sono più sicure, cosa sta succedendo davvero intorno a te — non voci di corridoio, dati verificati dalle autorità e dai cittadini.
+                    Sentinel ti mostra gli allarmi reali sul tuo percorso nella tua lingua: quali strade evitare, cosa sta succedendo intorno a te — dati verificati dalle autorità e dai cittadini, zero voci di corridoio.
                   </p>
                 </div>
                 <button 
                   onClick={() => handleOpenWaitlist('persona_turista')}
-                  className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] group-hover:gap-3 transition-all"
+                  className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] group-hover:gap-3 transition-all text-left"
                 >
                   Scopri la protezione per chi viaggia &rarr;
                 </button>
@@ -245,15 +245,15 @@ export default function LandingPage() {
                     Torni a casa tardi?
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-4">
-                    Vuoi sapere com'è la situazione prima di metterti in cammino.
+                    Vuoi sapere com'è la situazione sulla tua strada prima di metterti in cammino?
                   </h3>
                   <p className="text-sm md:text-base text-white/60 font-light leading-relaxed mb-6">
-                    Prima di uscire, guarda cosa è accaduto davvero in zona — non chi ci vive, ma cosa si è verificato di recente. Orari, frequenza, tipo di evento: fatti oggettivi per scegliere la strada migliore senza ansia.
+                    Guarda cosa è accaduto davvero sulla tua rotta prima di uscire: orari, frequenza ed eventi reali per scegliere il percorso migliore senza ansia e senza basarti su supposizioni.
                   </p>
                 </div>
                 <button 
                   onClick={() => handleOpenWaitlist('persona_sera')}
-                  className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] group-hover:gap-3 transition-all"
+                  className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] group-hover:gap-3 transition-all text-left"
                 >
                   Scopri la funzione Rientro Sicuro &rarr;
                 </button>
@@ -263,17 +263,17 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 5. SEZIONE DIFFERENZIAZIONE — "La sicurezza partecipata, fatta come deve essere" */}
+        {/* 5. SEZIONE DIFFERENZIAZIONE — "La tua tranquillità, protetta da dati reali e zero allarmismo" */}
         <section className="py-28 bg-[#0a0a0a]">
           <div className="max-w-7xl mx-auto px-6">
             
             <div className="max-w-3xl mb-16">
               <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">I Nostri Principi /</div>
               <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-6">
-                La sicurezza partecipata, fatta come deve essere
+                La tua tranquillità, protetta da dati reali e zero allarmismo
               </h2>
               <p className="text-lg text-white/60 font-light leading-relaxed">
-                Abbiamo progettato Sentinel ponendo l'etica e la veridicità al primo posto per evitare l'allarmismo e l'odio in rete.
+                Abbiamo progettato Sentinel ponendo l'etica e la veridicità al primo posto per eliminare il sensazionalismo e l'odio in rete.
               </p>
             </div>
 
@@ -285,7 +285,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">Moderazione prima, non dopo</h3>
                 <p className="text-sm text-white/60 font-light leading-relaxed">
-                  Ogni segnalazione passa un controllo prima di diventare pubblica. Mai vigilantismo, mai contenuto non verificato online all'istante.
+                  Ogni segnalazione passa un controllo prima di diventare pubblica. Nessun contenuto non verificato finisce sulla tua mappa.
                 </p>
               </div>
 
@@ -307,7 +307,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">Fonti ufficiali, sempre citate</h3>
                 <p className="text-sm text-white/60 font-light leading-relaxed">
-                  Terremoti, allerte meteo, traffico — direttamente dalle fonti istituzionali italiane (INGV, Protezione Civile), non da fonti anonime.
+                  Terremoti, allerte meteo, viabilità — direttamente dalle fonti istituzionali (INGV, Protezione Civile) sul tuo schermo.
                 </p>
               </div>
             </div>
@@ -324,7 +324,7 @@ export default function LandingPage() {
                 <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">Dimostrazione Prodotto /</div>
                 <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white">
                   La tecnologia al servizio <br/>
-                  <span className="text-[#10b981]">della tranquillità</span>
+                  <span className="text-[#10b981]">dei tuoi spostamenti</span>
                 </h2>
               </div>
               <button 
@@ -345,7 +345,7 @@ export default function LandingPage() {
                 <Map className="w-10 h-10 text-[#10b981] mb-6 group-hover:scale-110 transition-transform" />
                 <h3 className="text-xl font-bold text-white mb-3">La Mappa Viva 3D</h3>
                 <p className="text-sm text-white/60 font-light mb-6 leading-relaxed">
-                  Mappe 3D dettagliate a zero latenza con visualizzazione tridimensionale dei fabbricati e punti critici.
+                  Mappe 3D dettagliate a zero latenza con visualizzazione tridimensionale dei fabbricati sul tuo tragitto.
                 </p>
                 <span className="text-[#10b981] font-bold text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
                   Scopri di più &rarr;
@@ -359,7 +359,7 @@ export default function LandingPage() {
                 <BellRing className="w-10 h-10 text-[#10b981] mb-6 group-hover:scale-110 transition-transform" />
                 <h3 className="text-xl font-bold text-white mb-3">Allerte Preventive</h3>
                 <p className="text-sm text-white/60 font-light mb-6 leading-relaxed">
-                  Radar intelligente geolocalizzato. Ricevi notifiche esclusive per le minacce sui tuoi percorsi quotidiani.
+                  Radar intelligente geolocalizzato. Ricevi notifiche esclusive solo per le minacce sui tuoi percorsi quotidiani.
                 </p>
                 <span className="text-[#10b981] font-bold text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
                   Scopri di più &rarr;
@@ -400,7 +400,7 @@ export default function LandingPage() {
                 <div className="text-5xl font-bold text-[#10b981]/30 mb-4">01.</div>
                 <h3 className="text-xl font-bold text-white mb-3">Apri la Mappa</h3>
                 <p className="text-sm text-white/60 font-light leading-relaxed">
-                  Accedi senza registrazioni infinite. Osserva istantaneamente lo stato di sicurezza e la mappa della tua metropoli.
+                  Apri l'app in un istante. Vedi subito gli allarmi reali sulla tua strada e controlla se il tuo percorso è libero da pericoli.
                 </p>
               </div>
 
@@ -408,7 +408,7 @@ export default function LandingPage() {
                 <div className="text-5xl font-bold text-[#10b981]/30 mb-4">02.</div>
                 <h3 className="text-xl font-bold text-white mb-3">Ricevi Alert Chirurgici</h3>
                 <p className="text-sm text-white/60 font-light leading-relaxed">
-                  Anticipa ingorghi, deviazioni o eventi critici prima di avviare il navigatore o di uscire a piedi.
+                  Anticipa ingorghi, deviazioni o eventi critici solo quando un pericolo incrocia direttamente i tuoi spostamenti.
                 </p>
               </div>
 
@@ -416,7 +416,7 @@ export default function LandingPage() {
                 <div className="text-5xl font-bold text-[#10b981]/30 mb-4">03.</div>
                 <h3 className="text-xl font-bold text-white mb-3">Segnala in 1-Tap</h3>
                 <p className="text-sm text-white/60 font-light leading-relaxed">
-                  Vedi un ostacolo? Segnalalo in pochi secondi. Il filtro di moderazione verificherà il contenuto prima della pubblicazione.
+                  Vedi un ostacolo? Segnalalo o rassicura chi ti aspetta con un solo tap. Il filtro verificherà il contenuto prima della pubblicazione.
                 </p>
               </div>
             </div>
@@ -465,14 +465,14 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 9. FINAL CTA */}
+        {/* 9. FINAL CTA — Personal & Non-Absolute */}
         <section className="py-24 bg-gradient-to-b from-[#0a0a0a] to-[#050505] border-t border-white/10 text-center relative overflow-hidden">
           <div className="max-w-3xl mx-auto px-6 relative z-10">
             <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-6">
-              Pronto a muoverti in città con totale tranquillità?
+              Pronto a uscire di casa sapendo cosa ti aspetta?
             </h2>
             <p className="text-lg text-white/60 mb-10 max-w-xl mx-auto font-light leading-relaxed">
-              Unisciti alla prima rete partecipata e verificata di sicurezza urbana in Italia.
+              Unisciti alla prima rete partecipata di sicurezza e informazione verificata in Italia.
             </p>
             <button 
               onClick={() => handleOpenWaitlist('final_cta')}
@@ -493,7 +493,7 @@ export default function LandingPage() {
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0c0c0c]/95 border-t border-white/15 p-4 backdrop-blur-xl animate-in slide-in-from-bottom duration-300 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-[#10b981] flex items-center justify-center text-black font-bold">
-              <ShieldAlert className="w-5 h-5" />
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <div className="text-xs font-bold text-white">Sentinel</div>
