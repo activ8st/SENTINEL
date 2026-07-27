@@ -24,12 +24,21 @@ export default function WaitlistModal({ isOpen, onClose }) {
   const activeCityObj = PRIORITY_CITIES.find(c => c.name === city) || PRIORITY_CITIES[0];
   const selectedCityName = city === 'Altra Città...' ? (customCity || 'la tua città') : city;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (email && email.includes('@')) {
       trackEvent('waitlist_submit_city', { email_domain: email.split('@')[1], city: selectedCityName });
       setSubmitted(true);
-      toast.success(`Sei in lista per sbloccare ${selectedCityName}!`);
+      toast.success(`Sei in lista per sbloccare ${selectedCityName}! Controlla la tua posta.`);
+      try {
+        await fetch('http://localhost:8000/api/waitlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, city: selectedCityName })
+        });
+      } catch (err) {
+        console.log("Waitlist email call error:", err);
+      }
     } else {
       toast.error("Inserisci un indirizzo email valido.");
     }

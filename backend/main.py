@@ -309,3 +309,81 @@ def reject_incident(incident_id: str, db: Session = Depends(get_db)):
     incident.status = "rejected"
     db.commit()
     return {"success": True, "message": "Incidente scartato."}
+
+# --- REAL EMAIL & OTP RESEND INTEGRATION ---
+
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+
+def send_resend_email(to_email: str, subject: str, html_content: str):
+    if not RESEND_API_KEY:
+        print("[Resend] API Key missing.")
+        return False
+    try:
+        import requests
+        headers = {
+            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Content-Type": "application/json",
+            "User-Agent": "SentinelApp/1.0"
+        }
+        payload = {
+            "from": "Sentinel <onboarding@resend.dev>",
+            "to": [to_email],
+            "subject": subject,
+            "html": html_content
+        }
+        res = requests.post("https://api.resend.com/emails", headers=headers, json=payload, timeout=10)
+        return res.status_code == 200
+    except Exception as e:
+        print(f"[Resend Error] {e}")
+        return False
+
+@app.post("/api/waitlist")
+def handle_waitlist_signup(data: dict):
+    email = data.get("email")
+    city = data.get("city", "Milano")
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Email non valida.")
+
+    html = f"""
+    <div style="font-family: Arial, sans-serif; background-color: #050505; color: #ffffff; padding: 40px 20px; border-radius: 16px;">
+      <div style="max-w: 600px; margin: 0 auto; background: #0c0c0c; border: 1px solid #333; padding: 30px; border-radius: 20px;">
+        <h1 style="color: #10b981; font-size: 26px; margin-bottom: 10px;">Benvenuto in Sentinel! 🛡️</h1>
+        <p style="font-size: 15px; color: #ccc; line-height: 1.6;">
+          Hai iscritto con successo la tua città <strong>{city}</strong> e ti sei garantito il <strong>Founder Badge (+100 Punti Karma)</strong> per il primo giorno di lancio!
+        </p>
+        <div style="background: #10b98115; border: 1px solid #10b98140; padding: 15px; border-radius: 12px; margin: 20px 0; text-align: center;">
+          <span style="color: #10b981; font-weight: bold; font-size: 14px;">Stato Città: In Scalata Prioritaria su {city}</span>
+        </div>
+        <p style="font-size: 14px; color: #888;">
+          Grazie per aver scelto di proteggere la tua serenità con dati reali e zero pregiudizi.
+        </p>
+      </div>
+    </div>
+    """
+    success = send_resend_email(email, f"Benvenuto in Sentinel — Conferma Founder & Sblocco {city}", html)
+    return {"success": success, "message": f"Email inviata a {email}"}
+
+@app.post("/api/auth/send-otp")
+def handle_send_otp(data: dict):
+    email = data.get("email")
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Email non valida.")
+    
+    import random
+    otp_code = str(random.randint(100000, 999999))
+
+    html = f"""
+    <div style="font-family: Arial, sans-serif; background-color: #050505; color: #ffffff; padding: 40px 20px;">
+      <div style="max-w: 500px; margin: 0 auto; background: #0c0c0c; border: 1px solid #333; padding: 30px; border-radius: 20px; text-align: center;">
+        <h2 style="color: #10b981; margin-bottom: 10px;">Il tuo codice di verifica Sentinel</h2>
+        <p style="color: #aaa; font-size: 14px;">Inserisci questo codice a 6 cifre per completare l'accesso sicuro:</p>
+        <div style="font-size: 36px; font-weight: bold; letter-spacing: 6px; color: #10b981; background: #111; padding: 15px; border-radius: 12px; margin: 25px 0; border: 1px border #10b981;">
+          {otp_code}
+        </div>
+        <p style="color: #666; font-size: 12px;">Il codice scade tra 10 minuti. Non condividerlo con nessuno.</p>
+      </div>
+    </div>
+    """
+    success = send_resend_email(email, f"Codice OTP Sentinel: {otp_code}", html)
+    return {"success": success, "otp": otp_code}
+
