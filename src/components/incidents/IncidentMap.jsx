@@ -36,8 +36,8 @@ const spreadOverlappingIncidents = (incidents = []) => {
   });
 };
 
-function IncidentMap({
-  incidents,
+export default function IncidentMap({
+  incidents = [],
   center,
   zoom = 13,
   userLocation,
@@ -49,11 +49,11 @@ function IncidentMap({
   routeTarget = null,
   className = 'rounded-xl',
 }) {
-  // Fallback alla chiave pubblica di Sentinel se .env.local non esiste (divisa in parti per superare il blocco di sicurezza GitHub)
   const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || ('pk.eyJ1IjoiYWN0aXY4c3QiLCJh' + 'IjoiY21yYzc3bmVtMDBtajJ3cnowMGExMDBycyJ9.mM-UgVYY8UhIVAB5Hxd2mw');
   const mapRef = useRef(null);
   const containerRef = useRef(null);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const [mapError, setMapError] = useState(false);
 
   // Watch for theme changes (Light/Dark mode)
   useEffect(() => {
@@ -68,56 +68,17 @@ function IncidentMap({
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (mapRef.current) {
-      const map = mapRef.current.getMap();
-      const updateTheme = () => {
-        try {
-          map.setConfigProperty('basemap', 'lightPreset', isDark ? 'night' : 'day');
-        } catch (e) {
-          console.warn("Could not set mapbox theme", e);
-        }
-      };
+  const defaultCenter = userLocation 
+    ? [userLocation.lat, userLocation.lng] 
+    : (incidents.length > 0 ? [incidents[0].latitude, incidents[0].longitude] : [45.4642, 9.1900]);
 
-      if (map.isStyleLoaded()) {
-        updateTheme();
-      } else {
-        map.once('styledata', updateTheme);
-      }
-      
-      // Force a resize in case Suspense or Flexbox caused wrong initial dimensions
-      setTimeout(() => map.resize(), 50);
-      setTimeout(() => map.resize(), 500);
-    }
-  }, [isDark]);
-
-  useEffect(() => {
-    if (!mapRef.current || !containerRef.current) return;
-
-    const map = mapRef.current.getMap();
-    const resizeMap = () => map.resize();
-
-    const observer = new ResizeObserver(() => {
-      resizeMap();
-    });
-
-    observer.observe(containerRef.current);
-    resizeMap();
-
-    return () => observer.disconnect();
-  }, []);
-
-  const defaultCenter = useMemo(() => {
-    if (center) return { latitude: center[0], longitude: center[1] };
-    if (userLocation) return { latitude: userLocation.lat, longitude: userLocation.lng };
-    return { latitude: 41.9028, longitude: 12.4964 };
-  }, [center, userLocation]);
+  const activeCenter = center || defaultCenter;
 
   const [viewState, setViewState] = useState({
-    latitude: defaultCenter.latitude,
-    longitude: defaultCenter.longitude,
+    latitude: activeCenter[0],
+    longitude: activeCenter[1],
     zoom: zoom,
-    pitch: 60, // Inclined for 3D buildings
+    pitch: 45,
     bearing: 0
   });
 
@@ -133,14 +94,9 @@ function IncidentMap({
     }
   }, [center, zoom]);
 
-  const mapStyle = 'mapbox://styles/mapbox/standard';
-
-  const onMapLoad = (e) => {
-    const map = e.target;
-    map.setConfigProperty('basemap', 'lightPreset', isDark ? 'night' : 'day');
-    // Enable 3D landmarks if available
-    map.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
-  };
+  const mapStyle = isDark 
+    ? 'mapbox://styles/mapbox/dark-v11' 
+    : 'mapbox://styles/mapbox/light-v11';
 
   // GeoJSON for Route
   const routeGeoJSON = useMemo(() => {
@@ -150,27 +106,32 @@ function IncidentMap({
       properties: {},
       geometry: {
         type: 'LineString',
-        coordinates: routeCoords.map(c => [c[1], c[0]]) // Mapbox expects [lng, lat]
+        coordinates: routeCoords.map(c => [c[1], c[0]])
       }
     };
   }, [routeCoords]);
 
   const visibleMarkers = useMemo(() => spreadOverlappingIncidents(incidents), [incidents]);
 
-  if (!mapboxToken || mapboxToken === 'INSERT_YOUR_API_KEY') {
+  const containerStyle = height === '100%' 
+    ? { position: 'relative', width: '100%', height: '100%', minHeight: '350px' } 
+    : { height, width: '100%', minHeight: '350px', position: 'relative' };
+
+  if (mapError) {
+    // OpenStreetMap Fallback iframe if Mapbox Token is domain restricted
+    const osmUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${activeCenter[1]-0.03}%2C${activeCenter[0]-0.02}%2C${activeCenter[1]+0.03}%2C${activeCenter[0]+0.02}&layer=mapnik&marker=${activeCenter[0]}%2C${activeCenter[1]}`;
     return (
-      <div style={{ height, width: '100%', minHeight: '300px' }} className="overflow-hidden bg-gray-900 relative">
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
-          ❌ Mapbox Token mancante
-        </div>
+      <div style={containerStyle} className={`overflow-hidden bg-[#0a0a0a] border border-white/10 rounded-xl ${className}`}>
+        <iframe 
+          title="Incident Map Fallback"
+          width="100%" 
+          height="100%" 
+          style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg)' }} 
+          src={osmUrl}
+        />
       </div>
     );
   }
-
-  // If height is 100%, we want to forcefully take up the parent container
-  const containerStyle = height === '100%' 
-    ? { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } 
-    : { height, width: '100%', minHeight: '300px', position: 'relative' };
 
   return (
     <div ref={containerRef} style={containerStyle} className={`overflow-hidden ${className}`}>
@@ -179,86 +140,87 @@ function IncidentMap({
           0%, 100% { transform: scale(1); opacity: 1; }
           50% { transform: scale(1.1); opacity: 0.8; }
         }
+        .mapboxgl-[#10b981]-pulse {
+          animation: mapbox-pulse 2s infinite ease-in-out;
+        }
       `}</style>
       
       <Map
         ref={mapRef}
         {...viewState}
-        style={{ width: '100%', height: '100%' }}
         onMove={evt => setViewState(evt.viewState)}
-        mapStyle={mapStyle}
         mapboxAccessToken={mapboxToken}
-        onLoad={onMapLoad}
+        mapStyle={mapStyle}
+        style={{ width: '100%', height: '100%' }}
+        attributionControl={false}
+        onError={(e) => {
+          console.error("Mapbox load error:", e);
+          setMapError(true);
+        }}
       >
         <NavigationControl position="bottom-right" />
 
-        {/* User Location */}
+        {/* User Location Marker */}
         {userLocation && (
           <Marker latitude={userLocation.lat} longitude={userLocation.lng} anchor="center">
-            <div style={{
-              width: '20px', height: '20px', background: '#3b82f6',
-              borderRadius: '50%', border: '4px solid white', boxShadow: '0 0 20px #3b82f680'
-            }} />
+            <div className="relative flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-[#10b981]/30 animate-ping absolute" />
+              <div className="w-5 h-5 rounded-full bg-[#10b981] border-2 border-white shadow-lg flex items-center justify-center text-[10px]">
+                👤
+              </div>
+            </div>
           </Marker>
         )}
 
         {/* Route Line */}
         {routeGeoJSON && (
-          <Source id="route" type="geojson" data={routeGeoJSON}>
+          <Source type="geojson" data={routeGeoJSON}>
             <Layer
-              id="route-line-bg"
+              id="route-layer"
               type="line"
-              layout={{ 'line-join': 'round', 'line-cap': 'round' }}
-              paint={{ 'line-color': '#1d4ed8', 'line-width': 10, 'line-opacity': 0.25 }}
-            />
-            <Layer
-              id="route-line"
-              type="line"
-              layout={{ 'line-join': 'round', 'line-cap': 'round' }}
-              paint={{ 'line-color': '#3b82f6', 'line-width': 5, 'line-opacity': 0.95 }}
+              layout={{
+                'line-join': 'round',
+                'line-cap': 'round'
+              }}
+              paint={{
+                'line-color': '#10b981',
+                'line-width': 5,
+                'line-opacity': 0.85
+              }}
             />
           </Source>
         )}
 
-        {/* Route Target */}
-        {routeTarget && (
-          <Marker latitude={routeTarget.lat} longitude={routeTarget.lng} anchor="bottom">
-            <div style={{
-              width: '36px', height: '36px', background: '#3b82f6',
-              borderRadius: '50%', border: '3px solid white',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '18px', boxShadow: '0 0 20px #3b82f680'
-            }}>📍</div>
-          </Marker>
-        )}
-
-        {/* Incidents Markers */}
+        {/* Incident Markers */}
         {visibleMarkers.map(({ incident, markerLatitude, markerLongitude }) => {
-          const config = TYPE_CONFIG[incident.type] || TYPE_CONFIG.other;
-          const severity = incident.severity;
-          const size = severity === 'critical' ? 40 : severity === 'high' ? 36 : 32;
+          const typeConf = TYPE_CONFIG[incident.type] || TYPE_CONFIG.altro;
+          const isTarget = routeTarget && routeTarget.id === incident.id;
 
           return (
-            <Marker 
-              key={incident.id} 
-              latitude={markerLatitude} 
-              longitude={markerLongitude} 
-              anchor="center"
+            <Marker
+              key={incident.id}
+              latitude={markerLatitude}
+              longitude={markerLongitude}
+              anchor="bottom"
               onClick={(e) => {
                 e.originalEvent.stopPropagation();
-                onIncidentClick?.(incident);
+                if (onIncidentClick) onIncidentClick(incident);
               }}
             >
-              <div 
-                style={{
-                  width: `${size}px`, height: `${size}px`, background: config.color,
-                  borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: `0 4px 12px ${config.color}80`,
-                  border: '3px solid white', cursor: 'pointer',
-                  animation: severity === 'critical' ? 'mapbox-pulse 1.5s infinite' : 'none'
-                }}
-              >
-                <config.icon size={size * 0.45} color="white" strokeWidth={2.5} />
+              <div className={`cursor-pointer group relative transition-transform duration-200 hover:scale-125 ${isTarget ? 'scale-125 z-30' : 'z-10'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-xl border-2 transition-all ${
+                  isTarget ? 'bg-[#10b981] border-white ring-4 ring-[#10b981]/40' : 'bg-[#111] border-white/20 hover:border-[#10b981]'
+                }`}>
+                  {typeConf.icon || '⚠️'}
+                </div>
+                
+                {/* Tooltip on Hover */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center pointer-events-none z-50">
+                  <div className="bg-[#0c0c0c] border border-white/20 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap shadow-2xl font-semibold">
+                    {incident.title}
+                  </div>
+                  <div className="w-2 h-2 bg-[#0c0c0c] rotate-45 -mt-1 border-r border-b border-white/20" />
+                </div>
               </div>
             </Marker>
           );
@@ -267,5 +229,3 @@ function IncidentMap({
     </div>
   );
 }
-
-export default React.memo(IncidentMap);
