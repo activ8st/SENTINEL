@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"powershell -Command .\\backend\\venv\\Scripts\\python.exe -m uvicorn backend.main:app --reload --port 8000\"",
+    "dev:frontend": "vite",
+    "dev:backend": "powershell -Command .\\backend\\venv\\Scripts\\python.exe -m uvicorn backend.main:app --reload --port 8000",
     "build": "vite build",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
@@ -87,6 +89,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "baseline-browser-mapping": "^2.8.32",
+    "concurrently": "^10.0.4",
     "eslint": "^9.19.0",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.0.0",
