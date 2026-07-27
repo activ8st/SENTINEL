@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { X, ShieldCheck, FileText, Lock, Building, Scale, AlertTriangle, FileCode } from 'lucide-react';
 
 export default function LegalModal({ isOpen, onClose, initialTab = 'privacy' }) {
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const normalizeTab = (tab) => (tab === 'sources' ? 'institutional' : tab);
+  const [activeTab, setActiveTab] = useState(() => normalizeTab(initialTab));
 
   useEffect(() => {
-    setActiveTab(initialTab);
+    setActiveTab(normalizeTab(initialTab));
   }, [initialTab]);
 
   if (!isOpen) return null;

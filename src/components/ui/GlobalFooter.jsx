@@ -147,7 +147,7 @@ export default function GlobalFooter() {
                 </button>
               </li>
               <li>
-                <button onClick={() => openLegal('sources')} className="hover:text-gray-900 dark:hover:text-white transition-colors text-left">
+                <button onClick={() => openLegal('institutional')} className="hover:text-gray-900 dark:hover:text-white transition-colors text-left">
                   {t('footer_institutional')}
                 </button>
               </li>
