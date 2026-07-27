@@ -1,11 +1,88 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Component } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldAlert, Zap, Server, Smartphone, Database, MapPin, Compass, Radio } from 'lucide-react';
+import { ShieldAlert, Zap, Server, Smartphone, Database, MapPin, Compass, Radio, Search, Navigation, AlertTriangle } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import IncidentMap from '@/components/incidents/IncidentMap';
 import { MOCK_INCIDENTS } from '@/components/data/mockData';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
+
+class MapErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.warn("Mapbox GL WebGL render error caught by boundary:", error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full min-h-[500px] relative bg-[#06080e] rounded-2xl overflow-hidden border border-white/10 flex flex-col justify-between p-6 text-white select-none shadow-2xl">
+          <div 
+            className="absolute inset-0 bg-cover bg-center transition-all duration-500 opacity-80" 
+            style={{ 
+              backgroundImage: `url('https://a.basemaps.cartocdn.com/dark_all/13/4207/2808@2x.png'), url('/sentinel_hero_map.png')`,
+              filter: 'brightness(0.9) contrast(1.1)'
+            }} 
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/70 pointer-events-none" />
+
+          {/* Top Control Bar */}
+          <div className="relative z-10 flex items-center justify-between bg-black/85 backdrop-blur-xl p-3.5 rounded-2xl border border-white/20 shadow-2xl">
+            <div className="flex items-center gap-2.5 text-xs font-bold text-white">
+              <Search className="w-4 h-4 text-[#10b981]" />
+              <span>Milano · Piazza Duomo (Radar 3D Live)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+              <span className="text-[10px] font-black text-black bg-[#10b981] px-2 py-0.5 rounded shadow">
+                LIVE 3D RADAR
+              </span>
+            </div>
+          </div>
+
+          {/* Interactive Center Navigation Pins */}
+          <div className="relative z-10 flex-1 my-8 flex items-center justify-center">
+            <div className="relative">
+              <div className="w-16 h-16 bg-[#10b981]/30 rounded-full animate-ping absolute -inset-4" />
+              <div className="w-10 h-10 bg-[#10b981] rounded-full border-2 border-white flex items-center justify-center text-black shadow-[0_0_35px_rgba(16,185,129,1)]">
+                <Navigation className="w-5 h-5 fill-black" />
+              </div>
+              <div className="absolute top-12 -left-20 bg-black/95 border border-[#10b981]/60 text-[#10b981] text-[11px] font-black px-4 py-1.5 rounded-xl shadow-2xl whitespace-nowrap">
+                📍 Posizione Attuale · Via Montenapoleone
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Live Alert Strip */}
+          <div className="relative z-10 bg-black/90 backdrop-blur-xl p-4 rounded-2xl border border-white/20 flex items-center justify-between text-xs shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                <AlertTriangle className="w-4.5 h-4.5" />
+              </div>
+              <div>
+                <div className="font-extrabold text-white">Lavori Stradali & Deviazione Via Dante</div>
+                <div className="text-[10px] text-emerald-400 font-bold">Fonte Ufficiale · A 250m dal percorso</div>
+              </div>
+            </div>
+            <span className="text-[10px] font-black text-black bg-[#10b981] px-3 py-1 rounded shadow shrink-0">
+              VERIFICATO
+            </span>
+          </div>
+
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function Platform() {
   const { t } = useLanguageTheme();
@@ -50,7 +127,7 @@ export default function Platform() {
             </div>
           </div>
 
-          {/* 2. LIVE INTERACTIVE MAP DISPLAY */}
+          {/* 2. LIVE INTERACTIVE MAP DISPLAY WITH SAFETY ERROR BOUNDARY */}
           <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 rounded-[2.2rem] overflow-hidden p-6 md:p-8 shadow-2xl transition-colors duration-300">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
               <div>
@@ -66,11 +143,13 @@ export default function Platform() {
             </div>
             
             <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 relative shadow-2xl">
-              <IncidentMap 
-                incidents={MOCK_INCIDENTS} 
-                userLocation={{ lat: 45.4642, lng: 9.1900 }} 
-                zoom={13} 
-              />
+              <MapErrorBoundary>
+                <IncidentMap 
+                  incidents={MOCK_INCIDENTS} 
+                  userLocation={{ lat: 45.4642, lng: 9.1900 }} 
+                  zoom={13} 
+                />
+              </MapErrorBoundary>
             </div>
           </div>
 
