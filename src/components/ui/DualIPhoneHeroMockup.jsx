@@ -16,10 +16,12 @@ export default function DualIPhoneHeroMockup() {
           {/* Integrated Titanium Edge Ring */}
           <div className="w-full h-full rounded-[2rem] sm:rounded-[2.4rem] bg-[#050507] ring-1 ring-white/15 overflow-hidden flex flex-col relative text-white">
             
-            {/* Dynamic Island Notch */}
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 sm:w-16 h-3 sm:h-3.5 bg-black rounded-full z-30 flex items-center justify-between px-2 shadow-inner">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-              <div className="w-1.5 h-1.5 rounded-full bg-slate-800" />
+            {/* Authentic Apple Dynamic Island */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-18 sm:w-22 h-4 sm:h-4.5 bg-black rounded-full z-30 flex items-center justify-between px-2 shadow-[0_2px_8px_rgba(0,0,0,0.9)] border border-white/10">
+              <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#0a0a0d] border border-white/20 flex items-center justify-center">
+                <div className="w-1 h-1 rounded-full bg-[#10b981]" />
+              </div>
+              <div className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-[#111116]" />
             </div>
 
             {/* Status Bar */}
@@ -27,14 +29,14 @@ export default function DualIPhoneHeroMockup() {
               <span>09:41</span>
               <div className="flex items-center gap-1 text-[7px] sm:text-[8px]">
                 <span>5G</span>
-                <div className="w-3 h-1.5 border border-white/40 rounded-sm p-0.5">
+                <div className="w-3.5 h-1.5 border border-white/40 rounded-sm p-0.5">
                   <div className="w-full h-full bg-[#10b981]" />
                 </div>
               </div>
             </div>
 
             {/* Feed Header */}
-            <div className="px-2.5 pt-2 pb-1 flex items-center justify-between border-b border-white/10 shrink-0">
+            <div className="px-2.5 pt-2.5 pb-1 flex items-center justify-between border-b border-white/10 shrink-0">
               <div className="flex items-center gap-1.5">
                 <img src="/logo.svg" alt="Sentinel Logo" className="w-3.5 h-3.5 rounded object-cover" />
                 <span className="font-bold text-[9px] sm:text-[10px] tracking-tight">Sentinel Feed</span>
@@ -86,10 +88,12 @@ export default function DualIPhoneHeroMockup() {
           {/* Inner OLED Glass & Titanium Rim */}
           <div className="w-full h-full rounded-[2.1rem] sm:rounded-[2.5rem] bg-[#07090e] ring-1 ring-white/25 overflow-hidden flex flex-col relative text-white">
             
-            {/* Dynamic Island Notch */}
-            <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-16 sm:w-18 h-3.5 sm:h-4 bg-black rounded-full z-30 flex items-center justify-between px-2 shadow-inner">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-              <div className="w-1.5 h-1.5 rounded-full bg-slate-800" />
+            {/* Authentic Apple Dynamic Island */}
+            <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-20 sm:w-24 h-4.5 sm:h-5 bg-black rounded-full z-30 flex items-center justify-between px-2 shadow-[0_2px_10px_rgba(0,0,0,0.9)] border border-white/10">
+              <div className="w-2.5 sm:w-3 h-2.5 sm:h-3 rounded-full bg-[#0a0a0d] border border-white/20 flex items-center justify-center">
+                <div className="w-1 h-1 rounded-full bg-[#10b981]" />
+              </div>
+              <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#111116]" />
             </div>
 
             {/* Status Bar */}
@@ -115,7 +119,7 @@ export default function DualIPhoneHeroMockup() {
               </svg>
 
               {/* Top Search Pill */}
-              <div className="absolute top-2 left-2 right-2 bg-[#111116]/90 backdrop-blur-md border border-white/15 p-1 sm:p-1.5 rounded-xl flex items-center justify-between shadow z-10">
+              <div className="absolute top-2.5 left-2 right-2 bg-[#111116]/90 backdrop-blur-md border border-white/15 p-1 sm:p-1.5 rounded-xl flex items-center justify-between shadow z-10">
                 <div className="flex items-center gap-1 text-[7px] sm:text-[9px] opacity-60">
                   <Search className="w-2 sm:w-2.5 h-2 sm:h-2.5 text-[#10b981]" />
                   <span>Cerca rotta...</span>
