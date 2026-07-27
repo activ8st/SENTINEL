@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
+import { useLanguageTheme } from '@/context/LanguageThemeContext';
 
 import { useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -94,8 +93,7 @@ export default function Profile() {
     }
   };
 
-  const { theme, setTheme } = useTheme();
-  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+  const { theme, toggleTheme } = useLanguageTheme();
 
   if (loading) {
     return (

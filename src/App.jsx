@@ -45,6 +45,7 @@ const AuthenticatedApp = () => {
   const { data: dbIncidents = [] } = useQuery({
     queryKey: ['incidents-alerts'],
     queryFn: async () => {
+      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') return [];
       try {
         const res = await fetch('http://localhost:8000/api/incidents');
         if (!res.ok) return [];
