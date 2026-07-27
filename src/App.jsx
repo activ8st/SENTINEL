@@ -101,8 +101,15 @@ const AuthenticatedApp = () => {
       {/* APP FUNCTIONAL ROUTES */}
       <Route path="/Home" element={<LayoutWrapper currentPageName="Home"><Pages.Home /></LayoutWrapper>} />
 
+      {/* ALL APP ROUTES PUBLIC & DIRECTLY ACCESSIBLE */}
+      <Route path="/Notifications" element={<LayoutWrapper currentPageName="Notifications"><Pages.Notifications /></LayoutWrapper>} />
+      <Route path="/Profile" element={<LayoutWrapper currentPageName="Profile"><Pages.Profile /></LayoutWrapper>} />
+      <Route path="/Report" element={<LayoutWrapper currentPageName="Report"><Pages.Report /></LayoutWrapper>} />
+      <Route path="/MapView" element={<LayoutWrapper currentPageName="MapView"><Pages.MapView /></LayoutWrapper>} />
+      <Route path="/IncidentDetail" element={<LayoutWrapper currentPageName="IncidentDetail"><Pages.IncidentDetail /></LayoutWrapper>} />
+
       {Object.entries(Pages).map(([pageName, PageComponent]) => {
-        const publicPages = ['LandingPage', 'Platform', 'Manifesto', 'Contact', 'Auth', 'Home'];
+        const publicPages = ['LandingPage', 'Platform', 'Manifesto', 'Contact', 'Auth', 'Home', 'Notifications', 'Profile', 'Report', 'MapView', 'IncidentDetail'];
         if (publicPages.includes(pageName)) return null;
 
         return (
@@ -110,11 +117,9 @@ const AuthenticatedApp = () => {
             key={pageName}
             path={`/${pageName}`}
             element={
-              <ProtectedRoute>
-                <LayoutWrapper currentPageName={pageName}>
-                  <PageComponent />
-                </LayoutWrapper>
-              </ProtectedRoute>
+              <LayoutWrapper currentPageName={pageName}>
+                <PageComponent />
+              </LayoutWrapper>
             }
           />
         );
