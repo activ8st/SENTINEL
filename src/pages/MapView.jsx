@@ -11,7 +11,7 @@ import { Locate, Layers, X, List, ChevronDown, Navigation, ChevronLeft, ChevronR
 import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
-const IncidentMap = lazy(() => import('@/components/incidents/IncidentMap'));
+import IncidentMap from '@/components/incidents/IncidentMap';
 
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
