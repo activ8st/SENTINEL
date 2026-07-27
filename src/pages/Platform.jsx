@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, Component } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldAlert, Zap, Server, Smartphone, Database, MapPin, Compass } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
@@ -6,6 +6,36 @@ import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import IncidentMap from '@/components/incidents/IncidentMap';
 import { MOCK_INCIDENTS } from '@/components/data/mockData';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
+
+class MapErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Map Error caught:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full bg-[#090b10] rounded-2xl flex flex-col items-center justify-center p-6 text-center text-white border border-white/10">
+          <Compass className="w-12 h-12 text-[#10b981] mb-3 animate-pulse" />
+          <h3 className="text-lg font-bold">Mappa Vettoriale Live Sentinel</h3>
+          <p className="text-xs text-gray-400 mt-1 max-w-sm">
+            Monitoraggio attivo su Milano · Piazza Duomo. Allerte e segnalazioni verificate in tempo reale.
+          </p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function Platform() {
   const { t } = useLanguageTheme();
@@ -45,11 +75,13 @@ export default function Platform() {
             </div>
             
             <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 relative shadow-2xl">
-              <IncidentMap 
-                incidents={MOCK_INCIDENTS} 
-                userLocation={{ lat: 45.4642, lng: 9.1900 }} 
-                zoom={13} 
-              />
+              <MapErrorBoundary>
+                <IncidentMap 
+                  incidents={MOCK_INCIDENTS} 
+                  userLocation={{ lat: 45.4642, lng: 9.1900 }} 
+                  zoom={13} 
+                />
+              </MapErrorBoundary>
             </div>
           </div>
         </div>
