@@ -1,83 +1,66 @@
-import React, { useState } from 'react';
-import { Facebook, Twitter, Instagram, Linkedin, ChevronDown } from 'lucide-react';
-
-const faqs = [
-  {
-    question: "Come viene garantita l'affidabilità delle segnalazioni?",
-    answer: "Sentinel utilizza un sistema di Crowd-Verification. Ogni utente ha un 'Karma' basato sull'accuratezza delle sue segnalazioni precedenti. Se una segnalazione viene smentita da altri utenti sul posto, chi l'ha generata perde Karma e viene temporaneamente sospeso in caso di fake news reiterate."
-  },
-  {
-    question: "Il servizio è gratuito?",
-    answer: "Assolutamente sì. La sicurezza dei cittadini non deve avere un prezzo. L'app base con mappa live e segnalazioni sarà sempre gratuita per gli utenti."
-  },
-  {
-    question: "Posso usare Sentinel fuori dall'Italia?",
-    answer: "Attualmente la rete attiva principale è in Italia, con focus sulle grandi metropoli come Milano e Roma. Tuttavia, l'infrastruttura globale permette l'utilizzo ovunque ci sia una community attiva."
-  },
-  {
-    question: "I miei dati di posizione sono tracciati?",
-    answer: "No. Sentinel utilizza la tua posizione solo localmente sul tuo dispositivo per mostrarti gli alert pertinenti. Non salviamo il tuo storico degli spostamenti nei nostri server."
-  }
-];
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { ShieldAlert, Twitter, Instagram, Linkedin, Facebook } from 'lucide-react';
+import { trackEvent } from '@/lib/analytics';
 
 export default function GlobalFooter() {
-  const [openFaq, setOpenFaq] = useState(null);
-
   return (
-    <footer className="bg-[#050505] border-t border-white/10 text-white pt-24 pb-12 w-full font-sans" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
+    <footer className="bg-[#050505] border-t border-white/10 text-white pt-16 pb-12 w-full font-sans" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       <div className="max-w-7xl mx-auto px-6">
         
-        {/* FAQ Section */}
-        <div className="mb-24">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold tracking-tight mb-4">Domande Frequenti</h2>
-            <p className="text-white/50 text-lg">Tutto ciò che devi sapere su Sentinel.</p>
-          </div>
-          <div className="max-w-3xl mx-auto divide-y divide-white/10">
-            {faqs.map((faq, idx) => (
-              <div key={idx} className="py-6">
-                <button 
-                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full flex items-center justify-between text-left font-bold text-xl hover:text-[#10b981] transition-colors"
-                >
-                  {faq.question}
-                  <ChevronDown className={`w-5 h-5 transition-transform ${openFaq === idx ? 'rotate-180 text-[#10b981]' : 'text-white/30'}`} />
-                </button>
-                <div 
-                  className={`overflow-hidden transition-all duration-300 ${openFaq === idx ? 'max-h-48 mt-4 opacity-100' : 'max-h-0 opacity-0'}`}
-                >
-                  <p className="text-white/60 font-light leading-relaxed">{faq.answer}</p>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-16">
+          {/* Brand Col */}
+          <div className="md:col-span-2">
+            <Link to="/LandingPage" className="flex items-center gap-2.5 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-[#10b981] flex items-center justify-center text-black font-bold">
+                <ShieldAlert className="w-4 h-4 text-black" />
               </div>
-            ))}
+              <span className="text-2xl font-bold tracking-tight text-white">Sentinel</span>
+            </Link>
+            <p className="text-sm text-white/50 font-light max-w-sm leading-relaxed mb-6">
+              La prima rete partecipata di sicurezza urbana in Italia. Dati ufficiali verificati, filtro anti-discriminazione e moderazione preventiva.
+            </p>
+            <div className="flex items-center gap-4 text-white/40">
+              <a href="#" onClick={() => trackEvent('social_click', { network: 'twitter' })} className="hover:text-[#10b981] transition-colors"><Twitter className="w-5 h-5" /></a>
+              <a href="#" onClick={() => trackEvent('social_click', { network: 'instagram' })} className="hover:text-[#10b981] transition-colors"><Instagram className="w-5 h-5" /></a>
+              <a href="#" onClick={() => trackEvent('social_click', { network: 'linkedin' })} className="hover:text-[#10b981] transition-colors"><Linkedin className="w-5 h-5" /></a>
+              <a href="#" onClick={() => trackEvent('social_click', { network: 'facebook' })} className="hover:text-[#10b981] transition-colors"><Facebook className="w-5 h-5" /></a>
+            </div>
+          </div>
+
+          {/* Navigation Col */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white/80 mb-4">Piattaforma</h4>
+            <ul className="space-y-2.5 text-sm text-white/50 font-light">
+              <li><Link to="/LandingPage" className="hover:text-white transition-colors">Home</Link></li>
+              <li><Link to="/Platform" className="hover:text-white transition-colors">Funzionalità</Link></li>
+              <li><Link to="/Manifesto" className="hover:text-white transition-colors">Manifesto Etico</Link></li>
+              <li><Link to="/Contact" className="hover:text-white transition-colors">Contatti</Link></li>
+            </ul>
+          </div>
+
+          {/* Legal Col */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white/80 mb-4">Note Legali & Privacy</h4>
+            <ul className="space-y-2.5 text-sm text-white/50 font-light">
+              <li><a href="#" className="hover:text-white transition-colors">Privacy Policy (GDPR)</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Termini di Servizio</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Politica di Moderazione</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Dati Istituzionali</a></li>
+            </ul>
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="w-full h-[1px] bg-white/10 mb-12" />
-
-        {/* Footer Bottom */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold tracking-tight">Sentinel</span>
-            <span className="text-white/40 text-sm">© 2026. Tutti i diritti riservati.</span>
-          </div>
-          
+        {/* Bottom Line */}
+        <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/40 font-light">
+          <div>© 2026 Sentinel Inc. Tutti i diritti riservati. Made with integrity in Italy.</div>
           <div className="flex items-center gap-6">
-            <a href="#" className="text-white/40 hover:text-[#10b981] transition-colors">
-              <Twitter className="w-5 h-5" />
-            </a>
-            <a href="#" className="text-white/40 hover:text-[#10b981] transition-colors">
-              <Instagram className="w-5 h-5" />
-            </a>
-            <a href="#" className="text-white/40 hover:text-[#10b981] transition-colors">
-              <Linkedin className="w-5 h-5" />
-            </a>
-            <a href="#" className="text-white/40 hover:text-[#10b981] transition-colors">
-              <Facebook className="w-5 h-5" />
-            </a>
+            <span>Server Sicuri in UE</span>
+            <span>•</span>
+            <span>Zero Tracking Profilante</span>
           </div>
         </div>
+
       </div>
     </footer>
   );
