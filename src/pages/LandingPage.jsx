@@ -207,7 +207,7 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Card 1 — Turista */}
-              <div className="bg-[#0c0c0c] border border-white/10 rounded-[2rem] p-8 md:p-10 hover:border-[#10b981]/40 transition-all group flex flex-col justify-between">
+              <div className="bg-white dark:bg-[#0c0c0c] border border-gray-200 dark:border-white/10 rounded-[2rem] p-8 md:p-10 hover:border-[#10b981]/40 transition-all group flex flex-col justify-between shadow-xl">
                 <div>
                   <div className="w-14 h-14 bg-[#10b981]/10 rounded-2xl flex items-center justify-center text-[#10b981] border border-[#10b981]/20 mb-6">
                     <Compass className="w-7 h-7" />
@@ -398,37 +398,37 @@ export default function LandingPage() {
         </section>
 
         {/* 7. COME FUNZIONA (3 Step) */}
-        <section className="py-28 bg-[#0a0a0a] border-t border-white/10">
+        <section className="py-28 bg-gray-100 dark:bg-[#0a0a0a] border-t border-gray-200 dark:border-white/10 transition-colors">
           <div className="max-w-7xl mx-auto px-6">
             
             <div className="mb-16">
               <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('how_tag')}</div>
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 dark:text-white">
                 {t('how_title')}
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 relative">
-                <div className="text-5xl font-bold text-[#10b981]/30 mb-4">01.</div>
-                <h3 className="text-xl font-bold mb-3">{t('step_1_title')}</h3>
-                <p className="text-sm opacity-60 font-light leading-relaxed">
+              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/5 relative shadow-lg">
+                <div className="text-5xl font-bold text-[#10b981]/40 mb-4">01.</div>
+                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{t('step_1_title')}</h3>
+                <p className="text-sm text-gray-600 dark:text-white/60 font-light leading-relaxed">
                   {t('step_1_text')}
                 </p>
               </div>
 
-              <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 relative">
-                <div className="text-5xl font-bold text-[#10b981]/30 mb-4">02.</div>
-                <h3 className="text-xl font-bold mb-3">{t('step_2_title')}</h3>
-                <p className="text-sm opacity-60 font-light leading-relaxed">
+              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/5 relative shadow-lg">
+                <div className="text-5xl font-bold text-[#10b981]/40 mb-4">02.</div>
+                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{t('step_2_title')}</h3>
+                <p className="text-sm text-gray-600 dark:text-white/60 font-light leading-relaxed">
                   {t('step_2_text')}
                 </p>
               </div>
 
-              <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 relative">
-                <div className="text-5xl font-bold text-[#10b981]/30 mb-4">03.</div>
-                <h3 className="text-xl font-bold mb-3">{t('step_3_title')}</h3>
-                <p className="text-sm opacity-60 font-light leading-relaxed">
+              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/5 relative shadow-lg">
+                <div className="text-5xl font-bold text-[#10b981]/40 mb-4">03.</div>
+                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">{t('step_3_title')}</h3>
+                <p className="text-sm text-gray-600 dark:text-white/60 font-light leading-relaxed">
                   {t('step_3_text')}
                 </p>
               </div>
@@ -479,12 +479,12 @@ export default function LandingPage() {
         </section>
 
         {/* 9. FINAL CTA */}
-        <section className="py-24 bg-gradient-to-b from-[#0a0a0a] to-[#050505] border-t border-white/10 text-center relative overflow-hidden">
+        <section className="py-24 bg-gradient-to-b from-gray-100 to-white dark:from-[#0a0a0a] dark:to-[#050505] border-t border-gray-200 dark:border-white/10 text-center relative overflow-hidden transition-colors">
           <div className="max-w-3xl mx-auto px-6 relative z-10">
-            <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+            <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-gray-900 dark:text-white">
               {t('final_title')}
             </h2>
-            <p className="text-lg opacity-60 mb-10 max-w-xl mx-auto font-light leading-relaxed">
+            <p className="text-lg text-gray-600 dark:text-white/60 mb-10 max-w-xl mx-auto font-light leading-relaxed">
               {t('final_sub')}
             </p>
             <button 

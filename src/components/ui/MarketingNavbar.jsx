@@ -10,8 +10,8 @@ export default function MarketingNavbar({ onOpenWaitlist }) {
 
   const getLinkClass = (path) => {
     return location.pathname === path 
-      ? "opacity-100 font-bold transition-opacity" 
-      : "opacity-60 hover:opacity-100 transition-opacity";
+      ? "opacity-100 font-bold transition-opacity text-[#10b981]" 
+      : "opacity-75 hover:opacity-100 transition-opacity hover:text-[#10b981]";
   };
 
   const handleDownloadClick = () => {
@@ -20,7 +20,7 @@ export default function MarketingNavbar({ onOpenWaitlist }) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-white/10 bg-[#050505]/90 backdrop-blur-2xl shadow-2xl transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-black/10 dark:border-white/10 bg-white/90 dark:bg-[#050505]/90 backdrop-blur-2xl text-gray-900 dark:text-white transition-colors duration-300">
       <nav className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link 
@@ -41,42 +41,35 @@ export default function MarketingNavbar({ onOpenWaitlist }) {
             <Link to="/Contact" className={getLinkClass('/Contact')}>{t('nav_contact')}</Link>
           </div>
           
-          {/* Quick Header Language Toggle */}
+          {/* Language Toggle */}
           <button
-            onClick={() => {
-              const nextLang = lang === 'it' ? 'en' : 'it';
-              changeLang(nextLang);
-            }}
-            className="px-3 py-1.5 rounded-full bg-white/5 border border-white/15 text-xs font-semibold flex items-center gap-1.5 hover:bg-white/10 transition-colors"
-            title="Switch Language / Cambia Lingua"
+            onClick={() => changeLang(lang === 'it' ? 'en' : 'it')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-black/10 dark:border-white/10 hover:border-[#10b981] text-xs font-semibold transition-colors"
+            title="Switch Language"
           >
-            <Globe className="w-3.5 h-3.5 opacity-70" />
-            <span>{lang === 'it' ? 'IT' : 'EN'}</span>
+            <Globe className="w-3.5 h-3.5 text-[#10b981]" />
+            <span>{lang.toUpperCase()}</span>
           </button>
 
-          {/* Quick Header Theme Toggle */}
+          {/* Theme Toggle Button */}
           <button
-            onClick={() => {
-              const nextTheme = theme === 'dark' ? 'light' : 'dark';
-              toggleTheme(nextTheme);
-            }}
-            className="p-2 rounded-full bg-white/5 border border-white/15 text-xs font-semibold flex items-center justify-center hover:bg-white/10 transition-colors"
-            title="Toggle Light/Dark Theme"
+            onClick={toggleTheme}
+            className="p-2 rounded-full border border-black/10 dark:border-white/10 hover:border-[#10b981] transition-colors"
+            title={theme === 'dark' ? "Passa a Modalità Chiara" : "Passa a Modalità Scura"}
           >
             {theme === 'dark' ? (
-              <Moon className="w-4 h-4 text-[#10b981]" />
+              <Sun className="w-4 h-4 text-amber-400" />
             ) : (
-              <Sun className="w-4 h-4 text-amber-500" />
+              <Moon className="w-4 h-4 text-emerald-600" />
             )}
           </button>
 
-          <button
+          <button 
             onClick={handleDownloadClick}
-            className="flex items-center gap-2 bg-[#10b981] hover:bg-[#059669] text-black px-5 py-2 rounded-full font-bold text-sm transition-all hover:scale-105 shadow-[0_0_25px_rgba(16,185,129,0.3)]"
+            className="bg-[#10b981] hover:bg-[#059669] text-black font-bold px-5 py-2.5 rounded-full flex items-center gap-2 text-sm shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:scale-105"
           >
             <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('nav_download')}</span>
-            <span className="sm:hidden">App</span>
+            <span>{t('nav_download')}</span>
           </button>
         </div>
       </nav>

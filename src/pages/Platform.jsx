@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldAlert, Zap, Server, Smartphone, Database } from 'lucide-react';
+import { ShieldAlert, Zap, Server, Smartphone, Database, MapPin, Compass } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
+import IncidentMap from '@/components/incidents/IncidentMap';
+import { MOCK_INCIDENTS } from '@/components/data/mockData';
 
 export default function Platform() {
   useEffect(() => {
@@ -10,53 +12,71 @@ export default function Platform() {
   }, []);
 
   return (
-    <div className="bg-[#050505] text-[#f5f5f5] min-h-screen font-sans" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
+    <div className="bg-[#050505] dark:bg-[#050505] light:bg-slate-50 text-gray-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
       <MarketingNavbar />
 
-      {/* Hero "About A" Style */}
-      <section className="pt-24 pb-16">
+      {/* Hero */}
+      <section className="pt-28 pb-16">
         <div className="max-w-7xl mx-auto px-6">
-          <h1 className="text-6xl md:text-[80px] font-bold tracking-tight leading-[0.95] mb-8">
+          <h1 className="text-5xl md:text-[80px] font-bold tracking-tight leading-[0.95] mb-8 text-gray-900 dark:text-white">
             Ingegnerizzata per <br/><span className="text-[#10b981]">l'emergenza.</span>
           </h1>
-          <p className="text-xl text-white/60 max-w-2xl mb-16">
-            Un'architettura serverless progettata per latenza zero. Quando i secondi contano, la nostra infrastruttura distribuita non cede mai.
+          <p className="text-lg md:text-xl text-gray-600 dark:text-white/60 max-w-2xl mb-12">
+            Un'architettura vettoriale progettata per latenza zero. Mappa vettoriale 3D ad alta definizione per navigare la città in tempo reale con totale consapevolezza.
           </p>
-          <div className="w-full aspect-[21/9] rounded-[2rem] overflow-hidden bg-gray-900 border border-white/10 relative">
-             <img 
-               src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=2000&auto=format&fit=crop" 
-               alt="Server Room" 
-               className="w-full h-full object-cover mix-blend-luminosity opacity-70"
-             />
+
+          {/* ULTRA PREMIUM 3D MAP DISPLAY */}
+          <div className="bg-white dark:bg-[#0c0c0c] border border-gray-200 dark:border-white/10 rounded-[2.2rem] overflow-hidden p-6 md:p-8 shadow-2xl transition-colors duration-300">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Compass className="w-5 h-5 text-[#10b981]" />
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Mappa Vettoriale 3D Ultra HD · Live Radar</h2>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-white/50 mt-1">Dati vettoriali ad alta definizione con rilevamento preventivo degli incidenti urbani.</p>
+              </div>
+              <span className="text-xs font-bold text-[#10b981] bg-[#10b981]/15 px-4 py-1.5 rounded-full border border-[#10b981]/30">
+                ● Live Feed Milano
+              </span>
+            </div>
+            
+            <div className="w-full h-[500px] rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 relative shadow-inner">
+              <IncidentMap 
+                incidents={MOCK_INCIDENTS} 
+                userLocation={{ lat: 45.4642, lng: 9.1900 }} 
+                zoom={13} 
+              />
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features Grid */}
-      <section className="py-24">
+      <section className="py-16">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="border-t border-white/10 pt-8">
+            <div className="border-t border-gray-200 dark:border-white/10 pt-8">
               <Smartphone className="w-10 h-10 text-[#10b981] mb-6" />
-              <h3 className="text-2xl font-bold mb-4">PWA Universale</h3>
-              <p className="text-white/60">Abbiamo bypassato i tempi morti degli app store. La nostra Progressive Web App si installa all'istante, garantendoti l'accesso al network ovunque tu sia.</p>
+              <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">PWA Universale</h3>
+              <p className="text-gray-600 dark:text-white/60">Abbiamo bypassato i tempi morti degli app store. La nostra Progressive Web App si installa all'istante, garantendoti l'accesso al network ovunque tu sia.</p>
             </div>
-            <div className="border-t border-white/10 pt-8">
+            <div className="border-t border-gray-200 dark:border-white/10 pt-8">
               <Server className="w-10 h-10 text-[#10b981] mb-6" />
-              <h3 className="text-2xl font-bold mb-4">Calcolo Perimetrale</h3>
-              <p className="text-white/60">L'Edge Computing ci permette di elaborare i dati a un millisecondo da te. Ricevi le allerte critiche prima ancora che sfiorino i nostri database centrali.</p>
+              <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Calcolo Perimetrale</h3>
+              <p className="text-gray-600 dark:text-white/60">L'Edge Computing ci permette di elaborare i dati a un millisecondo da te. Ricevi le allerte critiche prima ancora che sfiorino i nostri database centrali.</p>
             </div>
-            <div className="border-t border-white/10 pt-8">
+            <div className="border-t border-gray-200 dark:border-white/10 pt-8">
               <Database className="w-10 h-10 text-[#10b981] mb-6" />
-              <h3 className="text-2xl font-bold mb-4">Scalabilità NoSQL</h3>
-              <p className="text-white/60">Un cluster di database distribuito addestrato per queries spaziali iper-veloci. Identifichiamo minacce nel tuo raggio d'azione alla velocità della luce.</p>
+              <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Zero Profilazione</h3>
+              <p className="text-gray-600 dark:text-white/60">Nessun tracciamento dell'identità personale. I dati di posizione vengono elaborati localmente sul dispositivo per mantenere la tua privacy impenetrabile.</p>
             </div>
           </div>
         </div>
       </section>
 
       <GlobalFooter />
+
     </div>
   );
 }
