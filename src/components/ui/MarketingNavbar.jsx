@@ -28,9 +28,7 @@ export default function MarketingNavbar({ onOpenWaitlist }) {
           className="flex items-center gap-2.5 hover:opacity-90 transition-opacity"
           onClick={() => trackEvent('nav_click', { destination: 'home' })}
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#10b981] to-emerald-700 flex items-center justify-center text-black font-bold shadow-[0_0_20px_rgba(16,185,129,0.3)]">
-            <ShieldAlert className="w-5 h-5 text-black" />
-          </div>
+          <img src="/logo.svg" alt="Sentinel Logo" className="w-9 h-9 rounded-xl object-cover shadow-[0_0_20px_rgba(16,185,129,0.3)]" />
           <span className="text-2xl font-bold tracking-tight">Sentinel</span>
         </Link>
         

@@ -39,9 +39,7 @@ export default function GlobalFooter() {
           {/* Brand Col */}
           <div className="md:col-span-2">
             <Link to="/LandingPage" className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-[#10b981] flex items-center justify-center text-black font-bold">
-                <ShieldAlert className="w-4 h-4 text-black" />
-              </div>
+              <img src="/logo.svg" alt="Sentinel Logo" className="w-8 h-8 rounded-xl object-cover" />
               <span className="text-2xl font-bold tracking-tight">Sentinel</span>
             </Link>
             <p className="text-sm opacity-60 font-light max-w-sm leading-relaxed mb-6">
