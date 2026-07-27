@@ -20,7 +20,7 @@ export default function MarketingNavbar({ onOpenWaitlist }) {
   };
 
   return (
-    <header className="relative z-30 w-full border-b border-white/10 bg-[#050505]/80 backdrop-blur-xl sticky top-0 transition-colors duration-300">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-white/10 bg-[#050505]/90 backdrop-blur-2xl shadow-2xl transition-all duration-300">
       <nav className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link 

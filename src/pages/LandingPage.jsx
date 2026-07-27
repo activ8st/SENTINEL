@@ -108,9 +108,9 @@ export default function LandingPage() {
       {/* 1. NAVBAR */}
       <MarketingNavbar onOpenWaitlist={() => handleOpenWaitlist('navbar')} />
 
-      <main>
+      <main className="pt-20">
         {/* 2. HERO SECTION */}
-        <section className="relative z-10 pt-12 pb-24 md:pt-20 md:pb-32 overflow-hidden">
+        <section className="relative z-10 pt-8 pb-24 md:pt-14 md:pb-32 overflow-hidden">
           <div className="max-w-7xl mx-auto px-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               

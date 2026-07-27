@@ -1,29 +1,23 @@
 import React from 'react';
-import { ShieldAlert, AlertTriangle, MapPin, Search, Navigation } from 'lucide-react';
+import { AlertTriangle, MapPin, Search, Navigation } from 'lucide-react';
 
 export default function DualIPhoneHeroMockup() {
   return (
-    <div className="relative w-full flex items-center justify-center p-1 sm:p-4">
+    <div className="relative w-full flex items-center justify-center p-1 sm:p-4 select-none">
       {/* Background Ambient Glow */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-[#10b981]/20 via-transparent to-amber-500/15 blur-[80px] rounded-full pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-[#10b981]/25 via-transparent to-amber-500/15 blur-[90px] rounded-full pointer-events-none" />
 
       {/* Scaled Proportional Phone Container */}
       <div className="relative w-full max-w-[340px] sm:max-w-[420px] aspect-[4/4.5] flex items-center justify-center py-2 sm:py-4">
         
         {/* PHONE 2 (BACKGROUND, LEFT) - iPhone 17 Pro Feed Screen */}
-        <div className="absolute left-[0%] top-[4%] w-[52%] aspect-[9/19.5] rounded-[2.2rem] sm:rounded-[2.6rem] bg-[#1c1c1e] p-[2.5px] sm:p-[3px] border border-slate-500/50 shadow-[0_20px_50px_rgba(0,0,0,0.85)] transform -rotate-8 translate-y-3 transition-transform duration-500 z-10">
+        <div className="absolute left-[2%] top-[4%] w-[50%] aspect-[9/19.5] rounded-[2.2rem] sm:rounded-[2.6rem] bg-[#121214] p-[3px] border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.9)] transform -rotate-6 translate-y-2 transition-transform duration-500 z-10">
           
-          {/* Physical Side Buttons (Left iPhone) */}
-          <div className="absolute -left-[4px] top-12 w-[3px] h-5 bg-slate-400 rounded-l-sm" /> {/* Action button */}
-          <div className="absolute -left-[4px] top-20 w-[3px] h-8 bg-slate-400 rounded-l-sm" /> {/* Vol Up */}
-          <div className="absolute -left-[4px] top-30 w-[3px] h-8 bg-slate-400 rounded-l-sm" /> {/* Vol Down */}
-          <div className="absolute -right-[4px] top-24 w-[3px] h-11 bg-slate-400 rounded-r-sm" /> {/* Power */}
-
-          {/* Inner OLED Glass & Titanium Rim */}
-          <div className="w-full h-full rounded-[2rem] sm:rounded-[2.4rem] bg-[#050507] ring-1 ring-white/20 overflow-hidden flex flex-col relative text-white">
+          {/* Integrated Titanium Edge Ring */}
+          <div className="w-full h-full rounded-[2rem] sm:rounded-[2.4rem] bg-[#050507] ring-1 ring-white/15 overflow-hidden flex flex-col relative text-white">
             
             {/* Dynamic Island Notch */}
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 sm:w-16 h-3 sm:h-3.5 bg-black rounded-full z-30 flex items-center justify-between px-1.5 shadow-inner">
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 sm:w-16 h-3 sm:h-3.5 bg-black rounded-full z-30 flex items-center justify-between px-2 shadow-inner">
               <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
               <div className="w-1.5 h-1.5 rounded-full bg-slate-800" />
             </div>
@@ -40,11 +34,9 @@ export default function DualIPhoneHeroMockup() {
             </div>
 
             {/* Feed Header */}
-            <div className="px-2.5 pt-1.5 pb-1 flex items-center justify-between border-b border-white/10 shrink-0">
-              <div className="flex items-center gap-1">
-                <div className="w-4.5 h-4.5 rounded-md bg-[#10b981] flex items-center justify-center">
-                  <ShieldAlert className="w-2.5 h-2.5 text-black" />
-                </div>
+            <div className="px-2.5 pt-2 pb-1 flex items-center justify-between border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-1.5">
+                <img src="/logo.svg" alt="Sentinel Logo" className="w-3.5 h-3.5 rounded object-cover" />
                 <span className="font-bold text-[9px] sm:text-[10px] tracking-tight">Sentinel Feed</span>
               </div>
               <span className="text-[7px] sm:text-[8px] bg-[#10b981]/15 text-[#10b981] px-1 py-0.5 rounded font-bold border border-[#10b981]/30">
@@ -54,7 +46,7 @@ export default function DualIPhoneHeroMockup() {
 
             {/* Feed UI Cards */}
             <div className="flex-1 p-1.5 sm:p-2 space-y-1.5 overflow-hidden text-left bg-[#050507]">
-              <div className="p-1.5 rounded-lg bg-white/[0.04] border border-white/10">
+              <div className="p-1.5 rounded-xl bg-white/[0.04] border border-white/10">
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="text-[7px] font-bold text-[#f59e0b] bg-[#f59e0b]/15 px-1 py-0.5 rounded">
                     LAVORI STRADALI
@@ -68,7 +60,7 @@ export default function DualIPhoneHeroMockup() {
                 </div>
               </div>
 
-              <div className="p-1.5 rounded-lg bg-white/[0.04] border border-white/10">
+              <div className="p-1.5 rounded-xl bg-white/[0.04] border border-white/10">
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="text-[7px] font-bold text-[#10b981] bg-[#10b981]/15 px-1 py-0.5 rounded">
                     FONTE UFFICIALE
@@ -89,16 +81,10 @@ export default function DualIPhoneHeroMockup() {
         </div>
 
         {/* PHONE 1 (FOREGROUND, RIGHT) - iPhone 17 Pro Map Screen */}
-        <div className="absolute right-[0%] top-[0%] w-[58%] aspect-[9/19.5] rounded-[2.4rem] sm:rounded-[2.8rem] bg-[#2a2a2d] p-[3px] sm:p-[3.5px] border border-slate-400/60 shadow-[0_30px_70px_rgba(0,0,0,0.95)] transform rotate-4 transition-transform duration-500 z-20">
+        <div className="absolute right-[2%] top-[0%] w-[56%] aspect-[9/19.5] rounded-[2.4rem] sm:rounded-[2.8rem] bg-[#1a1a1e] p-[3.5px] border border-white/20 shadow-[0_35px_80px_rgba(0,0,0,0.95)] transform rotate-2 transition-transform duration-500 z-20">
           
-          {/* Physical Side Buttons (Right iPhone) */}
-          <div className="absolute -left-[4px] top-12 w-[3px] h-5 bg-slate-300 rounded-l-sm" /> {/* Action */}
-          <div className="absolute -left-[4px] top-20 w-[3px] h-8 bg-slate-300 rounded-l-sm" /> {/* Vol Up */}
-          <div className="absolute -left-[4px] top-30 w-[3px] h-8 bg-slate-300 rounded-l-sm" /> {/* Vol Down */}
-          <div className="absolute -right-[4px] top-24 w-[3px] h-11 bg-slate-300 rounded-r-sm" /> {/* Power */}
-
           {/* Inner OLED Glass & Titanium Rim */}
-          <div className="w-full h-full rounded-[2.1rem] sm:rounded-[2.5rem] bg-[#07090e] ring-1 ring-white/20 overflow-hidden flex flex-col relative text-white">
+          <div className="w-full h-full rounded-[2.1rem] sm:rounded-[2.5rem] bg-[#07090e] ring-1 ring-white/25 overflow-hidden flex flex-col relative text-white">
             
             {/* Dynamic Island Notch */}
             <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-16 sm:w-18 h-3.5 sm:h-4 bg-black rounded-full z-30 flex items-center justify-between px-2 shadow-inner">
@@ -185,7 +171,7 @@ export default function DualIPhoneHeroMockup() {
         </div>
 
         {/* Floating Alert Card Overlay (Bottom Right) */}
-        <div className="absolute -bottom-1 right-[-2%] bg-[#0d0d0d]/95 border border-white/20 p-2.5 sm:p-3 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.95)] backdrop-blur-xl flex items-center justify-between gap-2 z-30 max-w-[220px] sm:max-w-[270px]">
+        <div className="absolute -bottom-1 right-[0%] bg-[#0d0d0d]/95 border border-white/20 p-2.5 sm:p-3 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.95)] backdrop-blur-xl flex items-center justify-between gap-2 z-30 max-w-[220px] sm:max-w-[270px]">
           <div className="flex items-center gap-2">
             <div className="w-7 sm:w-8 h-7 sm:h-8 bg-[#f59e0b]/20 rounded-lg flex items-center justify-center border border-[#f59e0b]/40 shrink-0">
               <AlertTriangle className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-[#f59e0b]" />
