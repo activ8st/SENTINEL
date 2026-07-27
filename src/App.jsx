@@ -16,8 +16,6 @@ import { initializeDB } from '@/lib/db';
 import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
 
 const { Pages, Layout, mainPage } = pagesConfig;
-const mainPageKey = mainPage ?? Object.keys(Pages)[0];
-const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
 const LayoutWrapper = ({ children, currentPageName }) => {
   const marketingPages = ['LandingPage', 'Platform', 'Manifesto', 'Contact', 'Auth'];
@@ -66,22 +64,18 @@ const AuthenticatedApp = () => {
     if (!dbIncidents.length) return;
 
     if (isFirstFetchRef.current) {
-      // First load: prime set of existing IDs, don't toast
       dbIncidents.forEach((inc) => prevIncidentIdsRef.current.add(inc.id));
       isFirstFetchRef.current = false;
       return;
     }
 
-    // Check for NEW incidents
     dbIncidents.forEach((inc) => {
       if (!prevIncidentIdsRef.current.has(inc.id)) {
         prevIncidentIdsRef.current.add(inc.id);
 
-        // Check user notification preference for this type
         const isEnabled = notifySettings[notifyKeyForType(inc.type)] !== false;
         if (!isEnabled) return;
 
-        // Check if within 5km radius
         const dist = calcDistance(userLat, userLng, inc.latitude, inc.longitude);
         if (dist <= 5) {
           toast.warning(`ALLERTA IN ZONA: ${inc.title}`, {
@@ -95,31 +89,31 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
+      {/* PUBLIC MARKETING ROUTES */}
       <Route path="/" element={<LayoutWrapper currentPageName="LandingPage"><Pages.LandingPage /></LayoutWrapper>} />
-      <Route path="/Home" element={<LayoutWrapper currentPageName="Home"><Pages.Home /></LayoutWrapper>} />
       <Route path="/LandingPage" element={<LayoutWrapper currentPageName="LandingPage"><Pages.LandingPage /></LayoutWrapper>} />
+      <Route path="/Platform" element={<LayoutWrapper currentPageName="Platform"><Pages.Platform /></LayoutWrapper>} />
+      <Route path="/Manifesto" element={<LayoutWrapper currentPageName="Manifesto"><Pages.Manifesto /></LayoutWrapper>} />
+      <Route path="/Contact" element={<LayoutWrapper currentPageName="Contact"><Pages.Contact /></LayoutWrapper>} />
+      <Route path="/Auth" element={<LayoutWrapper currentPageName="Auth"><Pages.Auth /></LayoutWrapper>} />
+
+      {/* APP FUNCTIONAL ROUTES */}
+      <Route path="/Home" element={<LayoutWrapper currentPageName="Home"><Pages.Home /></LayoutWrapper>} />
 
       {Object.entries(Pages).map(([pageName, PageComponent]) => {
-        if (pageName === 'LandingPage') return null;
-        const pageMeta = pagesConfig.meta?.[pageName] || {};
-        const isProtected = pageMeta.protected !== false;
+        const publicPages = ['LandingPage', 'Platform', 'Manifesto', 'Contact', 'Auth', 'Home'];
+        if (publicPages.includes(pageName)) return null;
 
         return (
           <Route
             key={pageName}
             path={`/${pageName}`}
             element={
-              isProtected ? (
-                <ProtectedRoute>
-                  <LayoutWrapper currentPageName={pageName}>
-                    <PageComponent />
-                  </LayoutWrapper>
-                </ProtectedRoute>
-              ) : (
+              <ProtectedRoute>
                 <LayoutWrapper currentPageName={pageName}>
                   <PageComponent />
                 </LayoutWrapper>
-              )
+              </ProtectedRoute>
             }
           />
         );
