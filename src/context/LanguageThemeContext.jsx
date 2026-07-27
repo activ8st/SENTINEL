@@ -66,8 +66,8 @@ export const translations = {
     card_1_text: "Mappe 3D dettagliate a zero latenza con visualizzazione tridimensionale dei fabbricati sul tuo tragitto.",
     card_2_title: "Allerte Preventive",
     card_2_text: "Radar intelligente geolocalizzato. Ricevi notifiche esclusive solo per le minacce sui tuoi percorsi quotidiani.",
-    card_3_title: "Karma & Reputazione",
-    card_3_text: "Sistema di validazione incrociata. La community vota e attribuisce punti Karma ai segnalatori autorevoli.",
+    card_3_title: "Karma & Reputazione Founder",
+    card_3_text: "Il Karma misura l'autorevolezza del segnalatore. Le segnalazioni degli utenti con alto Karma (come i membri Founder con +100 Punti) vengono validate al volo con massima priorità sulla mappa.",
     card_learn_more: "Scopri di più →",
 
     // How it Works
@@ -171,8 +171,8 @@ export const translations = {
     card_1_text: "Detailed zero-latency 3D maps with building elevation along your actual travel route.",
     card_2_title: "Preventive Alerts",
     card_2_text: "Smart geofenced radar. Receive notifications only for threats that cross your personal daily path.",
-    card_3_title: "Karma & Reputation",
-    card_3_text: "Cross-validation score. The community votes and grants Karma points to authoritative local contributors.",
+    card_3_title: "Karma & Founder Reputation",
+    card_3_text: "Karma measures contributor authority. Incident reports from high-Karma users (such as Founder members with +100 Points) are validated on-the-fly with top priority on the map.",
     card_learn_more: "Learn More →",
 
     // How it Works
