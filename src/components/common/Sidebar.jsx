@@ -25,7 +25,7 @@ export default function Sidebar() {
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/5">
         {!collapsed && (
           <Link to="/Home" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <img src="/logo.png" alt="Sentinel" className="w-8 h-8 rounded-lg object-cover" />
+            <img src="/logo.svg" alt="Sentinel" className="w-8 h-8 rounded-lg object-cover" />
             <span className="font-bold text-lg tracking-tight text-gray-900 dark:text-white">Sentinel</span>
           </Link>
         )}
@@ -44,7 +44,7 @@ export default function Sidebar() {
             to={item.path}
             className={({ isActive }) => `
               flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200
-              ${isActive ? 'bg-orange-500/10 text-orange-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5'}
+              ${isActive ? 'bg-[#10b981]/15 text-[#10b981] font-bold' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5'}
             `}
           >
             <item.icon className="w-6 h-6 flex-shrink-0" />

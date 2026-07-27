@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import IncidentCard from '@/components/incidents/IncidentCard';
-import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
+import { calcDistance, TYPE_CONFIG, MOCK_INCIDENTS } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
 import { Locate, Layers, X, List, ChevronDown, Navigation, ChevronLeft, ChevronRight, RefreshCw, Plus, Clock } from 'lucide-react';
 import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
@@ -120,12 +120,17 @@ export default function MapView() {
     }
   }, []);
 
-  const { data: apiIncidents = [], refetch, isFetching } = useQuery({
+  const { data: apiIncidents = MOCK_INCIDENTS, refetch, isFetching } = useQuery({
     queryKey: ['incidents'],
     queryFn: async () => {
-      const res = await fetch('http://localhost:8000/api/incidents');
-      if (!res.ok) return [];
-      return res.json();
+      try {
+        const res = await fetch('http://localhost:8000/api/incidents');
+        if (!res.ok) return MOCK_INCIDENTS;
+        const data = await res.json();
+        return Array.isArray(data) && data.length > 0 ? data : MOCK_INCIDENTS;
+      } catch {
+        return MOCK_INCIDENTS;
+      }
     },
     refetchInterval: 10000,
   });

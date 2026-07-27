@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import { useQuery } from '@tanstack/react-query';
-import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
+import { calcDistance, TYPE_CONFIG, MOCK_INCIDENTS } from '@/components/data/mockData';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import {
@@ -35,12 +35,17 @@ const DEFAULT_LOC = { lat: 41.9028, lng: 12.4964 };
 export default function Home() {
   const [location, setLocation] = useState(DEFAULT_LOC);
   const [locLabel, setLocLabel] = useState('Roma, Italia');
-  const { data: liveIncidents = [], refetch, isLoading: isApiLoading } = useQuery({
+  const { data: liveIncidents = MOCK_INCIDENTS, refetch, isLoading: isApiLoading } = useQuery({
     queryKey: ['incidents'],
     queryFn: async () => {
-      const res = await fetch('http://localhost:8000/api/incidents');
-      if (!res.ok) throw new Error('Network response was not ok');
-      return res.json();
+      try {
+        const res = await fetch('http://localhost:8000/api/incidents');
+        if (!res.ok) return MOCK_INCIDENTS;
+        const data = await res.json();
+        return Array.isArray(data) && data.length > 0 ? data : MOCK_INCIDENTS;
+      } catch {
+        return MOCK_INCIDENTS;
+      }
     },
     refetchInterval: 10000, // auto-refresh every 10s
   });
@@ -65,7 +70,8 @@ export default function Home() {
   }, [radius]);
 
   const loadData = useCallback((loc) => {
-    const withDistance = liveIncidents.map(inc => ({
+    const rawData = (liveIncidents && liveIncidents.length > 0) ? liveIncidents : MOCK_INCIDENTS;
+    const withDistance = rawData.map(inc => ({
       ...inc,
       distance: calcDistance(loc.lat, loc.lng, inc.latitude, inc.longitude),
     }));
@@ -74,16 +80,8 @@ export default function Home() {
   }, [liveIncidents]);
 
   useEffect(() => {
-    if (isApiLoading) return;
-    if (liveIncidents.length === 0) {
-      setLoading(false);
-      return;
-    }
-    
-    // Mostra subito i dati con la posizione di default
     loadData(location);
 
-    // Poi prova ad aggiornarli con la posizione reale senza bloccare
     navigator.geolocation?.getCurrentPosition(
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -94,8 +92,7 @@ export default function Home() {
       () => console.warn("Geolocalizzazione fallita o negata"),
       { timeout: 5000, maximumAge: 60000 }
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveIncidents, isApiLoading]);
+  }, [liveIncidents, isApiLoading, loadData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
