@@ -4,6 +4,7 @@ import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
 import { toast } from 'sonner';
+import emailjs from '@emailjs/browser';
 import { createAutoresponderHtml, createAdminNotificationHtml } from '@/lib/emailService';
 
 export default function Contact() {
@@ -44,47 +45,31 @@ export default function Contact() {
       console.warn("Storage warning:", e);
     }
 
-    // 1. Resend API Dispatch (Sends to Admin + Customer Autoresponder)
-    const defaultResendKey = ['re', '_K4awaoHX_', '9ogrpkyR2XDMvFxMpJAVeqhw'].join('');
-    const resendKey = import.meta.env.VITE_RESEND_API_KEY || defaultResendKey;
+    // 1. Dispatch via EmailJS (Universal Autoresponder to ANY client email + Admin notification)
+    const emailjsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_sentinel';
+    const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_sentinel';
+    const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
-    if (resendKey) {
+    if (emailjsPublicKey) {
       try {
-        // Send Admin Notification Email to Resend owner email (nikihammond04@gmail.com)
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${resendKey}`,
-            'Content-Type': 'application/json',
+        await emailjs.send(
+          emailjsServiceId,
+          emailjsTemplateId,
+          {
+            user_name: name,
+            user_email: email,
+            message: message,
+            admin_email: 'sentinelappsecurity@gmail.com',
+            autoresponder_html: createAutoresponderHtml(name, message),
           },
-          body: JSON.stringify({
-            from: 'Sentinel <onboarding@resend.dev>',
-            to: ['nikihammond04@gmail.com'],
-            subject: `🚨 [Lead Sentinel] Nuovo Messaggio da ${name}`,
-            html: createAdminNotificationHtml(name, email, message),
-          })
-        });
-
-        // Send Customer Autoresponder Confirmation Email to User
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${resendKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: 'Sentinel <onboarding@resend.dev>',
-            to: [email],
-            subject: `[Sentinel] Abbiamo ricevuto il tuo messaggio, ${name}!`,
-            html: createAutoresponderHtml(name, message),
-          })
-        });
-      } catch (resendErr) {
-        console.warn("Resend email dispatch error:", resendErr);
+          emailjsPublicKey
+        );
+      } catch (ejsErr) {
+        console.warn("EmailJS dispatch warning:", ejsErr);
       }
     }
 
-    // 2. Backup dispatch to Web3Forms for database logging
+    // 2. Backup dispatch to Web3Forms for online submissions database logging
     const web3formsKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || '3893fec3-2608-4ec9-9214-a2bcb2d83b1f';
     try {
       await fetch('https://api.web3forms.com/submit', {
@@ -97,7 +82,7 @@ export default function Contact() {
           message,
           replyto: email,
           from_name: 'Sentinel Network Security',
-          subject: `[Sentinel Lead] ${name}`,
+          subject: `[Sentinel Lead] ${name} (${email})`,
           botcheck: false,
         })
       });
@@ -107,7 +92,7 @@ export default function Contact() {
 
     setLoading(false);
     setSubmitted(true);
-    toast.success("Messaggio inviato ed autoresponder spedito con successo!");
+    toast.success("Messaggio inviato con successo ed autoresponder spedito!");
 
     // Fallback: try localhost backend if available
     try {
