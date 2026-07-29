@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile Rigid Layout Protection (Locks horizontal scrolling, enables pure vertical pan) */
+html, body, #root {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden !important;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+body {
+  overscroll-behavior-x: none;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
