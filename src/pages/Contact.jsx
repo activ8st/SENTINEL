@@ -57,7 +57,10 @@ export default function Contact() {
           emailjsTemplateId,
           {
             user_name: name,
+            name: name,
             user_email: email,
+            email: email,
+            to_email: email,
             message: message,
             admin_email: 'sentinelappsecurity@gmail.com',
             autoresponder_html: createAutoresponderHtml(name, message),
