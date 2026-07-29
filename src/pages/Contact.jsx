@@ -50,7 +50,7 @@ export default function Contact() {
 
     if (resendKey) {
       try {
-        // Send Admin Notification Email to sentinelappsecurity@gmail.com
+        // Send Admin Notification Email to Resend owner email (nikihammond04@gmail.com)
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -59,8 +59,8 @@ export default function Contact() {
           },
           body: JSON.stringify({
             from: 'Sentinel <onboarding@resend.dev>',
-            to: ['sentinelappsecurity@gmail.com'],
-            subject: `🚨 Nuovo Messaggio da ${name} su Sentinel`,
+            to: ['nikihammond04@gmail.com'],
+            subject: `🚨 [Lead Sentinel] Nuovo Messaggio da ${name}`,
             html: createAdminNotificationHtml(name, email, message),
           })
         });
