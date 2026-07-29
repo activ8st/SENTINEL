@@ -56,14 +56,17 @@ export default function Contact() {
             name,
             email,
             message,
-            subject: `Nuovo messaggio da ${name} via Sentinel`
+            replyto: email,
+            from_name: 'Sentinel Network Security',
+            subject: `[Sentinel] Abbiamo ricevuto il tuo messaggio, ${name}!`,
+            botcheck: false,
           })
         });
         const result = await response.json();
         setLoading(false);
         if (result.success) {
           setSubmitted(true);
-          toast.success("Messaggio inviato direttamente al team di Sentinel!");
+          toast.success("Messaggio registrato! Abbiamo inviato una mail di conferma.");
           return;
         }
       } catch (err) {
