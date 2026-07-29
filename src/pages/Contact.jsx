@@ -4,6 +4,7 @@ import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
 import { toast } from 'sonner';
+import { createAutoresponderHtml, createAdminNotificationHtml } from '@/lib/emailService';
 
 export default function Contact() {
   const { t } = useLanguageTheme();
@@ -43,36 +44,69 @@ export default function Contact() {
       console.warn("Storage warning:", e);
     }
 
-    // Check for Web3Forms or custom webhook key
-    const web3formsKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || import.meta.env.VITE_CONTACT_API_KEY || '3893fec3-2608-4ec9-9214-a2bcb2d83b1f';
+    // 1. Resend API Dispatch (Sends to Admin + Customer Autoresponder)
+    const resendKey = import.meta.env.VITE_RESEND_API_KEY;
 
-    if (web3formsKey) {
+    if (resendKey) {
       try {
-        const response = await fetch('https://api.web3forms.com/submit', {
+        // Send Admin Notification Email to sentinelappsecurity@gmail.com
+        await fetch('https://api.resend.com/emails', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          headers: {
+            'Authorization': `Bearer ${resendKey}`,
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({
-            access_key: web3formsKey,
-            name,
-            email,
-            message,
-            replyto: email,
-            from_name: 'Sentinel Network Security',
-            subject: `[Sentinel] Abbiamo ricevuto il tuo messaggio, ${name}!`,
-            botcheck: false,
+            from: 'Sentinel <onboarding@resend.dev>',
+            to: ['sentinelappsecurity@gmail.com'],
+            subject: `🚨 Nuovo Messaggio da ${name} su Sentinel`,
+            html: createAdminNotificationHtml(name, email, message),
           })
         });
-        const result = await response.json();
-        setLoading(false);
-        if (result.success) {
-          setSubmitted(true);
-          toast.success("Messaggio registrato! Abbiamo inviato una mail di conferma.");
-          return;
-        }
-      } catch (err) {
-        console.warn("Web3Forms error:", err);
+
+        // Send Customer Autoresponder Confirmation Email to User
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Sentinel <onboarding@resend.dev>',
+            to: [email],
+            subject: `[Sentinel] Abbiamo ricevuto il tuo messaggio, ${name}!`,
+            html: createAutoresponderHtml(name, message),
+          })
+        });
+      } catch (resendErr) {
+        console.warn("Resend email dispatch error:", resendErr);
       }
     }
+
+    // 2. Backup dispatch to Web3Forms for database logging
+    const web3formsKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || '3893fec3-2608-4ec9-9214-a2bcb2d83b1f';
+    try {
+      await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: web3formsKey,
+          name,
+          email,
+          message,
+          replyto: email,
+          from_name: 'Sentinel Network Security',
+          subject: `[Sentinel Lead] ${name}`,
+          botcheck: false,
+        })
+      });
+    } catch (w3err) {
+      console.warn("Web3Forms backup logging error:", w3err);
+    }
+
+    setLoading(false);
+    setSubmitted(true);
+    toast.success("Messaggio inviato ed autoresponder spedito con successo!");
 
     // Fallback: try localhost backend if available
     try {
