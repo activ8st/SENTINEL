@@ -46,9 +46,9 @@ export default function Contact() {
     }
 
     // 1. Dispatch via EmailJS (Universal Autoresponder to ANY client email + Admin notification)
-    const emailjsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_sentinel';
-    const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_sentinel';
-    const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+    const emailjsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_kzyps58';
+    const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_3prh5wo';
+    const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'F3RgrouhOMbNT81Zi';
 
     if (emailjsPublicKey) {
       try {
