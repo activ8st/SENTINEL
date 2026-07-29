@@ -28,15 +28,63 @@ export default function WaitlistModal({ isOpen, onClose }) {
     if (email && email.includes('@')) {
       trackEvent('waitlist_submit_city', { email_domain: email.split('@')[1], city: selectedCityName });
       setSubmitted(true);
-      toast.success(`Sei in lista per sbloccare ${selectedCityName}! Controlla la tua posta.`);
+      toast.success(`Sei in lista per sbloccare ${selectedCityName}! Abbiamo inviato la mail di conferma.`);
+
+      // 1. Local Storage Backup
       try {
-        await fetch('http://localhost:8000/api/waitlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, city: selectedCityName })
-        });
+        const existing = JSON.parse(localStorage.getItem('sentinel_waitlist_signups') || '[]');
+        existing.push({ email, city: selectedCityName, date: new Date().toISOString() });
+        localStorage.setItem('sentinel_waitlist_signups', JSON.stringify(existing));
       } catch (err) {
-        console.log("Waitlist email call error:", err);
+        console.warn("Storage warning:", err);
+      }
+
+      // 2. EmailJS Autoresponder + Admin Dispatch
+      const emailjsServiceId = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_fhdunxy';
+      const emailjsTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_3prh5wo';
+      const emailjsPublicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'F3RgrouhOMbNT81Zi';
+
+      if (emailjsPublicKey) {
+        try {
+          await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              service_id: emailjsServiceId,
+              template_id: emailjsTemplateId,
+              user_id: emailjsPublicKey,
+              template_params: {
+                user_name: email.split('@')[0],
+                name: email.split('@')[0],
+                user_email: email,
+                email: email,
+                to_email: email,
+                message: `Iscrizione prioritaria alla lista d'attesa per la città di ${selectedCityName}.`,
+                admin_email: 'sentinelappsecurity@gmail.com',
+              }
+            })
+          });
+        } catch (ejsErr) {
+          console.warn("Waitlist EmailJS error:", ejsErr);
+        }
+      }
+
+      // 3. Web3Forms Backup Logging
+      const w3Key = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || '3893fec3-2608-4ec9-9214-a2bcb2d83b1f';
+      try {
+        await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            access_key: w3Key,
+            email,
+            message: `Iscrizione Lista d'Attesa per ${selectedCityName}`,
+            from_name: 'Sentinel Waitlist',
+            subject: `[Sentinel Waitlist] ${selectedCityName} - ${email}`,
+          })
+        });
+      } catch (wErr) {
+        console.warn("Web3Forms waitlist error:", wErr);
       }
     } else {
       toast.error("Inserisci un indirizzo email valido.");
