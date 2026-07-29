@@ -44,7 +44,7 @@ export default function Contact() {
     }
 
     // Check for Web3Forms or custom webhook key
-    const web3formsKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || import.meta.env.VITE_CONTACT_API_KEY;
+    const web3formsKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || import.meta.env.VITE_CONTACT_API_KEY || '3893fec3-2608-4ec9-9214-a2bcb2d83b1f';
 
     if (web3formsKey) {
       try {
