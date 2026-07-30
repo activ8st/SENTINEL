@@ -15,14 +15,14 @@ body {
   overscroll-behavior-x: none;
 }
 
-/* Stacking Cards Sticky Logic */
+/* Stacking Cards Sticky Logic - Ultra-Sleek & Aesthetic */
 :root {
-  --card-top-offset: 36px;
+  --card-top-offset: 20px;
 }
 
 .stacking-cards-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 980px;
   margin: 0 auto;
   overflow: visible !important;
 }
@@ -30,7 +30,7 @@ body {
 .cards-list {
   display: flex;
   flex-direction: column;
-  gap: 36px;
+  gap: 28px;
   list-style: none;
   padding: 0;
   margin: 0;
@@ -40,12 +40,12 @@ body {
 .card-item {
   position: -webkit-sticky !important;
   position: sticky !important;
-  top: calc(var(--index) * var(--card-top-offset) + 85px) !important;
-  min-height: 360px;
+  top: calc(var(--index) * var(--card-top-offset) + 105px) !important;
+  min-height: 260px;
   border-radius: 2rem;
   overflow: hidden;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
-  margin-bottom: 30px;
+  box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.45);
+  margin-bottom: 24px;
   z-index: calc(var(--index) * 10);
 }
 
@@ -53,7 +53,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 2.5rem;
+  padding: 1.75rem;
   height: 100%;
 }
 
@@ -61,7 +61,23 @@ body {
   .card-content {
     flex-direction: row;
     align-items: center;
-    padding: 3.5rem;
+    padding: 2.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --card-top-offset: 14px;
+  }
+  .stacking-cards-container {
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
+  .card-item {
+    top: calc(var(--index) * var(--card-top-offset) + 95px) !important;
+    min-height: 240px;
+    border-radius: 1.5rem;
+    margin-bottom: 16px;
   }
 }
 
