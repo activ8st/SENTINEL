@@ -428,24 +428,6 @@ export default function LandingPage() {
               </button>
             </div>
 
-            {/* Shifted Command Radar Dashboard Visual */}
-            <div className="mb-16 aspect-[16/9] md:aspect-[21/9] rounded-[2.5rem] overflow-hidden bg-gray-950 border border-slate-200 dark:border-white/15 relative shadow-2xl group">
-              <img 
-                src="/sentinel_hero_map.png" 
-                alt="Sentinel 3D Command Radar Dashboard & Telemetry" 
-                className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
-                loading="lazy"
-                decoding="async"
-              />
-              <div className="absolute top-6 right-6 bg-[#090909]/90 border border-white/15 p-3.5 rounded-2xl backdrop-blur-xl flex items-center gap-3 shadow-xl text-white">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#10b981]"></span>
-                </span>
-                <span className="text-xs font-bold tracking-wide uppercase">{t('demo_infra_badge')}</span>
-              </div>
-            </div>
-
             {/* Feature Cards Grid (HIGH CONTRAST LIGHT / DARK) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div 

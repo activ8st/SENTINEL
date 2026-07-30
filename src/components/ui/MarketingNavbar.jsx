@@ -22,7 +22,7 @@ export default function MarketingNavbar({ onOpenWaitlist }) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-black/10 dark:border-white/10 bg-white/90 dark:bg-[#050505]/95 backdrop-blur-2xl text-gray-900 dark:text-white transition-colors duration-300">
+    <header className="fixed top-0 left-0 right-0 z-[1000] w-full border-b border-black/10 dark:border-white/10 bg-white/90 dark:bg-[#050505]/95 backdrop-blur-2xl text-gray-900 dark:text-white transition-colors duration-300">
       <nav className="max-w-7xl mx-auto px-5 sm:px-6 h-20 flex items-center justify-between">
         
         {/* Logo */}
