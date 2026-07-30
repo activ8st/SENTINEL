@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ShieldCheck, Map, BellRing, Users, ArrowRight, Lock, Eye, ChevronDown, Download, Compass, Moon, AlertTriangle, Radio } from 'lucide-react';
+import { ShieldCheck, Map, BellRing, Users, ArrowRight, Lock, Eye, ChevronDown, Download, Compass, Moon, AlertTriangle, Radio, Navigation } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import ItalyMapModal from '@/components/ui/ItalyMapModal';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
