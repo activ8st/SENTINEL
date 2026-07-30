@@ -84,9 +84,11 @@ export default function LandingPage() {
   return (
     <div className="relative w-full max-w-full bg-slate-50 dark:bg-[#050505] text-slate-900 dark:text-[#f5f5f5] min-h-screen font-sans selection:bg-[#10b981] selection:text-black transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
-      {/* Ambient Glow Orbs */}
-      <div className="absolute top-[-5%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] bg-[#10b981] opacity-10 blur-[180px] rounded-full pointer-events-none" />
-      <div className="absolute top-[35%] right-0 translate-x-1/3 w-[500px] h-[500px] bg-amber-500/10 opacity-10 blur-[180px] rounded-full pointer-events-none" />
+      {/* Ambient Glow Orbs (Confined inside overflow-hidden wrapper to eliminate horizontal scrollbar) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-5%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] bg-[#10b981] opacity-10 blur-[180px] rounded-full" />
+        <div className="absolute top-[35%] right-0 translate-x-1/3 w-[500px] h-[500px] bg-amber-500/10 opacity-10 blur-[180px] rounded-full" />
+      </div>
 
       {/* 1. NAVBAR */}
       <MarketingNavbar onOpenWaitlist={() => handleOpenWaitlist('navbar')} />
