@@ -7,14 +7,14 @@ export const translations = {
     nav_features: "Funzionalità",
     nav_manifesto: "Manifesto",
     nav_contact: "Contatti",
-    nav_download: "Scarica Sentinel",
+    nav_download: "Richiedi Accesso",
 
     // Hero
     hero_eyebrow: "Sicurezza verificata, non allarmismo",
     hero_title_1: "Sai se è sicuro,",
     hero_title_2: "prima di uscirci.",
     hero_subtitle: "Sentinel ti mostra esattamente cosa c'è sulla tua strada prima che tu esca di casa — dati ufficiali, segnalazioni verificate dalla community, mai stereotipi. Per farti muovere sempre con più serenità.",
-    hero_cta_primary: "Scarica Sentinel",
+    hero_cta_primary: "Richiedi Accesso Prioritario",
     hero_cta_secondary: "Guarda come funziona",
     hero_trust_badge: "Gratuito · Zero profilazione dati · Fonti ufficiali verificate",
     hero_live_badge: "Allerte Live Attive",
