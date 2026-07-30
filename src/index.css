@@ -18,13 +18,14 @@ body {
 
 /* Stacking Cards Sticky Logic */
 :root {
-  --card-top-offset: 28px;
+  --card-top-offset: 36px;
 }
 
 .stacking-cards-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  overflow: visible !important;
 }
 
 .cards-list {
@@ -34,16 +35,19 @@ body {
   list-style: none;
   padding: 0;
   margin: 0;
+  overflow: visible !important;
 }
 
 .card-item {
-  position: sticky;
-  top: calc(var(--index) * var(--card-top-offset) + 85px);
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: calc(var(--index) * var(--card-top-offset) + 85px) !important;
   min-height: 360px;
   border-radius: 2rem;
   overflow: hidden;
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+  margin-bottom: 30px;
+  z-index: calc(var(--index) * 10);
 }
 
 .card-content {

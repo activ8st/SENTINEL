@@ -82,7 +82,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="relative w-full max-w-full bg-slate-50 dark:bg-[#050505] text-slate-900 dark:text-[#f5f5f5] min-h-screen overflow-x-hidden font-sans selection:bg-[#10b981] selection:text-black transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
+    <div className="relative w-full max-w-full bg-slate-50 dark:bg-[#050505] text-slate-900 dark:text-[#f5f5f5] min-h-screen font-sans selection:bg-[#10b981] selection:text-black transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
       {/* Ambient Glow Orbs */}
       <div className="absolute top-[-5%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] bg-[#10b981] opacity-10 blur-[180px] rounded-full pointer-events-none" />
@@ -174,7 +174,7 @@ export default function LandingPage() {
         </section>
 
         {/* 4. SEZIONE CASI D'USO REALI (STACKING CARDS ANIMATE) */}
-        <section className="py-28 relative border-b border-slate-200 dark:border-white/10">
+        <section className="py-28 relative border-b border-slate-200 dark:border-white/10 overflow-visible">
           <div className="max-w-7xl mx-auto px-6">
             
             <div className="text-center max-w-3xl mx-auto mb-16">
