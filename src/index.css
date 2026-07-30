@@ -16,6 +16,52 @@ body {
   overscroll-behavior-x: none;
 }
 
+/* Stacking Cards Sticky Logic */
+:root {
+  --card-top-offset: 28px;
+}
+
+.stacking-cards-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.card-item {
+  position: sticky;
+  top: calc(var(--index) * var(--card-top-offset) + 85px);
+  min-height: 360px;
+  border-radius: 2rem;
+  overflow: hidden;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.5rem;
+  height: 100%;
+}
+
+@media (min-width: 768px) {
+  .card-content {
+    flex-direction: row;
+    align-items: center;
+    padding: 3.5rem;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

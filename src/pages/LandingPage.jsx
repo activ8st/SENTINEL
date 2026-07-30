@@ -114,7 +114,7 @@ export default function LandingPage() {
                 
                 {/* Subtitle */}
                 <p className="text-lg md:text-xl text-slate-600 dark:text-white/70 mb-10 max-w-xl leading-relaxed font-normal">
-                  {t('hero_subtitle')}
+                  La prima piattaforma italiana di sicurezza partecipata e controllo del vicinato in tempo reale. Non vendiamo "sicurezza generica". Sentinel offre controllo urbano real-time, iper-localizzazione ed azione comunitaria strutturata prima che tu debba chiederlo.
                 </p>
                 
                 {/* CTAs */}
@@ -173,7 +173,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 4. SEZIONE PERSONA */}
+        {/* 4. SEZIONE CASI D'USO REALI (STACKING CARDS ANIMATE) */}
         <section className="py-28 relative border-b border-slate-200 dark:border-white/10">
           <div className="max-w-7xl mx-auto px-6">
             
@@ -187,54 +187,167 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Card 1 — Turista */}
-              <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 rounded-[2rem] p-8 md:p-10 hover:border-[#10b981]/40 transition-all group flex flex-col justify-between shadow-xl text-slate-900 dark:text-white">
-                <div>
-                  <div className="w-14 h-14 bg-[#10b981]/15 rounded-2xl flex items-center justify-center text-[#10b981] border border-[#10b981]/30 mb-6">
-                    <Compass className="w-7 h-7" />
+            {/* Stacking Cards Container — 6 Total Stacking Cards */}
+            <div className="stacking-cards-container">
+              <ul className="cards-list">
+                
+                {/* STACK 1 — Genitori & Famiglie */}
+                <li className="card-item bg-white dark:bg-[#0e1310] border border-slate-300 dark:border-[#10b981]/30 text-slate-900 dark:text-white shadow-2xl" style={{ '--index': 1 }}>
+                  <div className="card-content">
+                    <div className="max-w-xl">
+                      <div className="w-14 h-14 bg-purple-500/15 rounded-2xl flex items-center justify-center text-purple-500 border border-purple-500/30 mb-6">
+                        <Users className="w-7 h-7" />
+                      </div>
+                      <div className="inline-block text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-500/15 px-3 py-1 rounded-full mb-4">
+                        1. PER FAMIGLIE E GENITORI
+                      </div>
+                      <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">
+                        Genitori & Famiglie
+                      </h3>
+                      <p className="text-sm md:text-base text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-6">
+                        Tranquillità sui percorsi scolastici e sul rientro dei figli. Monitora la sicurezza del quartiere e ricevi allerte sul tragitto quotidiano della tua famiglia prima che si verifichino imprevisti.
+                      </p>
+                      <button 
+                        onClick={() => handleOpenWaitlist('persona_famiglie')}
+                        className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] hover:gap-3 transition-all text-left"
+                      >
+                        Scopri la protezione per famiglie →
+                      </button>
+                    </div>
                   </div>
-                  <div className="inline-block text-xs font-bold uppercase tracking-wider text-[#10b981] bg-[#10b981]/15 px-3 py-1 rounded-full mb-4">
-                    {t('persona_1_badge')}
-                  </div>
-                  <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">
-                    {t('persona_1_title')}
-                  </h3>
-                  <p className="text-sm md:text-base text-slate-600 dark:text-white/60 font-normal leading-relaxed mb-6">
-                    {t('persona_1_text')}
-                  </p>
-                </div>
-                <button 
-                  onClick={() => handleOpenWaitlist('persona_turista')}
-                  className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] group-hover:gap-3 transition-all text-left"
-                >
-                  {t('persona_1_cta')}
-                </button>
-              </div>
+                </li>
 
-              {/* Card 2 — Chi si sposta la sera */}
-              <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 rounded-[2rem] p-8 md:p-10 hover:border-[#10b981]/40 transition-all group flex flex-col justify-between shadow-xl text-slate-900 dark:text-white">
-                <div>
-                  <div className="w-14 h-14 bg-[#f59e0b]/15 rounded-2xl flex items-center justify-center text-[#f59e0b] border border-[#f59e0b]/30 mb-6">
-                    <Moon className="w-7 h-7" />
+                {/* STACK 2 — Studenti, Pendolari & Lavoratori Urbani */}
+                <li className="card-item bg-white dark:bg-[#091217] border border-slate-300 dark:border-blue-500/30 text-slate-900 dark:text-white shadow-2xl" style={{ '--index': 2 }}>
+                  <div className="card-content">
+                    <div className="max-w-xl">
+                      <div className="w-14 h-14 bg-blue-500/15 rounded-2xl flex items-center justify-center text-blue-500 border border-blue-500/30 mb-6">
+                        <Compass className="w-7 h-7" />
+                      </div>
+                      <div className="inline-block text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-500/15 px-3 py-1 rounded-full mb-4">
+                        2. PER PENDOLARI E STUDENTI
+                      </div>
+                      <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">
+                        Studenti, Pendolari & Lavoratori Urbani
+                      </h3>
+                      <p className="text-sm md:text-base text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-6">
+                        Spostamenti quotidiani veloci tra stazioni, fermate della metro e mezzi pubblici. Conosci in anticipo deviazioni, blocchi stradali e nodi critici della città.
+                      </p>
+                      <button 
+                        onClick={() => handleOpenWaitlist('persona_pendolari')}
+                        className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] hover:gap-3 transition-all text-left"
+                      >
+                        Scopri la funzione per pendolari →
+                      </button>
+                    </div>
                   </div>
-                  <div className="inline-block text-xs font-bold uppercase tracking-wider text-[#f59e0b] bg-[#f59e0b]/15 px-3 py-1 rounded-full mb-4">
-                    {t('persona_2_badge')}
+                </li>
+
+                {/* STACK 3 — Chi si sposta la sera / Lavoratori Notturni (Preesistente 1) */}
+                <li className="card-item bg-white dark:bg-[#16120b] border border-slate-300 dark:border-amber-500/30 text-slate-900 dark:text-white shadow-2xl" style={{ '--index': 3 }}>
+                  <div className="card-content">
+                    <div className="max-w-xl">
+                      <div className="w-14 h-14 bg-[#f59e0b]/15 rounded-2xl flex items-center justify-center text-[#f59e0b] border border-[#f59e0b]/30 mb-6">
+                        <Moon className="w-7 h-7" />
+                      </div>
+                      <div className="inline-block text-xs font-bold uppercase tracking-wider text-[#f59e0b] bg-[#f59e0b]/15 px-3 py-1 rounded-full mb-4">
+                        3. {t('persona_2_badge')}
+                      </div>
+                      <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">
+                        {t('persona_2_title')}
+                      </h3>
+                      <p className="text-sm md:text-base text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-6">
+                        {t('persona_2_text')}
+                      </p>
+                      <button 
+                        onClick={() => handleOpenWaitlist('persona_sera')}
+                        className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] hover:gap-3 transition-all text-left"
+                      >
+                        {t('persona_2_cta')}
+                      </button>
+                    </div>
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">
-                    {t('persona_2_title')}
-                  </h3>
-                  <p className="text-sm md:text-base text-slate-600 dark:text-white/60 font-normal leading-relaxed mb-6">
-                    {t('persona_2_text')}
-                  </p>
-                </div>
-                <button 
-                  onClick={() => handleOpenWaitlist('persona_sera')}
-                  className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] group-hover:gap-3 transition-all text-left"
-                >
-                  {t('persona_2_cta')}
-                </button>
-              </div>
+                </li>
+
+                {/* STACK 4 — Turisti & Residenti Temporanei (Preesistente 2) */}
+                <li className="card-item bg-white dark:bg-[#07130e] border border-slate-300 dark:border-[#10b981]/40 text-slate-900 dark:text-white shadow-2xl" style={{ '--index': 4 }}>
+                  <div className="card-content">
+                    <div className="max-w-xl">
+                      <div className="w-14 h-14 bg-[#10b981]/15 rounded-2xl flex items-center justify-center text-[#10b981] border border-[#10b981]/30 mb-6">
+                        <Compass className="w-7 h-7" />
+                      </div>
+                      <div className="inline-block text-xs font-bold uppercase tracking-wider text-[#10b981] bg-[#10b981]/15 px-3 py-1 rounded-full mb-4">
+                        4. {t('persona_1_badge')}
+                      </div>
+                      <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">
+                        {t('persona_1_title')}
+                      </h3>
+                      <p className="text-sm md:text-base text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-6">
+                        {t('persona_1_text')}
+                      </p>
+                      <button 
+                        onClick={() => handleOpenWaitlist('persona_turista')}
+                        className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] hover:gap-3 transition-all text-left"
+                      >
+                        {t('persona_1_cta')}
+                      </button>
+                    </div>
+                  </div>
+                </li>
+
+                {/* STACK 5 — Comunità & Controllo del Vicinato */}
+                <li className="card-item bg-white dark:bg-[#120f18] border border-slate-300 dark:border-indigo-500/30 text-slate-900 dark:text-white shadow-2xl" style={{ '--index': 5 }}>
+                  <div className="card-content">
+                    <div className="max-w-xl">
+                      <div className="w-14 h-14 bg-indigo-500/15 rounded-2xl flex items-center justify-center text-indigo-500 border border-indigo-500/30 mb-6">
+                        <ShieldCheck className="w-7 h-7" />
+                      </div>
+                      <div className="inline-block text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 px-3 py-1 rounded-full mb-4">
+                        5. PER LA COMMUNITY E RIONI
+                      </div>
+                      <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">
+                        Comunità & Controllo del Vicinato
+                      </h3>
+                      <p className="text-sm md:text-base text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-6">
+                        Rafforza la protezione locale partecipando attivamente alla rete di vicinato. Segnala anomalie con un tap ed accumula punti Karma per la tua affidabilità.
+                      </p>
+                      <button 
+                        onClick={() => handleOpenWaitlist('persona_community')}
+                        className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] hover:gap-3 transition-all text-left"
+                      >
+                        Unisciti alla rete di vicinato →
+                      </button>
+                    </div>
+                  </div>
+                </li>
+
+                {/* STACK 6 — Automobilisti & Viabilità Urgente */}
+                <li className="card-item bg-white dark:bg-[#0c1614] border border-slate-300 dark:border-emerald-500/40 text-slate-900 dark:text-white shadow-2xl" style={{ '--index': 6 }}>
+                  <div className="card-content">
+                    <div className="max-w-xl">
+                      <div className="w-14 h-14 bg-emerald-500/15 rounded-2xl flex items-center justify-center text-emerald-500 border border-emerald-500/30 mb-6">
+                        <Navigation className="w-7 h-7" />
+                      </div>
+                      <div className="inline-block text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 px-3 py-1 rounded-full mb-4">
+                        6. PER AUTOMOBILISTI E VIABILITÀ
+                      </div>
+                      <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">
+                        Automobilisti & Viabilità Urgente
+                      </h3>
+                      <p className="text-sm md:text-base text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-6">
+                        Riconosci subito strade interrotte, cantieri non segnalati o incidenti prima di rimanere bloccato nel traffico urbano ed extraurbano.
+                      </p>
+                      <button 
+                        onClick={() => handleOpenWaitlist('persona_automobilisti')}
+                        className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] hover:gap-3 transition-all text-left"
+                      >
+                        Scopri la viabilità in tempo reale →
+                      </button>
+                    </div>
+                  </div>
+                </li>
+
+              </ul>
             </div>
 
           </div>
