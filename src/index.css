@@ -5,8 +5,7 @@
 /* Mobile Rigid Layout Protection (Locks horizontal scrolling, enables pure vertical pan) */
 html, body, #root {
   width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden !important;
+  max-width: 100%;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
   position: relative;
