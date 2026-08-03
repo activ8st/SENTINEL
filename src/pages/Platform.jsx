@@ -1,8 +1,9 @@
-import React, { useEffect, Component } from 'react';
+import React, { useEffect, Component, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldAlert, Zap, Server, Smartphone, Database, MapPin, Compass, Radio, Search, Navigation, AlertTriangle } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
+import WaitlistModal from '@/components/ui/WaitlistModal';
 import IncidentMap from '@/components/incidents/IncidentMap';
 import { MOCK_INCIDENTS } from '@/components/data/mockData';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
@@ -48,35 +49,12 @@ class MapErrorBoundary extends Component {
             </div>
           </div>
 
-          {/* Interactive Center Navigation Pins */}
-          <div className="relative z-10 flex-1 my-8 flex items-center justify-center">
-            <div className="relative">
-              <div className="w-16 h-16 bg-[#10b981]/30 rounded-full animate-ping absolute -inset-4" />
-              <div className="w-10 h-10 bg-[#10b981] rounded-full border-2 border-white flex items-center justify-center text-black shadow-[0_0_35px_rgba(16,185,129,1)]">
-                <Navigation className="w-5 h-5 fill-black" />
-              </div>
-              <div className="absolute top-12 -left-20 bg-black/95 border border-[#10b981]/60 text-[#10b981] text-[11px] font-black px-4 py-1.5 rounded-xl shadow-2xl whitespace-nowrap">
-                📍 Posizione Attuale · Via Montenapoleone
-              </div>
+          <div className="relative z-10 bg-black/85 backdrop-blur-xl p-4 rounded-2xl border border-white/15">
+            <div className="flex items-center gap-3 text-xs text-white/70">
+              <ShieldAlert className="w-4 h-4 text-[#10b981]" />
+              <span>Simulazione interattiva radar perimetrale della viabilità in tempo reale.</span>
             </div>
           </div>
-
-          {/* Bottom Live Alert Strip */}
-          <div className="relative z-10 bg-black/90 backdrop-blur-xl p-4 rounded-2xl border border-white/20 flex items-center justify-between text-xs shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
-                <AlertTriangle className="w-4.5 h-4.5" />
-              </div>
-              <div>
-                <div className="font-extrabold text-white">Lavori Stradali & Deviazione Via Dante</div>
-                <div className="text-[10px] text-emerald-400 font-bold">Fonte Ufficiale · A 250m dal percorso</div>
-              </div>
-            </div>
-            <span className="text-[10px] font-black text-black bg-[#10b981] px-3 py-1 rounded shadow shrink-0">
-              VERIFICATO
-            </span>
-          </div>
-
         </div>
       );
     }
@@ -86,6 +64,7 @@ class MapErrorBoundary extends Component {
 
 export default function Platform() {
   const { t } = useLanguageTheme();
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -94,7 +73,7 @@ export default function Platform() {
   return (
     <div className="bg-slate-50 dark:bg-[#050505] text-slate-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
-      <MarketingNavbar />
+      <MarketingNavbar onOpenWaitlist={() => setIsWaitlistOpen(true)} />
 
       {/* Hero Header */}
       <section className="pt-28 pb-12">
@@ -180,6 +159,11 @@ export default function Platform() {
       </section>
 
       <GlobalFooter />
+
+      <WaitlistModal 
+        isOpen={isWaitlistOpen} 
+        onClose={() => setIsWaitlistOpen(false)} 
+      />
 
     </div>
   );

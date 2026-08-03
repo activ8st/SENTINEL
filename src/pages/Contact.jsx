@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Mail, MapPin, Phone, CheckCircle2, ArrowRight, Send, ShieldCheck } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
+import WaitlistModal from '@/components/ui/WaitlistModal';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
 import { toast } from 'sonner';
 import emailjs from '@emailjs/browser';
@@ -14,6 +15,7 @@ export default function Contact() {
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -118,7 +120,7 @@ export default function Contact() {
   return (
     <div className="bg-slate-50 dark:bg-[#050505] text-gray-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
-      <MarketingNavbar />
+      <MarketingNavbar onOpenWaitlist={() => setIsWaitlistOpen(true)} />
 
       {/* Hero Contact */}
       <section className="pt-28 pb-16">
@@ -249,6 +251,10 @@ export default function Contact() {
       </section>
 
       <GlobalFooter />
+      <WaitlistModal 
+        isOpen={isWaitlistOpen} 
+        onClose={() => setIsWaitlistOpen(false)} 
+      />
     </div>
   );
 }
