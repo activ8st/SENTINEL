@@ -1,8 +1,7 @@
 // Shared mock data — used by Feed, Map, Alerts, Incident Detail
 import { ShieldAlert, Flame, Car, Activity, Eye, TrafficCone, CloudLightning, Info } from 'lucide-react';
 
-const now = Date.now();
-const mins = (m) => new Date(now - m * 60 * 1000).toISOString();
+const mins = (m) => new Date(Date.now() - m * 60 * 1000).toISOString();
 
 export const MOCK_INCIDENTS = [
   // --- MILAN INCIDENTS (MATCHING THE MAP & MARKETING DEMO) ---

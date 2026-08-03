@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Slider } from '@/components/ui/slider';
 import { useQuery } from '@tanstack/react-query';
 import { calcDistance, TYPE_CONFIG, MOCK_INCIDENTS } from '@/components/data/mockData';
+import { fetchAllLiveSentinelFeeds } from '@/lib/newsScraper';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import {
@@ -39,15 +40,15 @@ export default function Home() {
     queryKey: ['incidents'],
     queryFn: async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/incidents');
-        if (!res.ok) return MOCK_INCIDENTS;
-        const data = await res.json();
-        return Array.isArray(data) && data.length > 0 ? data : MOCK_INCIDENTS;
+        const liveFeeds = await fetchAllLiveSentinelFeeds();
+        const combined = [...liveFeeds, ...MOCK_INCIDENTS];
+        // Sort by created_date desc so freshest events appear at the top
+        return combined.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
       } catch {
         return MOCK_INCIDENTS;
       }
     },
-    refetchInterval: 10000, // auto-refresh every 10s
+    refetchInterval: 15000, // auto-refresh live feeds every 15s
   });
   const readStatuses = useLiveQuery(() => db.readStatus.toArray(), []) || [];
   const readIncidentIds = new Set(readStatuses.map(rs => rs.incidentId));
