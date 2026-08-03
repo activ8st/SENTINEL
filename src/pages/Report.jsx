@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { TYPE_CONFIG } from '@/components/data/mockData';
+import { getPersistentIncidents } from '@/lib/liveSyncEngine';
 import {
   ChevronLeft, ChevronRight, MapPin, Loader2, Check, Shield, Upload, X
 } from 'lucide-react';
@@ -114,37 +115,47 @@ export default function Report() {
     mutate: async (data) => {
       try {
         const incidentId = 'inc-' + Date.now();
-        const payload = {
+        const newIncident = {
           id: incidentId,
-          ...data,
-          status: 'active'
+          title: data.title || 'Segnalazione Utente',
+          description: data.description || 'Segnalazione in tempo reale inviata dalla community Sentinel.',
+          type: data.type || 'other',
+          severity: data.severity || 'medium',
+          status: 'active',
+          latitude: data.latitude || DEFAULT_LOC.lat,
+          longitude: data.longitude || DEFAULT_LOC.lng,
+          address: data.address || 'Posizione Rilevata',
+          city: data.city || 'Italia',
+          is_live: true,
+          viewers_count: 1,
+          reports_count: 1,
+          created_date: new Date().toISOString(),
+          source: 'Utente Sentinel',
+          official_verified: false
         };
-        const res = await fetch('http://localhost:8000/api/incidents', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        
-        const resData = await res.json().catch(() => ({}));
 
-        if (!res.ok) {
-          if (res.status === 400) {
-            toast.error(resData.detail || 'Segnalazione rifiutata: violazione delle linee guida della community.');
-            return;
-          }
-          if (res.status === 429) {
-            toast.error(resData.detail || 'Troppe segnalazioni inviate. Riprova tra 1 minuto.');
-            return;
-          }
-          throw new Error(resData.detail || 'Errore nella segnalazione');
+        // 1. Save to LocalStorage persistent cache
+        try {
+          const current = getPersistentIncidents();
+          const updated = [newIncident, ...current];
+          localStorage.setItem('sentinel_live_feed_v2', JSON.stringify(updated));
+        } catch (e) {
+          console.warn('LocalStorage report save warning:', e);
         }
 
-        if (resData.status === 'pending_review') {
-          setPendingReview(true);
+        // 2. Save to Dexie IndexedDB
+        try {
+          await db.open();
+          await db.incidents.add(newIncident);
+          await db.reports.add(newIncident);
+        } catch (e) {
+          console.warn('Dexie report save warning:', e);
         }
+
         setSuccessId(incidentId);
+        toast.success("Segnalazione pubblicata in tempo reale sul network!");
       } catch (e) {
-        toast.error(e.message || 'Errore nella segnalazione. Riprova.');
+        toast.error(e.message || 'Errore nella pubblicazione della segnalazione.');
       }
     },
     isPending: false

@@ -11,6 +11,7 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { MOCK_INCIDENTS, calcDistance, TYPE_CONFIG, SEVERITY_CONFIG } from '@/components/data/mockData';
+import { getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -65,23 +66,13 @@ export default function Notifications() {
     localStorage.setItem('sentinel_dismissed_ids', JSON.stringify([...updatedSet]));
   };
 
-  // Safe Query for incidents with MOCK_INCIDENTS fallback
-  const { data: fetchedAlerts = MOCK_INCIDENTS } = useQuery({
+  // Safe Query for incidents with persistent storage fallback
+  const { data: fetchedAlerts = getPersistentIncidents() } = useQuery({
     queryKey: ['incidents-notifications'],
     queryFn: async () => {
-      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-        return MOCK_INCIDENTS;
-      }
-      try {
-        const res = await fetch('http://localhost:8000/api/incidents');
-        if (!res.ok) return MOCK_INCIDENTS;
-        const data = await res.json();
-        return data.length > 0 ? data : MOCK_INCIDENTS;
-      } catch (e) {
-        return MOCK_INCIDENTS;
-      }
+      return getPersistentIncidents();
     },
-    initialData: MOCK_INCIDENTS,
+    initialData: () => getPersistentIncidents(),
   });
 
   const alerts = useMemo(() =>

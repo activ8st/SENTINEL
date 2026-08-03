@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { calcDistance } from '@/components/data/mockData';
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeDB } from '@/lib/db';
+import { getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
@@ -43,18 +44,11 @@ const AuthenticatedApp = () => {
   const prevIncidentIdsRef = useRef(new Set());
   const isFirstFetchRef = useRef(true);
 
-  // Poll backend for incidents every 30s
+  // Poll incidents for radar alerts
   const { data: dbIncidents = [] } = useQuery({
     queryKey: ['incidents-alerts'],
     queryFn: async () => {
-      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') return [];
-      try {
-        const res = await fetch('http://localhost:8000/api/incidents');
-        if (!res.ok) return [];
-        return await res.json();
-      } catch (e) {
-        return [];
-      }
+      return getPersistentIncidents();
     },
     refetchInterval: 30000,
   });

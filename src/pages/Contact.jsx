@@ -97,23 +97,6 @@ export default function Contact() {
 
     setLoading(false);
     setSubmitted(true);
-    toast.success("Messaggio inviato con successo ed autoresponder spedito!");
-
-    // Fallback: try localhost backend if available
-    try {
-      if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-        await fetch('http://localhost:8000/api/contact', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, message })
-        });
-      }
-    } catch (err) {
-      console.log("Localhost fetch bypassed");
-    }
-
-    setLoading(false);
-    setSubmitted(true);
     toast.success("Messaggio registrato con successo! Ti risponderemo a breve.");
   };
 
