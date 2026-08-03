@@ -13,6 +13,8 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 
 import IncidentMap from '@/components/incidents/IncidentMap';
 
+import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
+
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
 const TIME_WINDOWS = [
@@ -33,7 +35,7 @@ const getIncidentDate = (incident) => new Date(incident.created_date || incident
 const isInTimeWindow = (incident, windowIndex) => {
   const selected = TIME_WINDOWS[windowIndex] || TIME_WINDOWS[0];
   const ageHours = (Date.now() - getIncidentDate(incident).getTime()) / 36e5;
-  return ageHours >= 0 && ageHours <= selected.maxHours;
+  return Math.max(0, ageHours) <= (selected ? selected.maxHours : 720);
 };
 
 export default function MapView() {
@@ -120,19 +122,12 @@ export default function MapView() {
     }
   }, []);
 
-  const { data: apiIncidents = MOCK_INCIDENTS, refetch, isFetching } = useQuery({
+  const { data: apiIncidents = getPersistentIncidents(), refetch, isFetching } = useQuery({
     queryKey: ['incidents'],
     queryFn: async () => {
-      try {
-        const res = await fetch('http://localhost:8000/api/incidents');
-        if (!res.ok) return MOCK_INCIDENTS;
-        const data = await res.json();
-        return Array.isArray(data) && data.length > 0 ? data : MOCK_INCIDENTS;
-      } catch {
-        return MOCK_INCIDENTS;
-      }
+      return await syncSentinelFeedsPermanently();
     },
-    refetchInterval: 10000,
+    refetchInterval: 15000,
   });
 
   const incidents = useMemo(() => apiIncidents

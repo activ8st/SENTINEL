@@ -8,14 +8,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Slider } from '@/components/ui/slider';
 import { useQuery } from '@tanstack/react-query';
 import { calcDistance, TYPE_CONFIG, MOCK_INCIDENTS } from '@/components/data/mockData';
-import { fetchAllLiveSentinelFeeds } from '@/lib/newsScraper';
+import { syncSentinelFeedsPermanently, getPersistentIncidents, startPermanentBackgroundSync } from '@/lib/liveSyncEngine';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
-import {
-  Navigation, RefreshCw, Filter, SlidersHorizontal,
-  AlertTriangle, Flame, Car, Heart, Eye, Radio, CloudLightning, HelpCircle,
-  CheckSquare, Square, Shield
-} from 'lucide-react';
+
+startPermanentBackgroundSync();
 
 const SORT_OPTIONS = [
   { value: 'distance', label: 'Distanza' },
@@ -36,17 +33,10 @@ const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 export default function Home() {
   const [location, setLocation] = useState(DEFAULT_LOC);
   const [locLabel, setLocLabel] = useState('Roma, Italia');
-  const { data: liveIncidents = MOCK_INCIDENTS, refetch, isLoading: isApiLoading } = useQuery({
+  const { data: liveIncidents = getPersistentIncidents(), refetch, isLoading: isApiLoading } = useQuery({
     queryKey: ['incidents'],
     queryFn: async () => {
-      try {
-        const liveFeeds = await fetchAllLiveSentinelFeeds();
-        const combined = [...liveFeeds, ...MOCK_INCIDENTS];
-        // Sort by created_date desc so freshest events appear at the top
-        return combined.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-      } catch {
-        return MOCK_INCIDENTS;
-      }
+      return await syncSentinelFeedsPermanently();
     },
     refetchInterval: 15000, // auto-refresh live feeds every 15s
   });
