@@ -8,11 +8,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Slider } from '@/components/ui/slider';
 import { useQuery } from '@tanstack/react-query';
 import { calcDistance, TYPE_CONFIG, MOCK_INCIDENTS } from '@/components/data/mockData';
-import { syncSentinelFeedsPermanently, getPersistentIncidents, startPermanentBackgroundSync } from '@/lib/liveSyncEngine';
+import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
-
-startPermanentBackgroundSync();
 
 const SORT_OPTIONS = [
   { value: 'distance', label: 'Distanza' },
