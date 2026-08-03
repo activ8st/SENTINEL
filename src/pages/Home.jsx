@@ -45,8 +45,14 @@ export default function Home() {
   });
   const readStatuses = useLiveQuery(() => db.readStatus.toArray(), []) || [];
   const readIncidentIds = new Set(readStatuses.map(rs => rs.incidentId));
-  const [incidents, setIncidents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [incidents, setIncidents] = useState(() => {
+    const rawData = getPersistentIncidents();
+    return rawData.map(inc => ({
+      ...inc,
+      distance: calcDistance(DEFAULT_LOC.lat, DEFAULT_LOC.lng, inc.latitude, inc.longitude)
+    }));
+  });
+  const [loading, setLoading] = useState(false);
   const [sortBy, setSortBy] = useState('distance');
   const [activeTypes, setActiveTypes] = useState(Object.keys(TYPE_CONFIG));
   const [showFilters, setShowFilters] = useState(false);

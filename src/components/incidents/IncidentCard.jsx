@@ -2,12 +2,9 @@ import React from 'react';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { MapPin, Clock, Users, ChevronRight, Radio, AlertTriangle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { MapPin, Clock, ChevronRight } from 'lucide-react';
 import { TYPE_CONFIG, SEVERITY_CONFIG, STATUS_CONFIG } from '@/components/data/mockData';
-import VoteButtons from '@/components/incidents/VoteButtons';
 import AerialView from '@/components/incidents/AerialView';
-import { ReliabilityBadge } from '@/components/data/reliability';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -23,117 +20,94 @@ export default function IncidentCard({ incident, distance, unread = false }) {
 
   const [showAerial, setShowAerial] = React.useState(false);
 
+  const emojiIcon = type.emoji || type.icon || '⚠️';
+
   return (
-    <Link to={createPageUrl('IncidentDetail') + `?id=${incident.id}`}>
-      <div className={`relative flex gap-3 p-4 rounded-2xl border border-gray-200 dark:border-white/8 
-                      bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/80 active:scale-[0.99] transition-all 
-                      border-l-4 ${severity.border} ${unread ? 'ring-1 ring-orange-500/30' : ''}`}>
-        {/* Unread dot */}
-        {unread && (
-          <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-orange-500" />
-        )}
-
-        {/* Type icon */}
-        <div className={`flex-shrink-0 w-11 h-11 rounded-xl ${type.bg} ${type.text} flex items-center justify-center`}>
-          <type.icon className="w-5 h-5" />
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 min-w-0">
-          {/* Top row */}
-          <div className="flex items-start gap-2 mb-1">
-            <span className={`text-xs font-semibold uppercase tracking-wide ${type.text}`}>
+    <Link to={createPageUrl('IncidentDetail') + `?id=${incident.id}`} className="block group">
+      <div className={`relative flex flex-col p-5 rounded-2xl border transition-all duration-300
+                      bg-white dark:bg-[#0d1017] hover:bg-slate-50 dark:hover:bg-[#121622] 
+                      border-slate-200 dark:border-white/10 shadow-lg hover:shadow-2xl hover:border-[#10b981]/40
+                      border-l-4 ${severity.border} ${unread ? 'ring-2 ring-emerald-500/40' : ''}`}>
+        
+        {/* Top Header Row */}
+        <div className="flex items-center justify-between mb-3 gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            {/* Category Icon Box */}
+            <div className={`w-9 h-9 rounded-xl ${type.bg} border border-white/10 flex items-center justify-center text-lg shrink-0 shadow-inner`}>
+              <span>{emojiIcon}</span>
+            </div>
+            <span className={`text-xs font-black uppercase tracking-wider ${type.text} truncate`}>
               {type.label}
             </span>
-            <span className={`ml-auto flex items-center gap-1 text-xs ${status.text}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${status.dot} ${incident.status === 'active' ? 'animate-pulse' : ''}`} />
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {incident.is_live && (
+              <span className="flex items-center gap-1 bg-red-600/90 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow">
+                🔴 LIVE
+              </span>
+            )}
+            <span className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${status.bg}`}>
+              <span className={`w-1.5 h-1.5 rounded-full bg-current ${incident.status === 'active' ? 'animate-pulse' : ''}`} />
               {status.label}
             </span>
           </div>
+        </div>
 
-          {/* Title */}
-          <p className="text-gray-900 dark:text-white font-semibold leading-snug line-clamp-2 pr-4">
-            {incident.title}
-          </p>
+        {/* Card Title */}
+        <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 mb-3 group-hover:text-[#10b981] transition-colors">
+          {incident.title}
+        </h3>
 
-          {/* Meta row */}
-          <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              <span className="truncate max-w-[120px]">{incident.address || incident.city}</span>
-            </span>
+        {/* Clean Meta Row (Location, Distance, Time) - NO OVERLAP */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-white/60 pt-3 border-t border-slate-100 dark:border-white/5">
+          <div className="flex items-center gap-1.5 min-w-0 max-w-[55%]">
+            <MapPin className="w-3.5 h-3.5 text-[#10b981] shrink-0" />
+            <span className="truncate font-medium">{incident.address || incident.city}</span>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0 ml-auto">
             {formatDist(distance) && (
-              <span className="text-orange-400 font-medium">{formatDist(distance)}</span>
+              <span className="font-extrabold text-[#10b981] bg-[#10b981]/15 border border-[#10b981]/30 px-2 py-0.5 rounded-md text-[11px]">
+                {formatDist(distance)}
+              </span>
             )}
-            <span className="flex items-center gap-1 ml-auto">
-              <Clock className="w-3 h-3" />
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 dark:text-white/50">
+              <Clock className="w-3 h-3 text-slate-400" />
               {formatDistanceToNow(new Date(incident.created_date), { addSuffix: false, locale: it })} fa
             </span>
           </div>
-
-          {/* Live badge & Aerial View */}
-          <div className="mt-2 flex items-center gap-2">
-            {incident.is_live && (
-              <Badge className="bg-red-600 text-white text-xs animate-pulse px-2 py-0.5">
-                🔴 LIVE
-              </Badge>
-            )}
-
-            <Dialog open={showAerial} onOpenChange={setShowAerial}>
-              <DialogTrigger asChild>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowAerial(true);
-                  }}
-                  className="text-xs bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded flex items-center gap-1 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                >
-                  🚁 Vista Drone 3D
-                </button>
-              </DialogTrigger>
-              <DialogContent 
-                className="sm:max-w-md bg-gray-950 border-gray-800 p-0 overflow-hidden" 
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-              >
-                <DialogTitle className="sr-only">Vista Drone 3D</DialogTitle>
-                <div className="h-[300px] w-full">
-                  <AerialView address={incident.address || incident.city} />
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          {/* Verifica community + affidabilità segnalatore */}
-          <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 dark:border-gray-800 pt-2">
-            <div className="flex items-center gap-3">
-              <VoteButtons incident={incident} />
-              {incident.reported_by_id && (
-                <button 
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    try {
-                      await fetch(`http://localhost:8000/api/incidents/${incident.id}/report-fake`, { method: 'POST' });
-                      alert("Segnalazione Fake News registrata. Grazie!");
-                    } catch (err) {
-                      console.error(err);
-                    }
-                  }}
-                  className="text-[11px] text-gray-400 hover:text-red-500 flex items-center gap-1 transition-colors"
-                  title="Segnala come Fake News"
-                >
-                  <AlertTriangle className="w-3 h-3" /> Fake?
-                </button>
-              )}
-            </div>
-            {incident.reported_by_id && (
-              <ReliabilityBadge karma={incident.reporter_karma ?? 0} compact />
-            )}
-          </div>
         </div>
 
-        <ChevronRight className="flex-shrink-0 self-center w-4 h-4 text-gray-600" />
+        {/* Action Strip */}
+        <div className="mt-3 pt-2 flex items-center justify-between text-xs">
+          <Dialog open={showAerial} onOpenChange={setShowAerial}>
+            <DialogTrigger asChild>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowAerial(true);
+                }}
+                className="text-[11px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/80 px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition"
+              >
+                <span>🚁 Vista Drone 3D</span>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl bg-slate-900 border-white/10 text-white">
+              <DialogTitle className="text-lg font-bold flex items-center gap-2">
+                <span>🚁 Vista Perimetrale 3D</span>
+                <span className="text-xs text-[#10b981] font-mono">({incident.title})</span>
+              </DialogTitle>
+              <AerialView incident={incident} />
+            </DialogContent>
+          </Dialog>
+
+          <span className="text-slate-400 dark:text-white/40 group-hover:text-[#10b981] transition-colors flex items-center gap-1 text-[11px] font-bold">
+            Dettagli <ChevronRight className="w-3.5 h-3.5" />
+          </span>
+        </div>
+
       </div>
     </Link>
   );
