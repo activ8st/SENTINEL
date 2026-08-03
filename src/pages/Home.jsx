@@ -11,6 +11,11 @@ import { calcDistance, TYPE_CONFIG, MOCK_INCIDENTS } from '@/components/data/moc
 import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
+import {
+  Navigation, RefreshCw, Filter, SlidersHorizontal,
+  AlertTriangle, Flame, Car, Heart, Eye, Radio, CloudLightning, HelpCircle,
+  CheckSquare, Square, Shield
+} from 'lucide-react';
 
 const SORT_OPTIONS = [
   { value: 'distance', label: 'Distanza' },
