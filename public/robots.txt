@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sentinel-app.it/sitemap.xml
+Sitemap: https://sentinel-italy.vercel.app/sitemap.xml
