@@ -8,22 +8,39 @@ import AerialView from '@/components/incidents/AerialView';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 
+const safeFormatTimeAgo = (dateStr) => {
+  try {
+    if (!dateStr) return 'poco fa';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'poco fa';
+    return formatDistanceToNow(d, { addSuffix: false, locale: it });
+  } catch (e) {
+    return 'poco fa';
+  }
+};
+
 export default function IncidentCard({ incident, distance, unread = false }) {
-  const type = TYPE_CONFIG[incident.type] || TYPE_CONFIG.other;
-  const severity = SEVERITY_CONFIG[incident.severity] || SEVERITY_CONFIG.medium;
-  const status = STATUS_CONFIG[incident.status] || STATUS_CONFIG.active;
+  if (!incident) return null;
+
+  const typeKey = incident.type && TYPE_CONFIG[incident.type] ? incident.type : 'other';
+  const type = TYPE_CONFIG[typeKey];
+
+  const severityKey = incident.severity && SEVERITY_CONFIG[incident.severity] ? incident.severity : 'medium';
+  const severity = SEVERITY_CONFIG[severityKey];
+
+  const statusKey = incident.status && STATUS_CONFIG[incident.status] ? incident.status : 'active';
+  const status = STATUS_CONFIG[statusKey];
 
   const formatDist = (km) => {
-    if (km === null || km === undefined) return null;
+    if (km === null || km === undefined || isNaN(km)) return null;
     return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
   };
 
   const [showAerial, setShowAerial] = React.useState(false);
-
-  const emojiIcon = type.emoji || type.icon || '⚠️';
+  const emojiIcon = type?.emoji || type?.icon || '⚠️';
 
   return (
-    <Link to={createPageUrl('IncidentDetail') + `?id=${incident.id}`} className="block group">
+    <Link to={createPageUrl('IncidentDetail') + `?id=${incident.id}`} className="block group select-none">
       <div className={`relative flex flex-col p-5 rounded-2xl border transition-all duration-300
                       bg-white dark:bg-[#0d1017] hover:bg-slate-50 dark:hover:bg-[#121622] 
                       border-slate-200 dark:border-white/10 shadow-lg hover:shadow-2xl hover:border-[#10b981]/40
@@ -56,14 +73,14 @@ export default function IncidentCard({ incident, distance, unread = false }) {
 
         {/* Card Title */}
         <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 mb-3 group-hover:text-[#10b981] transition-colors">
-          {incident.title}
+          {incident.title || 'Evento Rilevato'}
         </h3>
 
         {/* Clean Meta Row (Location, Distance, Time) - NO OVERLAP */}
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-white/60 pt-3 border-t border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-1.5 min-w-0 max-w-[55%]">
             <MapPin className="w-3.5 h-3.5 text-[#10b981] shrink-0" />
-            <span className="truncate font-medium">{incident.address || incident.city}</span>
+            <span className="truncate font-medium">{incident.address || incident.city || 'Italia'}</span>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0 ml-auto">
@@ -74,36 +91,34 @@ export default function IncidentCard({ incident, distance, unread = false }) {
             )}
             <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 dark:text-white/50">
               <Clock className="w-3 h-3 text-slate-400" />
-              {formatDistanceToNow(new Date(incident.created_date), { addSuffix: false, locale: it })} fa
+              {safeFormatTimeAgo(incident.created_date)} fa
             </span>
           </div>
         </div>
 
-        {/* Action Strip */}
-        <div className="mt-3 pt-2 flex items-center justify-between text-xs">
+        {/* 3D Drone View CTA */}
+        <div className="mt-3 flex items-center justify-between pt-2 border-t border-dashed border-slate-200 dark:border-white/5 text-[11px]">
           <Dialog open={showAerial} onOpenChange={setShowAerial}>
             <DialogTrigger asChild>
               <button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   setShowAerial(true);
                 }}
-                className="text-[11px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/80 px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition"
+                className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-700 dark:text-white/80 hover:text-[#10b981] dark:hover:text-[#10b981] bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 px-2.5 py-1 rounded-lg transition-colors border border-slate-200 dark:border-white/10"
               >
-                <span>🚁 Vista Drone 3D</span>
+                🚁 Vista Drone 3D
               </button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl bg-slate-900 border-white/10 text-white">
-              <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                <span>🚁 Vista Perimetrale 3D</span>
-                <span className="text-xs text-[#10b981] font-mono">({incident.title})</span>
-              </DialogTitle>
-              <AerialView incident={incident} />
+            <DialogContent className="max-w-4xl p-0 bg-black border-slate-800 text-white overflow-hidden rounded-2xl">
+              <DialogTitle className="sr-only">Vista Drone 3D per {incident.title}</DialogTitle>
+              <AerialView incident={incident} onClose={() => setShowAerial(false)} />
             </DialogContent>
           </Dialog>
 
-          <span className="text-slate-400 dark:text-white/40 group-hover:text-[#10b981] transition-colors flex items-center gap-1 text-[11px] font-bold">
+          <span className="inline-flex items-center gap-1 text-slate-400 dark:text-white/40 group-hover:text-[#10b981] font-bold transition-colors">
             Dettagli <ChevronRight className="w-3.5 h-3.5" />
           </span>
         </div>
