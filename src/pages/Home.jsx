@@ -69,14 +69,17 @@ export default function Home() {
     localStorage.setItem('sentinelRadiusKm', String(radius));
   }, [radius]);
 
+  useEffect(() => {
+    startPermanentBackgroundSync();
+  }, []);
+
   const loadData = useCallback((loc) => {
-    const rawData = (liveIncidents && liveIncidents.length > 0) ? liveIncidents : MOCK_INCIDENTS;
+    const rawData = (liveIncidents && liveIncidents.length > 0) ? liveIncidents : getPersistentIncidents();
     const withDistance = rawData.map(inc => ({
       ...inc,
       distance: calcDistance(loc.lat, loc.lng, inc.latitude, inc.longitude),
     }));
     setIncidents(withDistance);
-    setLoading(false);
   }, [liveIncidents]);
 
   useEffect(() => {
