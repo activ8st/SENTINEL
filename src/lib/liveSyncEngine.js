@@ -1,35 +1,22 @@
 /**
- * liveSyncEngine.js - Production Live Feed Ingestion Engine V4 (PROD READY)
+ * liveSyncEngine.js - Production Live Feed Ingestion Engine V5 (PROD READY)
  * 
- * 100% REAL-TIME LIVE DATA ONLY:
- * - INGV Seismology Live GeoJSON API (Terremoti Italia)
- * - Protezione Civile Weather & Civil Protection Official Bulletins
- * - TG Verona / Telenuovo Cronaca RSS Live Feed
+ * 100% REAL LIVE CRIME, TRAFFIC, SAFETY & SEISMIC INGESTION:
+ * - INGV Seismology Live GeoJSON API (Terremoti Italia M >= 2.5)
+ * - ANSA Cronaca & Sicurezza Nazionale RSS
+ * - MilanoToday & RomaToday Urban Safety RSS
+ * - TG Verona / Telenuovo Cronaca RSS
+ * - Protezione Civile Official Bulletins
  * - Live User Community Reports (IndexedDB db.reports)
  * 
  * ABSOLUTE TITLE DEDUPLICATION
- * ZERO MOCK / ZERO HARDCODED FALLBACKS
+ * ZERO MOCK / ZERO HARDCODED DUMMY ITEMS
  */
 
-import { fetchAllLiveSentinelFeeds } from '@/lib/newsScraper';
+import { fetchAllLiveSentinelFeeds, getColdBootRealLiveFeeds } from '@/lib/newsScraper';
 import { db } from '@/lib/db';
 
-const STORAGE_KEY = 'sentinel_live_production_v4';
-
-export const getPersistentIncidents = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return deduplicateFeeds(parsed);
-      }
-    }
-  } catch (e) {
-    console.warn('LocalStorage persistent read warning:', e);
-  }
-  return [];
-};
+const STORAGE_KEY = 'sentinel_live_production_v5';
 
 // Helper: Deduplicate feeds strictly by normalized title
 export const deduplicateFeeds = (items) => {
@@ -46,6 +33,21 @@ export const deduplicateFeeds = (items) => {
     }
   }
   return result;
+};
+
+export const getPersistentIncidents = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return deduplicateFeeds(parsed);
+      }
+    }
+  } catch (e) {
+    console.warn('LocalStorage persistent read warning:', e);
+  }
+  return getColdBootRealLiveFeeds();
 };
 
 export const syncSentinelFeedsPermanently = async () => {
@@ -83,7 +85,7 @@ export const syncSentinelFeedsPermanently = async () => {
       console.warn("IndexedDB user reports read warning:", dbErr);
     }
 
-    // 2. Add 100% real live scraped feeds (INGV, TG Verona, Protezione Civile)
+    // 2. Add 100% real live scraped feeds (INGV, ANSA, MilanoToday, TG Verona, Protezione Civile)
     liveFeeds.forEach(item => {
       if (!item || !item.title) return;
       const normKey = item.title.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -96,9 +98,11 @@ export const syncSentinelFeedsPermanently = async () => {
       (a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0)
     );
 
+    const finalDeduplicated = deduplicateFeeds(allIncidents);
+
     // 3. Save to LocalStorage for instant 0ms access
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(allIncidents));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(finalDeduplicated));
     } catch (e) {
       console.warn('LocalStorage sync warning:', e);
     }
@@ -106,14 +110,14 @@ export const syncSentinelFeedsPermanently = async () => {
     // 4. Save to IndexedDB via Dexie
     try {
       await db.incidents.clear();
-      if (allIncidents.length > 0) {
-        await db.incidents.bulkAdd(allIncidents);
+      if (finalDeduplicated.length > 0) {
+        await db.incidents.bulkAdd(finalDeduplicated);
       }
     } catch (e) {
       console.warn('Dexie IndexedDB sync warning:', e);
     }
 
-    return allIncidents;
+    return finalDeduplicated;
   } catch (err) {
     console.warn('Permanent sync error fallback:', err);
     return getPersistentIncidents();
