@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ShieldCheck, Mail, ArrowRight, CheckCircle2, MapPin, Share2, Copy, Sparkles, Trophy } from 'lucide-react';
 import { trackEvent } from '@/lib/analytics';
 import { toast } from 'sonner';
@@ -11,6 +11,17 @@ export default function WaitlistModal({ isOpen, onClose }) {
   const [customCity, setCustomCity] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Close on ESC key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -109,21 +120,23 @@ export default function WaitlistModal({ isOpen, onClose }) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-300 font-sans"
+      className="fixed inset-0 z-50 flex items-center justify-center pt-20 pb-6 px-4 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-300 font-sans"
       style={{ fontFamily: "'Funnel Display', sans-serif" }}
       onClick={onClose}
     >
       <div 
-        className="relative w-full max-w-lg bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/15 rounded-[2.2rem] p-6 sm:p-8 shadow-2xl overflow-hidden text-slate-900 dark:text-white"
+        className="relative w-full max-w-lg max-h-[82vh] my-auto overflow-y-auto bg-white dark:bg-[#0c0e14] border border-slate-200 dark:border-white/15 rounded-[2.2rem] p-6 sm:p-8 shadow-2xl text-slate-900 dark:text-white select-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Ambient Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#10b981]/15 blur-[120px] pointer-events-none" />
 
-        {/* Close Button */}
+        {/* Clear, Visible, Touch-Friendly Close Button "X" (Top-Right) */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 w-10 h-10 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-full flex items-center justify-center text-slate-900 dark:text-white transition-colors border border-slate-200 dark:border-white/10 z-20"
+          type="button"
+          aria-label="Chiudi finestra"
+          className="absolute top-4 right-4 sm:top-5 sm:right-5 w-9 h-9 sm:w-10 sm:h-10 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-900 dark:text-white rounded-full flex items-center justify-center border border-slate-300 dark:border-white/20 shadow-md transition-all active:scale-90 z-30"
         >
           <X className="w-5 h-5" />
         </button>
@@ -136,7 +149,7 @@ export default function WaitlistModal({ isOpen, onClose }) {
               {lang === 'en' ? 'Revolut-Style City Unlock Waitlist' : 'Sblocca la tua Città in Priorità'}
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-2 leading-tight">
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-2 leading-tight pr-8">
               {lang === 'en' ? 'Where do you want Sentinel first?' : 'Dove vuoi attivare Sentinel prima?'}
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-white/70 font-normal mb-6 leading-relaxed">
@@ -199,89 +212,90 @@ export default function WaitlistModal({ isOpen, onClose }) {
               )}
 
               {/* Email Input */}
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 dark:text-white/40 absolute left-4 top-1/2 -translate-y-1/2" />
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-100 dark:bg-[#050505] border border-slate-300 dark:border-white/15 rounded-xl pl-11 pr-4 py-3.5 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-[#10b981] transition-colors"
-                  placeholder="Inserisci la tua email..."
-                  required
-                />
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-white/70 block mb-1">
+                  {lang === 'en' ? 'Your Email Address:' : 'La tua Email per la Notifica:'}
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-slate-100 dark:bg-[#050505] border border-slate-300 dark:border-white/10 rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-[#10b981]"
+                    placeholder="nome@email.com"
+                    required
+                  />
+                </div>
               </div>
 
-              {/* Submit CTA */}
-              <button 
+              <button
                 type="submit"
-                className="w-full inline-flex items-center justify-center gap-2 bg-[#10b981] hover:bg-[#059669] text-black font-bold text-sm sm:text-base py-4 rounded-xl transition-all hover:scale-[1.01] shadow-[0_0_25px_rgba(16,185,129,0.35)]"
+                className="w-full bg-[#10b981] hover:bg-[#059669] text-black font-bold py-3.5 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.3)] mt-2"
               >
-                Sblocca {selectedCityName} & Riserva Founder Badge
+                <span>{lang === 'en' ? `Join Waitlist for ${selectedCityName}` : `Richiedi Accesso per ${selectedCityName}`}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
-
             </form>
-
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between text-[10px] text-slate-500 dark:text-white/50">
-              <span> iOS TestFlight & Android Beta</span>
-              <span>100% Gratuito · No Spam</span>
-            </div>
           </div>
         ) : (
-          /* REVOLUT-STYLE SUCCESS SCREEN */
-          <div className="text-center py-2 animate-in zoom-in-95 duration-300">
-            
-            <div className="w-16 h-16 bg-[#10b981]/20 border border-[#10b981]/40 rounded-full flex items-center justify-center mx-auto mb-4 text-[#10b981]">
-              <CheckCircle2 className="w-9 h-9" />
+          /* SUCCESS / REVOLUT REFERRAL SCREEN */
+          <div className="text-center py-4 animate-in fade-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-[#10b981]/20 rounded-full flex items-center justify-center text-[#10b981] mx-auto mb-4 border border-[#10b981]/40">
+              <CheckCircle2 className="w-8 h-8" />
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-1">
-              Sei Ufficialmente in Lista!
+            <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-2">
+              Sei in Posizione Prioritaria! 🚀
             </h3>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-white/70 font-normal mb-6">
-              Hai riservato la tua priorità per <strong className="text-[#10b981]">{selectedCityName}</strong> e sbloccato il Founder Badge (+100 Karma)!
+            <p className="text-xs text-slate-600 dark:text-white/70 mb-6 max-w-sm mx-auto">
+              Hai registrato la tua richiesta per <strong className="text-[#10b981]">{selectedCityName}</strong>. Invita altri cittadini della tua zona per sbloccare la copertura prima!
             </p>
 
-            {/* VIRAL SHARE BOX */}
-            <div className="bg-slate-100 dark:bg-[#050505] border border-[#10b981]/30 p-5 rounded-2xl mb-6 text-left relative overflow-hidden text-slate-900 dark:text-white">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#10b981] uppercase tracking-wider mb-2">
-                <Trophy className="w-4 h-4 text-[#10b981]" />
-                Fai Scalare la Tua Città (+5 Posizioni)
+            {/* Referral Link Box */}
+            <div className="bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl p-4 mb-6 text-left">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-white/80 mb-2">
+                <span className="flex items-center gap-1">
+                  <Trophy className="w-3.5 h-3.5 text-[#10b981]" /> Il tuo Link di Invito Personale:
+                </span>
+                <span className="text-[10px] text-[#10b981] font-mono">+5 Punti Priorità</span>
               </div>
-              <p className="text-xs text-slate-600 dark:text-white/60 font-normal mb-4 leading-relaxed">
-                Condividi il tuo link personale con i tuoi amici di {selectedCityName}. Per ogni amico che si iscrive col tuo link, fai scalare la tua città nella classifica di lancio.
-              </p>
 
-              {/* Share Buttons */}
-              <div className="space-y-2">
-                <button
-                  onClick={handleWhatsAppShare}
-                  className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md"
-                >
-                  <Share2 className="w-4 h-4" />
-                  Condividi su WhatsApp con i tuoi Amici
-                </button>
-
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={shareUrl}
+                  className="flex-1 bg-white dark:bg-[#050505] border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-[10px] text-slate-600 dark:text-white/70 font-mono truncate"
+                />
                 <button
                   onClick={handleCopy}
-                  className="w-full bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/15 text-slate-900 dark:text-white font-medium text-xs py-2.5 rounded-xl flex items-center justify-center gap-2 border border-slate-300 dark:border-white/10 transition-colors"
+                  className="bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-900 dark:text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition"
                 >
-                  <Copy className="w-3.5 h-3.5 text-[#10b981]" />
-                  {copied ? 'Link Copiato!' : 'Copia Link Personale'}
+                  <Copy className="w-3.5 h-3.5" />
+                  {copied ? 'Copiato!' : 'Copia'}
                 </button>
               </div>
             </div>
 
-            <button
-              onClick={onClose}
-              className="text-xs text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white underline transition-colors"
-            >
-              Chiudi e torna alla Landing Page
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleWhatsAppShare}
+                className="flex-1 bg-[#25D366] hover:bg-[#1ebd59] text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-md"
+              >
+                <Share2 className="w-4 h-4" />
+                Condividi su WhatsApp
+              </button>
 
+              <button
+                onClick={onClose}
+                className="px-6 py-3 bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-900 dark:text-white font-bold rounded-xl text-xs transition"
+              >
+                Chiudi
+              </button>
+            </div>
           </div>
         )}
-
       </div>
     </div>
   );

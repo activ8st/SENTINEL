@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { X, ShieldAlert, Zap } from 'lucide-react';
 import Map, { Marker } from 'react-map-gl';
@@ -7,23 +7,36 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 export default function ItalyMapModal({ isOpen, onClose }) {
   const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || ('pk.eyJ1IjoiYWN0aXY4c3QiLCJh' + 'IjoiY21yYzc3bmVtMDBtajJ3cnowMGExMDBycyJ9.mM-UgVYY8UhIVAB5Hxd2mw');
 
+  // ESC Key Listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]/95 backdrop-blur-3xl animate-in fade-in duration-500 font-sans select-none" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
-      {/* Close button */}
+      {/* Clear, Visible, Touch-Friendly Close Button "X" (Top-Right) */}
       <button 
         onClick={onClose}
-        className="absolute top-8 right-8 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors z-[60] border border-white/20 shadow-2xl"
+        type="button"
+        aria-label="Chiudi mappa 3D"
+        className="absolute top-5 right-5 sm:top-6 sm:right-6 w-10 h-10 bg-white/10 hover:bg-white/20 active:scale-90 rounded-full flex items-center justify-center text-white transition-all z-[70] border border-white/20 shadow-2xl"
       >
-        <X className="w-6 h-6" />
+        <X className="w-5 h-5" />
       </button>
 
       {/* Header */}
-      <div className="absolute top-10 text-center z-[60] pointer-events-none px-4">
-        <h2 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-1 drop-shadow-2xl">La Rete è Viva</h2>
-        <p className="text-emerald-400 text-sm md:text-base font-semibold">Milano in tempo reale · Mapbox 3D Live</p>
+      <div className="absolute top-6 sm:top-8 text-center z-[60] pointer-events-none px-4">
+        <h2 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight mb-1 drop-shadow-2xl">La Rete è Viva</h2>
+        <p className="text-emerald-400 text-xs md:text-sm font-semibold">Milano in tempo reale · Mapbox 3D Live</p>
       </div>
 
       {/* Map Container */}
@@ -63,29 +76,19 @@ export default function ItalyMapModal({ isOpen, onClose }) {
             </div>
           </Marker>
         </Map>
+      </div>
 
-        {/* Floating Bottom Bar */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[60] w-full max-w-md px-4">
-          <div className="bg-[#0c0c0c]/95 border border-white/20 p-4 rounded-2xl backdrop-blur-2xl shadow-2xl flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#10b981]/20 border border-[#10b981]/40 rounded-xl flex items-center justify-center text-[#10b981]">
-                <Zap className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-sm font-bold text-white">Sentinel 3D Live</div>
-                <div className="text-xs text-[#10b981] font-semibold">● Milano · Piazza Gae Aulenti</div>
-              </div>
-            </div>
-
-            <Link
-              to="/Auth"
-              onClick={onClose}
-              className="bg-[#10b981] hover:bg-[#059669] text-black px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg transition-transform hover:scale-105"
-            >
-              Accedi
-            </Link>
-          </div>
-        </div>
+      {/* Bottom Floating Bar */}
+      <div className="absolute bottom-6 z-[60] bg-[#0c0e14]/90 backdrop-blur-md border border-[#10b981]/50 px-5 py-3 rounded-full flex items-center gap-3 shadow-2xl">
+        <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] animate-pulse" />
+        <span className="text-xs font-bold text-white">Network Attivo · Milano & Verona</span>
+        <Link
+          to="/Auth"
+          onClick={onClose}
+          className="ml-2 bg-[#10b981] hover:bg-[#059669] text-black text-xs font-extrabold px-4 py-1.5 rounded-full transition-all hover:scale-105"
+        >
+          Accedi Ora
+        </Link>
       </div>
 
     </div>

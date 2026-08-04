@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Map, BellRing, Users, ArrowRight, CheckCircle2, Activity } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
@@ -52,33 +52,44 @@ const FEATURE_DETAILS = {
     ctaText: 'Attiva Notifiche Live',
     ctaLink: '/Auth'
   },
-  karma: {
-    id: 'karma',
+  community: {
+    id: 'community',
     icon: Users,
-    badge: 'Proof of Reputation System',
-    title: 'Karma & Reputazione Founder',
-    subtitle: 'Il primo algoritmo meritocratico che premia la veridicità ed azzera l\'allarmismo.',
-    description: `Sul web tradizionale, le notizie sensazionalistiche prendono il sopravvento. Su Sentinel vige la legge della veridicità. Ogni utente accumula un punteggio Karma pubblico basato sulla precisione delle sue segnalazioni.`,
+    badge: 'Verified Crowd-Verification Network',
+    title: 'Rete Partecipata',
+    subtitle: 'La forza del vicinato unita ad algoritmi di moderazione etica e prevenzione allarmismi.',
+    description: `La sicurezza collettiva non si costruisce sulle voci di corridoio o sui social network. Sentinel combina le segnalazioni verificate dei cittadini sul campo con un motore di validazione etica in tempo reale.`,
     bullets: [
       {
-        title: 'Validazione Prioritaria delle Segnalazioni',
-        desc: 'Le segnalazioni effettuate dagli utenti ad alto Karma (come i membri Founder con +100 Punti) saltano la coda di moderazione.'
+        title: 'Karma & Punteggio di Affidabilità',
+        desc: 'Ogni utente guadagna reputazione inviando informazioni precise. Le fake news ed i falsi allarmi vengono neutralizzati all\'origine.'
       },
       {
-        title: 'Filtro Anti-Fake News & Odio',
-        desc: 'Gli utenti che inviano informazioni false o sensazionalistiche perdono Karma fino al blocco permanente dell\'account.'
+        title: 'Zero Profilazione o Discriminazione',
+        desc: 'Filtri automatici rigidi rimuovono qualsiasi riferimento etnico o discriminatorio. Solo fatti oggettivi e verificabili: cosa, dove e quando.'
       },
       {
-        title: 'Badge Founder Esclusivo',
-        desc: 'I primi iscritti alla piattaforma ottengono lo status di Founder permanente e il diritto di voto sulla moderazione comunitaria.'
+        title: 'Sinergia Istituzionale & Notizie Locali',
+        desc: 'Le segnalazioni dei cittadini si integrano fluidamente con le notizie giornaliere TG Verona, INGV e bollettini della Protezione Civile.'
       }
     ],
-    ctaText: 'Riserva il tuo Karma Founder',
+    ctaText: 'Partecipa alla Community',
     ctaLink: '/Auth'
   }
 };
 
 export default function FeatureModal({ featureId, onClose }) {
+  // ESC Key Listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && featureId) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [featureId, onClose]);
+
   if (!featureId || !FEATURE_DETAILS[featureId]) return null;
 
   const data = FEATURE_DETAILS[featureId];
@@ -87,40 +98,38 @@ export default function FeatureModal({ featureId, onClose }) {
   return (
     <AnimatePresence>
       <div 
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-300 font-sans overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-center justify-center pt-20 pb-6 px-4 bg-black/80 backdrop-blur-2xl animate-in fade-in duration-300 font-sans select-none"
         style={{ fontFamily: "'Funnel Display', sans-serif" }}
         onClick={onClose}
       >
         <div 
-          className="relative w-full max-w-xl max-h-[85vh] my-auto bg-white dark:bg-[#0d0d0d] border border-slate-200 dark:border-white/15 rounded-[2rem] p-6 md:p-8 shadow-2xl overflow-hidden text-slate-900 dark:text-white flex flex-col"
+          className="relative w-full max-w-xl max-h-[82vh] my-auto overflow-y-auto bg-white dark:bg-[#0c0e14] border border-slate-200 dark:border-white/15 rounded-[2.2rem] p-6 sm:p-8 shadow-2xl text-slate-900 dark:text-white flex flex-col justify-between"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Ambient Glow */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#10b981]/15 blur-[100px] rounded-full pointer-events-none" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-72 bg-[#10b981]/15 blur-[100px] pointer-events-none" />
 
-          {/* Close Button */}
+          {/* Clear, Visible, Touch-Friendly Close Button "X" (Top-Right) */}
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 w-10 h-10 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-full flex items-center justify-center text-slate-900 dark:text-white transition-colors border border-slate-200 dark:border-white/10 z-20"
+            type="button"
+            aria-label="Chiudi dettagli funzionalità"
+            className="absolute top-4 right-4 sm:top-5 sm:right-5 w-9 h-9 sm:w-10 sm:h-10 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-900 dark:text-white rounded-full flex items-center justify-center border border-slate-300 dark:border-white/20 shadow-md transition-all active:scale-90 z-30"
           >
             <X className="w-5 h-5" />
           </button>
 
-          {/* Header Area */}
-          <div className="shrink-0 pr-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#10b981]/15 border border-[#10b981]/30 text-[11px] font-bold text-[#10b981] mb-4">
-              <Activity className="w-3 h-3 animate-pulse" />
-              {data.badge}
+          {/* Header */}
+          <div className="flex items-start gap-4 mb-4 pr-10">
+            <div className="w-12 h-12 rounded-2xl bg-[#10b981]/20 border border-[#10b981]/40 flex items-center justify-center text-[#10b981] shrink-0 shadow-lg">
+              <IconComponent className="w-6 h-6" />
             </div>
-
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-[#10b981]/15 border border-[#10b981]/30 flex items-center justify-center text-[#10b981] flex-shrink-0">
-                <IconComponent className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{data.title}</h2>
-                <p className="text-xs text-slate-500 dark:text-white/60 font-normal leading-snug">{data.subtitle}</p>
-              </div>
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#10b981] bg-[#10b981]/10 px-2.5 py-0.5 rounded-full border border-[#10b981]/20 inline-block mb-1">
+                {data.badge}
+              </span>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{data.title}</h2>
+              <p className="text-xs text-slate-500 dark:text-white/60 font-normal leading-snug">{data.subtitle}</p>
             </div>
           </div>
 
@@ -133,7 +142,7 @@ export default function FeatureModal({ featureId, onClose }) {
             <div className="space-y-3 pt-1">
               {data.bullets.map((bullet, idx) => (
                 <div key={idx} className="flex items-start gap-3 bg-slate-50 dark:bg-white/[0.02] p-3 rounded-xl border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white">
-                  <div className="w-5 h-5 rounded-full bg-[#10b981]/20 flex items-center justify-center text-[#10b981] flex-shrink-0 mt-0.5">
+                  <div className="w-5 h-5 rounded-full bg-[#10b981]/20 flex items-center justify-center text-[#10b981] shrink-0 mt-0.5">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                   </div>
                   <div>
