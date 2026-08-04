@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import IncidentCard from '@/components/incidents/IncidentCard';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import { useQuery } from '@tanstack/react-query';
-import { calcDistance, TYPE_CONFIG, MOCK_INCIDENTS } from '@/components/data/mockData';
+import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
 import { syncSentinelFeedsPermanently, getPersistentIncidents, startPermanentBackgroundSync } from '@/lib/liveSyncEngine';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
@@ -30,29 +30,51 @@ const TYPE_ICONS = {
   suspicious: Eye, traffic: Radio, weather: CloudLightning, other: HelpCircle,
 };
 
-// Default center: Milan (where active live incidents are located)
+// Default location center fallback
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
 export default function Home() {
   const [location, setLocation] = useState(DEFAULT_LOC);
-  const [locLabel, setLocLabel] = useState('Roma, Italia');
-  const { data: liveIncidents = getPersistentIncidents(), refetch, isLoading: isApiLoading } = useQuery({
-    queryKey: ['incidents'],
+  const [locLabel, setLocLabel] = useState('Inizializzazione GPS...');
+
+  // Start background sync loop on boot
+  useEffect(() => {
+    startPermanentBackgroundSync();
+  }, []);
+
+  // High-accuracy real-time GPS triangulation
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocLabel('Milano, Italia (Default)');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setLocation(userLoc);
+        setLocLabel(`GPS Attivo (${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)})`);
+      },
+      (err) => {
+        console.warn("GPS High Accuracy Error fallback:", err);
+        setLocLabel('La tua Posizione (GPS)');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }, []);
+
+  // Live Query from TanStack Query + Dexie
+  const { data: rawLiveIncidents = [], refetch, isFetching } = useQuery({
+    queryKey: ['incidents-production-v4'],
     queryFn: async () => {
       return await syncSentinelFeedsPermanently();
     },
-    refetchInterval: 15000, // auto-refresh live feeds every 15s
+    refetchInterval: 15000,
   });
+
   const readStatuses = useLiveQuery(() => db.readStatus.toArray(), []) || [];
   const readIncidentIds = new Set(readStatuses.map(rs => rs.incidentId));
-  const [incidents, setIncidents] = useState(() => {
-    const rawData = getPersistentIncidents();
-    return rawData.map(inc => ({
-      ...inc,
-      distance: calcDistance(DEFAULT_LOC.lat, DEFAULT_LOC.lng, inc.latitude, inc.longitude)
-    }));
-  });
-  const [loading, setLoading] = useState(false);
+
   const [sortBy, setSortBy] = useState('distance');
   const [activeTypes, setActiveTypes] = useState(Object.keys(TYPE_CONFIG));
   const [showFilters, setShowFilters] = useState(false);
@@ -69,33 +91,21 @@ export default function Home() {
     localStorage.setItem('sentinelRadiusKm', String(radius));
   }, [radius]);
 
-  useEffect(() => {
-    startPermanentBackgroundSync();
-  }, []);
+  // Combine live query data with persistent storage fallback
+  const baseIncidents = useMemo(() => {
+    if (Array.isArray(rawLiveIncidents) && rawLiveIncidents.length > 0) {
+      return rawLiveIncidents;
+    }
+    return getPersistentIncidents();
+  }, [rawLiveIncidents]);
 
-  const loadData = useCallback((loc) => {
-    const rawData = (liveIncidents && liveIncidents.length > 0) ? liveIncidents : getPersistentIncidents();
-    const withDistance = rawData.map(inc => ({
+  // Calculate dynamic distance to exact user GPS coordinates (Instant 0ms render)
+  const incidentsWithDistance = useMemo(() => {
+    return baseIncidents.map(inc => ({
       ...inc,
-      distance: calcDistance(loc.lat, loc.lng, inc.latitude, inc.longitude),
+      distance: calcDistance(location.lat, location.lng, inc.latitude, inc.longitude)
     }));
-    setIncidents(withDistance);
-  }, [liveIncidents]);
-
-  useEffect(() => {
-    loadData(location);
-
-    navigator.geolocation?.getCurrentPosition(
-      (pos) => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setLocation(loc);
-        setLocLabel('La tua posizione');
-        loadData(loc);
-      },
-      () => console.warn("Geolocalizzazione fallita o negata"),
-      { timeout: 5000, maximumAge: 60000 }
-    );
-  }, [liveIncidents, isApiLoading, loadData]);
+  }, [baseIncidents, location]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -109,19 +119,21 @@ export default function Home() {
     );
   };
 
-  const filtered = incidents
-    .filter(i => activeTypes.includes(i.type))
-    .filter(i => !showOnlyActive || i.status === 'active')
-    .filter(i => !useRadius || (i.distance ?? 999999) <= radius)
-    .sort((a, b) => {
-      if (sortBy === 'distance') return (a.distance ?? 999) - (b.distance ?? 999);
-      if (sortBy === 'time') return new Date(b.created_date) - new Date(a.created_date);
-      if (sortBy === 'severity') return SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
-      return 0;
-    });
+  const filtered = useMemo(() => {
+    return incidentsWithDistance
+      .filter(i => activeTypes.includes(i.type))
+      .filter(i => !showOnlyActive || i.status === 'active')
+      .filter(i => !useRadius || (i.distance ?? 999999) <= radius)
+      .sort((a, b) => {
+        if (sortBy === 'distance') return (a.distance ?? 99999) - (b.distance ?? 99999);
+        if (sortBy === 'time') return new Date(b.created_date || 0) - new Date(a.created_date || 0);
+        if (sortBy === 'severity') return (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99);
+        return 0;
+      });
+  }, [incidentsWithDistance, activeTypes, showOnlyActive, useRadius, radius, sortBy]);
 
-  const criticalCount = incidents.filter(i => i.severity === 'critical' && i.status === 'active').length;
-  const activeCount = incidents.filter(i => i.status === 'active').length;
+  const criticalCount = incidentsWithDistance.filter(i => i.severity === 'critical' && i.status === 'active').length;
+  const activeCount = incidentsWithDistance.filter(i => i.status === 'active').length;
   const activeFiltersCount = Object.keys(TYPE_CONFIG).length - activeTypes.length + (showOnlyActive ? 1 : 0) + (useRadius ? 1 : 0);
 
   return (
@@ -133,13 +145,20 @@ export default function Home() {
             <div className="flex items-center gap-2.5">
               <img src="/logo.svg" alt="Sentinel Logo" className="w-9 h-9 rounded-xl object-cover shadow-sm" />
               <div>
-                <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-none">Sentinel</h1>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <Navigation className="w-3 h-3 text-blue-400" />
-                  <span className="text-xs text-gray-400">{locLabel}</span>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-none">Sentinel</h1>
+                  <span className="text-[10px] font-black bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
+                    LIVE 30s
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Navigation className="w-3 h-3 text-[#10b981]" />
+                  <span className="text-xs text-gray-400 font-medium">{locLabel}</span>
                 </div>
               </div>
             </div>
+
             <div className="flex items-center gap-2">
               {criticalCount > 0 && (
                 <Badge className="bg-red-500 text-white text-xs animate-pulse">
@@ -151,10 +170,10 @@ export default function Home() {
                 size="icon"
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white w-9 h-9"
                 onClick={handleRefresh}
-                disabled={refreshing}
+                disabled={refreshing || isFetching}
                 aria-label={refreshing ? 'Aggiornamento in corso...' : 'Aggiorna feed'}
               >
-                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+                <RefreshCw className={`w-4 h-4 ${refreshing || isFetching ? 'animate-spin' : ''}`} aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -182,159 +201,165 @@ export default function Home() {
             aria-expanded={showFilters}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ml-auto
               ${activeFiltersCount > 0
-                ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
           >
-            <SlidersHorizontal className="w-3 h-3" aria-hidden="true" />
-            Filtri {activeFiltersCount > 0 ? `(${activeFiltersCount})` : ''}
+            <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>Filtri</span>
+            {activeFiltersCount > 0 && (
+              <span className="w-4 h-4 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center font-bold">
+                {activeFiltersCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="px-4 py-3 flex items-center gap-3 rounded-2xl border border-gray-200 bg-white/80 text-sm text-gray-700 shadow-sm backdrop-blur dark:border-white/10 dark:bg-gray-900/70 dark:text-gray-300">
-        <span><span className="font-semibold text-gray-900 dark:text-white">{activeCount}</span> attivi</span>
-        <span className="text-gray-400 dark:text-gray-600">·</span>
-        <span><span className="font-semibold text-gray-900 dark:text-white">{filtered.length}</span> nel feed</span>
-        {showOnlyActive && (
-          <Badge variant="outline" className="ml-auto text-xs border-gray-300 bg-gray-100 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
-            Solo attivi
-          </Badge>
-        )}
-        {useRadius && (
-          <Badge variant="outline" className="ml-auto text-xs border-orange-400 bg-orange-500/10 text-orange-500 dark:text-orange-300">
-            Entro {radius} km
-          </Badge>
-        )}
-      </div>
+      {/* Feed List */}
+      <div className="p-4 max-w-5xl mx-auto">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-xs text-gray-500 font-medium">
+            <strong className="text-gray-900 dark:text-white">{activeCount}</strong> attivi ·{' '}
+            <strong className="text-gray-900 dark:text-white">{filtered.length}</strong> nel feed
+          </span>
+        </div>
 
-      {/* Incidents list */}
-      <div className="px-4 py-4 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 pb-28">
-        {(loading || isApiLoading) ? (
-          Array(6).fill(0).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full bg-gray-100 dark:bg-gray-800/60 rounded-2xl" />
-          ))
-        ) : filtered.length === 0 ? (
-          <div className="col-span-full text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-800 flex items-center justify-center">
-              <Filter className="w-8 h-8 text-gray-600" />
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/5">
+            <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-3 text-gray-400">
+              <Shield className="w-6 h-6" />
             </div>
-            <h3 className="text-white font-semibold mb-1">Nessun incidente trovato</h3>
-            <p className="text-sm text-gray-500">Prova a cambiare i filtri</p>
+            <p className="text-sm text-gray-400 font-bold mb-1">Nessun evento rilevato nelle vicinanze</p>
+            <p className="text-xs text-gray-500 max-w-sm mx-auto mb-4">
+              La tua area è attualmente tranquilla. Lo scraper Sentinel monitora le fonti istituzionali 24/7.
+            </p>
             <Button
+              size="sm"
               variant="outline"
-              className="mt-4 border-gray-700 text-gray-300"
-              onClick={() => { setActiveTypes(Object.keys(TYPE_CONFIG)); setShowOnlyActive(false); setUseRadius(false); }}
+              onClick={() => {
+                setActiveTypes(Object.keys(TYPE_CONFIG));
+                setShowOnlyActive(false);
+                setUseRadius(false);
+              }}
+              className="text-xs border-gray-700 text-gray-300"
             >
-              Rimuovi filtri
+              Resetta tutti i filtri
             </Button>
           </div>
         ) : (
-          <AnimatePresence initial={false}>
-            {filtered.map((inc, i) => (
-              <motion.div
-                key={inc.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i < 6 ? i * 0.04 : 0 }}
-              >
-                <IncidentCard incident={inc} distance={inc.distance} unread={!readIncidentIds.has(inc.id)} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <AnimatePresence mode="popLayout">
+              {filtered.map(inc => (
+                <motion.div
+                  key={inc.id}
+                  layout
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <IncidentCard
+                    incident={inc}
+                    distance={inc.distance}
+                    unread={!readIncidentIds.has(inc.id)}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
         )}
       </div>
 
-      {/* Filters sheet */}
+      {/* Filter Sheet */}
       <Sheet open={showFilters} onOpenChange={setShowFilters}>
-        <SheetContent side="bottom" className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 rounded-t-3xl max-h-[80vh] overflow-y-auto">
-          <SheetHeader className="pb-4">
-            <SheetTitle className="text-gray-900 dark:text-white">Filtri</SheetTitle>
+        <SheetContent side="bottom" className="rounded-t-3xl bg-gray-950 border-gray-800 text-white max-h-[85vh] overflow-y-auto">
+          <SheetHeader className="pb-4 border-b border-gray-800">
+            <SheetTitle className="text-white text-base font-bold flex items-center justify-between">
+              <span>Filtra Segnalazioni Live</span>
+              {activeFiltersCount > 0 && (
+                <button
+                  onClick={() => {
+                    setActiveTypes(Object.keys(TYPE_CONFIG));
+                    setShowOnlyActive(false);
+                    setUseRadius(false);
+                  }}
+                  className="text-xs text-[#10b981] font-normal hover:underline"
+                >
+                  Resetta filtri
+                </button>
+              )}
+            </SheetTitle>
           </SheetHeader>
 
-          {/* Active only toggle */}
-          <div className="mb-6">
-            <button
-              onClick={() => setShowOnlyActive(!showOnlyActive)}
-              aria-pressed={showOnlyActive}
-              aria-label={showOnlyActive ? 'Mostra tutti gli incidenti' : 'Mostra solo incidenti attivi'}
-              className="flex items-center justify-between w-full p-3 rounded-xl bg-gray-100 dark:bg-gray-800"
-            >
-              <span className="text-gray-900 dark:text-white font-medium">Solo incidenti attivi</span>
-              {showOnlyActive
-                ? <CheckSquare className="w-5 h-5 text-orange-500" aria-hidden="true" />
-                : <Square className="w-5 h-5 text-gray-500" aria-hidden="true" />
-              }
-            </button>
-          </div>
-
-          <div className="mb-6">
-            <button
-              onClick={() => setUseRadius(!useRadius)}
-              aria-pressed={useRadius}
-              aria-label={useRadius ? 'Disattiva filtro raggio' : 'Attiva filtro raggio'}
-              className="flex items-center justify-between w-full p-3 rounded-xl bg-gray-100 dark:bg-gray-800 mb-3"
-            >
-              <span className="text-gray-900 dark:text-white font-medium">Filtra per raggio</span>
-              {useRadius
-                ? <CheckSquare className="w-5 h-5 text-orange-500" aria-hidden="true" />
-                : <Square className="w-5 h-5 text-gray-500" aria-hidden="true" />
-              }
-            </button>
-            {useRadius && (
-              <>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Distanza massima</span>
-                  <Badge variant="outline" className="text-orange-500 border-orange-500">{radius} km</Badge>
-                </div>
-                <Slider value={[radius]} onValueChange={([v]) => setRadius(v)} min={5} max={500} step={5} />
-              </>
-            )}
-          </div>
-
-          {/* Type toggles */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tipo di incidente</span>
+          <div className="py-4 space-y-6">
+            {/* Filter by Status */}
+            <div>
+              <label className="text-xs font-semibold text-gray-400 block mb-2">Stato Evento</label>
               <button
-                className="text-xs text-orange-400"
-                aria-label={activeTypes.length === Object.keys(TYPE_CONFIG).length ? 'Deseleziona tutti i tipi' : 'Seleziona tutti i tipi'}
-                onClick={() => setActiveTypes(
-                  activeTypes.length === Object.keys(TYPE_CONFIG).length
-                    ? []
-                    : Object.keys(TYPE_CONFIG)
-                )}
+                onClick={() => setShowOnlyActive(prev => !prev)}
+                className={`w-full flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition-all
+                  ${showOnlyActive
+                    ? 'bg-[#10b981]/20 border-[#10b981] text-[#10b981]'
+                    : 'bg-gray-900 border-gray-800 text-gray-300'}`}
               >
-                {activeTypes.length === Object.keys(TYPE_CONFIG).length ? 'Deseleziona tutti' : 'Seleziona tutti'}
+                <span>Solo Eventi Attivi</span>
+                {showOnlyActive ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4 text-gray-600" />}
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(TYPE_CONFIG).map(([key, cfg]) => {
-                const active = activeTypes.includes(key);
-                return (
-                  <button
-                    key={key}
-                    onClick={() => toggleType(key)}
-                    aria-pressed={active}
-                    aria-label={`${active ? 'Disattiva' : 'Attiva'} filtro: ${cfg.label}`}
-                    className={`flex items-center gap-2 p-3 rounded-xl border transition-all text-left ${
-                      active ? `${cfg.bg} border-current/30 ${cfg.text}` : 'bg-gray-800 border-gray-700 text-gray-500'
-                    }`}
-                  >
-                    <span className="text-lg" aria-hidden="true">{cfg.emoji}</span>
-                    <span className="text-sm font-medium">{cfg.label}</span>
-                  </button>
-                );
-              })}
+
+            {/* Filter by Radius */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-semibold text-gray-400">Raggio di azione GPS</label>
+                <button
+                  onClick={() => setUseRadius(prev => !prev)}
+                  className={`text-xs font-bold ${useRadius ? 'text-[#10b981]' : 'text-gray-500'}`}
+                >
+                  {useRadius ? `Attivo: entro ${radius} km` : 'Disattivato (Tutta Italia)'}
+                </button>
+              </div>
+              {useRadius && (
+                <div className="pt-2 px-1">
+                  <Slider
+                    value={[radius]}
+                    min={5}
+                    max={500}
+                    step={5}
+                    onValueChange={([val]) => setRadius(val)}
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-500 mt-2">
+                    <span>5 km</span>
+                    <span className="text-[#10b981] font-bold">{radius} km</span>
+                    <span>500 km</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Filter by Categories */}
+            <div>
+              <label className="text-xs font-semibold text-gray-400 block mb-2">Tipologie di Evento</label>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(TYPE_CONFIG).map(([key, cfg]) => {
+                  const IconComp = TYPE_ICONS[key] || TYPE_ICONS.other;
+                  const isActive = activeTypes.includes(key);
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => toggleType(key)}
+                      className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all text-left
+                        ${isActive
+                          ? `${cfg.bg} ${cfg.border} ${cfg.text}`
+                          : 'bg-gray-900 border-gray-800 text-gray-500 opacity-60'}`}
+                    >
+                      <IconComp className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{cfg.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-
-          <Button
-            className="w-full mt-6 bg-orange-500 hover:bg-orange-600 text-white"
-            onClick={() => setShowFilters(false)}
-          >
-            Applica filtri
-          </Button>
         </SheetContent>
       </Sheet>
     </div>
