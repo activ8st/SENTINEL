@@ -10,39 +10,54 @@
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
     
     <!-- SEO Meta Tags -->
-    <title>Sentinel — Sicurezza urbana in tempo reale, verificata</title>
-    <meta name="description" content="Scopri cosa succede davvero nella tua città con dati ufficiali e segnalazioni verificate. Senza allarmismo, prima che tu debba chiederlo." />
-    <meta name="keywords" content="sicurezza urbana Italia, allerte in tempo reale, app sicurezza cittadini, mappa emergenze Italia" />
+    <title>Sentinel Italia — App Sicurezza Urbana & Mappa Emergenze in Tempo Reale</title>
+    <meta name="description" content="Sentinel Italia è la prima piattaforma di sicurezza urbana partecipata. Mappa 3D, notifiche di quartiere in tempo reale, news verificate e allerte per famiglie, pendolari e cittadini." />
+    <meta name="keywords" content="Sentinel, Sentinel Italia, Sentinel App, sicurezza urbana Italia, app sicurezza cittadini, mappa crimini Milano, allerte in tempo reale, sicurezza quartiere, mappa emergenze Italia" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://sentinel-app.it/" />
-    <meta property="og:title" content="Sentinel — Sicurezza urbana in tempo reale, verificata" />
-    <meta property="og:description" content="Scopri cosa succede davvero nella tua città con dati ufficiali e segnalazioni verificate. Senza allarmismo, prima che tu debba chiederlo." />
-    <meta property="og:image" content="https://sentinel-app.it/sentinel_hero_map.png" />
+    <meta property="og:url" content="https://sentinel-italy.vercel.app/" />
+    <meta property="og:title" content="Sentinel Italia — App Sicurezza Urbana & Mappa Emergenze in Tempo Reale" />
+    <meta property="og:description" content="Sentinel Italia è la prima piattaforma di sicurezza urbana partecipata. Mappa 3D, notifiche di quartiere in tempo reale, news verificate e allerte per famiglie, pendolari e cittadini." />
+    <meta property="og:image" content="https://sentinel-italy.vercel.app/sentinel_hero_map.png" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://sentinel-app.it/" />
-    <meta name="twitter:title" content="Sentinel — Sicurezza urbana in tempo reale, verificata" />
-    <meta name="twitter:description" content="Scopri cosa succede davvero nella tua città con dati ufficiali e segnalazioni verificate. Senza allarmismo, prima che tu debba chiederlo." />
-    <meta name="twitter:image" content="https://sentinel-app.it/sentinel_hero_map.png" />
+    <meta name="twitter:url" content="https://sentinel-italy.vercel.app/" />
+    <meta name="twitter:title" content="Sentinel Italia — App Sicurezza Urbana in Tempo Reale" />
+    <meta name="twitter:description" content="Mappa 3D, notizie locali verificate e allerte di quartiere in tempo reale." />
+    <meta name="twitter:image" content="https://sentinel-italy.vercel.app/sentinel_hero_map.png" />
 
-    <!-- Structured Data (JSON-LD) - Ethical & No Fake Rating -->
+    <!-- Structured Data (JSON-LD) for Search Engine Rich Snippets -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "Sentinel",
-      "applicationCategory": "SafetyApplication",
-      "operatingSystem": "iOS, Android, Web",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "EUR"
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Sentinel Italia",
+        "alternateName": ["Sentinel App", "Sentinel Safety"],
+        "applicationCategory": "SafetyApplication",
+        "operatingSystem": "iOS, Android, Web",
+        "url": "https://sentinel-italy.vercel.app/",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        },
+        "description": "Piattaforma di sicurezza urbana partecipata e tracciamento emergenze in tempo reale con moderazione preventiva e fonti verificate."
       },
-      "description": "Piattaforma di sicurezza urbana partecipata e tracciamento emergenze in tempo reale con moderazione preventiva e fonti verificate."
-    }
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Sentinel Italia",
+        "url": "https://sentinel-italy.vercel.app/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://sentinel-italy.vercel.app/Home?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
     </script>
   </head>
   <body class="bg-[#050505] text-white">
