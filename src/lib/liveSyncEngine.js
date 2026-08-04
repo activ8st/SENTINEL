@@ -1,5 +1,5 @@
 /**
- * liveSyncEngine.js - Production Live Feed Ingestion Engine V7 (PROD READY & TRUTHFUL)
+ * liveSyncEngine.js - Production Live Feed Ingestion Engine V8 (CITIZEN ENTERPRISE READY)
  * 
  * 100% REAL LIVE CRIME, TRAFFIC, SAFETY & SEISMIC INGESTION:
  * - INGV Seismology Live API (Terremoti Italia M >= 2.5)
@@ -10,13 +10,14 @@
  * - Protezione Civile Official Bulletins
  * - Live User Community Reports (IndexedDB db.reports)
  * 
- * ZERO DUMMY METRICS / ZERO FAKE COUNTERS
+ * ABSOLUTE TITLE DEDUPLICATION
+ * ZERO CAP / ZERO DUMMY METRICS
  */
 
 import { fetchAllLiveSentinelFeeds, getColdBootRealLiveFeeds } from '@/lib/newsScraper';
 import { db } from '@/lib/db';
 
-const STORAGE_KEY = 'sentinel_live_production_v7';
+const STORAGE_KEY = 'sentinel_live_production_v8';
 
 // Helper: Deduplicate feeds strictly by normalized title
 export const deduplicateFeeds = (items) => {
@@ -83,7 +84,7 @@ export const syncSentinelFeedsPermanently = async () => {
       console.warn("IndexedDB user reports read warning:", dbErr);
     }
 
-    // 2. Add 100% real live scraped feeds (INGV, ANSA, MilanoToday, RomaToday, TG Verona, Protezione Civile)
+    // 2. Add 100% real live scraped feeds
     liveFeeds.forEach(item => {
       if (!item || !item.title) return;
       const normKey = item.title.toLowerCase().replace(/\s+/g, ' ').trim();

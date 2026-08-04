@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import IncidentCard from '@/components/incidents/IncidentCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import { useQuery } from '@tanstack/react-query';
@@ -12,7 +11,7 @@ import { syncSentinelFeedsPermanently, getPersistentIncidents, startPermanentBac
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import {
-  Navigation, RefreshCw, Filter, SlidersHorizontal,
+  Navigation, RefreshCw, SlidersHorizontal,
   AlertTriangle, Flame, Car, Heart, Eye, Radio, CloudLightning, HelpCircle,
   CheckSquare, Square, Shield
 } from 'lucide-react';
@@ -23,6 +22,14 @@ const SORT_OPTIONS = [
   { value: 'severity', label: 'Gravità' },
 ];
 
+const TIME_WINDOWS = [
+  { hours: 6, label: 'Ultime 6h' },
+  { hours: 12, label: 'Ultime 12h' },
+  { hours: 24, label: 'Ultime 24h' },
+  { hours: 48, label: 'Ultime 48h' },
+  { hours: 72, label: 'Ultime 72h (3 Giorni)' },
+];
+
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
 const TYPE_ICONS = {
@@ -30,12 +37,12 @@ const TYPE_ICONS = {
   suspicious: Eye, traffic: Radio, weather: CloudLightning, other: HelpCircle,
 };
 
-// Default location center fallback
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
 export default function Home() {
   const [location, setLocation] = useState(DEFAULT_LOC);
   const [locLabel, setLocLabel] = useState('Inizializzazione GPS...');
+  const [selectedHours, setSelectedHours] = useState(72);
 
   // Start background sync loop on boot
   useEffect(() => {
@@ -45,7 +52,7 @@ export default function Home() {
   // High-accuracy real-time GPS triangulation
   useEffect(() => {
     if (!navigator.geolocation) {
-      setLocLabel('Milano, Italia (Default)');
+      setLocLabel('Milano · Centro');
       return;
     }
 
@@ -65,7 +72,7 @@ export default function Home() {
 
   // Live Query from TanStack Query + Dexie
   const { data: rawLiveIncidents = [], refetch, isFetching } = useQuery({
-    queryKey: ['incidents-production-v4'],
+    queryKey: ['incidents-production-v8'],
     queryFn: async () => {
       return await syncSentinelFeedsPermanently();
     },
@@ -99,7 +106,7 @@ export default function Home() {
     return getPersistentIncidents();
   }, [rawLiveIncidents]);
 
-  // Calculate dynamic distance to exact user GPS coordinates (Instant 0ms render)
+  // Calculate dynamic distance to exact user GPS coordinates
   const incidentsWithDistance = useMemo(() => {
     return baseIncidents.map(inc => ({
       ...inc,
@@ -120,55 +127,61 @@ export default function Home() {
   };
 
   const filtered = useMemo(() => {
+    const cutoffTime = Date.now() - selectedHours * 3600 * 1000;
+
     return incidentsWithDistance
       .filter(i => activeTypes.includes(i.type))
       .filter(i => !showOnlyActive || i.status === 'active')
       .filter(i => !useRadius || (i.distance ?? 999999) <= radius)
+      .filter(i => {
+        if (!i.created_date) return true;
+        return new Date(i.created_date).getTime() >= cutoffTime;
+      })
       .sort((a, b) => {
         if (sortBy === 'distance') return (a.distance ?? 99999) - (b.distance ?? 99999);
         if (sortBy === 'time') return new Date(b.created_date || 0) - new Date(a.created_date || 0);
         if (sortBy === 'severity') return (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99);
         return 0;
       });
-  }, [incidentsWithDistance, activeTypes, showOnlyActive, useRadius, radius, sortBy]);
+  }, [incidentsWithDistance, activeTypes, showOnlyActive, useRadius, radius, sortBy, selectedHours]);
 
   const criticalCount = incidentsWithDistance.filter(i => i.severity === 'critical' && i.status === 'active').length;
   const activeCount = incidentsWithDistance.filter(i => i.status === 'active').length;
   const activeFiltersCount = Object.keys(TYPE_CONFIG).length - activeTypes.length + (showOnlyActive ? 1 : 0) + (useRadius ? 1 : 0);
 
   return (
-    <div className="min-h-screen bg-transparent" role="main">
+    <div className="min-h-screen bg-[#0b0e14] text-white" role="main">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-b border-gray-200 dark:border-white/5">
+      <div className="sticky top-0 z-40 bg-[#0b0e14]/95 backdrop-blur border-b border-white/10">
         <div className="px-4 pt-4 pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <img src="/logo.svg" alt="Sentinel Logo" className="w-9 h-9 rounded-xl object-cover shadow-sm" />
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-none">Sentinel</h1>
+                  <h1 className="text-lg font-bold text-white leading-none">Sentinel</h1>
                   <span className="text-[10px] font-black bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40 px-2 py-0.5 rounded-full flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
-                    LIVE 30s
+                    LIVE BROADCAST
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 mt-1">
                   <Navigation className="w-3 h-3 text-[#10b981]" />
-                  <span className="text-xs text-gray-400 font-medium">{locLabel}</span>
+                  <span className="text-xs text-white/60 font-medium">{locLabel}</span>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               {criticalCount > 0 && (
-                <Badge className="bg-red-500 text-white text-xs animate-pulse">
+                <Badge className="bg-red-600 text-white text-xs animate-pulse font-bold px-2.5 py-1">
                   {criticalCount} critico
                 </Badge>
               )}
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white w-9 h-9"
+                className="text-white/60 hover:text-white hover:bg-white/10 w-9 h-9"
                 onClick={handleRefresh}
                 disabled={refreshing || isFetching}
                 aria-label={refreshing ? 'Aggiornamento in corso...' : 'Aggiorna feed'}
@@ -179,71 +192,90 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Sort bar */}
+        {/* Time Window & Sort Bar */}
         <div className="px-4 pb-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-          {SORT_OPTIONS.map(opt => (
+          {/* Hours Filter Pills */}
+          <div className="flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10 shrink-0">
+            {TIME_WINDOWS.map(tw => (
+              <button
+                key={tw.hours}
+                onClick={() => setSelectedHours(tw.hours)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${
+                  selectedHours === tw.hours
+                    ? 'bg-[#10b981] text-black shadow'
+                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {tw.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort bar */}
+          <div className="flex items-center gap-1.5 ml-auto shrink-0">
+            {SORT_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setSortBy(opt.value)}
+                aria-pressed={sortBy === opt.value}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-colors
+                  ${sortBy === opt.value
+                    ? 'bg-white/20 text-white border border-white/30'
+                    : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+              >
+                {opt.label}
+              </button>
+            ))}
             <button
-              key={opt.value}
-              onClick={() => setSortBy(opt.value)}
-              aria-pressed={sortBy === opt.value}
-              aria-label={`Ordina per ${opt.label}`}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors
-                ${sortBy === opt.value
-                  ? 'bg-[#10b981] text-black font-bold'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
+              onClick={() => setShowFilters(true)}
+              aria-label={`Apri filtri${activeFiltersCount > 0 ? `, ${activeFiltersCount} attivi` : ''}`}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-colors
+                ${activeFiltersCount > 0
+                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                  : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
             >
-              {opt.label}
+              <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Filtri</span>
+              {activeFiltersCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center font-bold">
+                  {activeFiltersCount}
+                </span>
+              )}
             </button>
-          ))}
-          <button
-            onClick={() => setShowFilters(true)}
-            aria-label={`Apri filtri${activeFiltersCount > 0 ? `, ${activeFiltersCount} attivi` : ''}`}
-            aria-expanded={showFilters}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ml-auto
-              ${activeFiltersCount > 0
-                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Filtri</span>
-            {activeFiltersCount > 0 && (
-              <span className="w-4 h-4 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center font-bold">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
+          </div>
         </div>
       </div>
 
       {/* Feed List */}
       <div className="p-4 max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-xs text-gray-500 font-medium">
-            <strong className="text-gray-900 dark:text-white">{activeCount}</strong> attivi ·{' '}
-            <strong className="text-gray-900 dark:text-white">{filtered.length}</strong> nel feed
+          <span className="text-xs text-white/60 font-medium">
+            <strong className="text-white font-bold">{activeCount}</strong> attivi ·{' '}
+            <strong className="text-[#10b981] font-bold">{filtered.length}</strong> eventi live nelle {selectedHours}h
           </span>
         </div>
 
         {filtered.length === 0 ? (
           <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/5">
-            <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-3 text-gray-400">
+            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3 text-white/40">
               <Shield className="w-6 h-6" />
             </div>
-            <p className="text-sm text-gray-400 font-bold mb-1">Nessun evento rilevato nelle vicinanze</p>
-            <p className="text-xs text-gray-500 max-w-sm mx-auto mb-4">
-              La tua area è attualmente tranquilla. Lo scraper Sentinel monitora le fonti istituzionali 24/7.
+            <p className="text-sm text-white/80 font-bold mb-1">Nessun evento rilevato nelle ultime {selectedHours} ore</p>
+            <p className="text-xs text-white/50 max-w-sm mx-auto mb-4">
+              La tua area è tranquilla. Aumenta la finestra temporale fino a 72h o resetta i filtri.
             </p>
             <Button
               size="sm"
               variant="outline"
               onClick={() => {
+                setSelectedHours(72);
                 setActiveTypes(Object.keys(TYPE_CONFIG));
                 setShowOnlyActive(false);
                 setUseRadius(false);
               }}
-              className="text-xs border-gray-700 text-gray-300"
+              className="text-xs border-white/20 text-white hover:bg-white/10"
             >
-              Resetta tutti i filtri
+              Mostra eventi fino a 72h
             </Button>
           </div>
         ) : (
@@ -272,8 +304,8 @@ export default function Home() {
 
       {/* Filter Sheet */}
       <Sheet open={showFilters} onOpenChange={setShowFilters}>
-        <SheetContent side="bottom" className="rounded-t-3xl bg-gray-950 border-gray-800 text-white max-h-[85vh] overflow-y-auto">
-          <SheetHeader className="pb-4 border-b border-gray-800">
+        <SheetContent side="bottom" className="rounded-t-3xl bg-[#0b0e14] border-white/10 text-white max-h-[85vh] overflow-y-auto">
+          <SheetHeader className="pb-4 border-b border-white/10">
             <SheetTitle className="text-white text-base font-bold flex items-center justify-between">
               <span>Filtra Segnalazioni Live</span>
               {activeFiltersCount > 0 && (
@@ -294,26 +326,26 @@ export default function Home() {
           <div className="py-4 space-y-6">
             {/* Filter by Status */}
             <div>
-              <label className="text-xs font-semibold text-gray-400 block mb-2">Stato Evento</label>
+              <label className="text-xs font-semibold text-white/50 block mb-2">Stato Evento</label>
               <button
                 onClick={() => setShowOnlyActive(prev => !prev)}
                 className={`w-full flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition-all
                   ${showOnlyActive
                     ? 'bg-[#10b981]/20 border-[#10b981] text-[#10b981]'
-                    : 'bg-gray-900 border-gray-800 text-gray-300'}`}
+                    : 'bg-white/5 border-white/10 text-white/70'}`}
               >
                 <span>Solo Eventi Attivi</span>
-                {showOnlyActive ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4 text-gray-600" />}
+                {showOnlyActive ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4 text-white/30" />}
               </button>
             </div>
 
             {/* Filter by Radius */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-gray-400">Raggio di azione GPS</label>
+                <label className="text-xs font-semibold text-white/50">Raggio di azione GPS</label>
                 <button
                   onClick={() => setUseRadius(prev => !prev)}
-                  className={`text-xs font-bold ${useRadius ? 'text-[#10b981]' : 'text-gray-500'}`}
+                  className={`text-xs font-bold ${useRadius ? 'text-[#10b981]' : 'text-white/40'}`}
                 >
                   {useRadius ? `Attivo: entro ${radius} km` : 'Disattivato (Tutta Italia)'}
                 </button>
@@ -327,7 +359,7 @@ export default function Home() {
                     step={5}
                     onValueChange={([val]) => setRadius(val)}
                   />
-                  <div className="flex justify-between text-[10px] text-gray-500 mt-2">
+                  <div className="flex justify-between text-[10px] text-white/40 mt-2">
                     <span>5 km</span>
                     <span className="text-[#10b981] font-bold">{radius} km</span>
                     <span>500 km</span>
@@ -338,7 +370,7 @@ export default function Home() {
 
             {/* Filter by Categories */}
             <div>
-              <label className="text-xs font-semibold text-gray-400 block mb-2">Tipologie di Evento</label>
+              <label className="text-xs font-semibold text-white/50 block mb-2">Tipologie di Evento</label>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(TYPE_CONFIG).map(([key, cfg]) => {
                   const IconComp = TYPE_ICONS[key] || TYPE_ICONS.other;
@@ -350,7 +382,7 @@ export default function Home() {
                       className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all text-left
                         ${isActive
                           ? `${cfg.bg} ${cfg.border} ${cfg.text}`
-                          : 'bg-gray-900 border-gray-800 text-gray-500 opacity-60'}`}
+                          : 'bg-white/5 border-white/10 text-white/40 opacity-60'}`}
                     >
                       <IconComp className="w-4 h-4 shrink-0" />
                       <span className="truncate">{cfg.label}</span>
