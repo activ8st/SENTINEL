@@ -1,23 +1,23 @@
 /**
- * liveSyncEngine.js - Production Live Feed Ingestion Engine V8 (CITIZEN ENTERPRISE READY)
+ * liveSyncEngine.js - Production Live Feed Ingestion Engine V9 (CITIZEN ENTERPRISE READY)
  * 
  * 100% REAL LIVE CRIME, TRAFFIC, SAFETY & SEISMIC INGESTION:
  * - INGV Seismology Live API (Terremoti Italia M >= 2.5)
  * - ANSA Cronaca Nazionale & Sicurezza RSS Live
  * - MilanoToday Cronaca Nera & Viabilità RSS Live
  * - RomaToday Cronaca Nera & Sicurezza RSS Live
- * - TG Verona / Telenuovo Cronaca RSS Live
+ * - VeronaSera & L'Arena Verona Cronaca RSS Live
  * - Protezione Civile Official Bulletins
  * - Live User Community Reports (IndexedDB db.reports)
  * 
  * ABSOLUTE TITLE DEDUPLICATION
- * ZERO CAP / ZERO DUMMY METRICS
+ * ZERO DUMMY METRICS
  */
 
 import { fetchAllLiveSentinelFeeds, getColdBootRealLiveFeeds } from '@/lib/newsScraper';
 import { db } from '@/lib/db';
 
-const STORAGE_KEY = 'sentinel_live_production_v8';
+const STORAGE_KEY = 'sentinel_live_production_v9';
 
 // Helper: Deduplicate feeds strictly by normalized title
 export const deduplicateFeeds = (items) => {

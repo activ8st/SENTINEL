@@ -72,7 +72,7 @@ export default function Home() {
 
   // Live Query from TanStack Query + Dexie
   const { data: rawLiveIncidents = [], refetch, isFetching } = useQuery({
-    queryKey: ['incidents-production-v8'],
+    queryKey: ['incidents-production-v9'],
     queryFn: async () => {
       return await syncSentinelFeedsPermanently();
     },
