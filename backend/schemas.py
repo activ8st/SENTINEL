@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 class MediaBase(BaseModel):
     url: str
@@ -48,6 +48,7 @@ class IncidentBase(BaseModel):
     
     # Bot tracking fields
     source: Optional[str] = None
+    source_label: Optional[str] = None
     source_trust: Optional[str] = "institutional"
     last_seen_at: Optional[datetime] = None
 
@@ -57,6 +58,14 @@ class IncidentCreate(IncidentBase):
 class Incident(IncidentBase):
     created_date: datetime
     # we remap media objects to media_urls for the frontend
+
+    @field_serializer("created_date", "last_seen_at", when_used="json")
+    def serialize_utc_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
     
     class Config:
         from_attributes = True

@@ -10,10 +10,11 @@ import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
 import { syncSentinelFeedsPermanently, getPersistentIncidents, startPermanentBackgroundSync } from '@/lib/liveSyncEngine';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
+import { apiUrl } from '@/lib/api';
 import {
   Navigation, RefreshCw, SlidersHorizontal,
   AlertTriangle, Flame, Car, Heart, Eye, Radio, CloudLightning, HelpCircle,
-  CheckSquare, Square, Shield
+  CheckSquare, Square, Shield, MapPin
 } from 'lucide-react';
 
 const SORT_OPTIONS = [
@@ -31,6 +32,12 @@ const TIME_WINDOWS = [
 ];
 
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+const AREA_PRESETS = [3, 5, 10, 25, 50];
+
+const loadSharedRadius = () => {
+  const saved = Number(localStorage.getItem('sentinelRadiusKm'));
+  return Number.isFinite(saved) && saved >= 3 ? Math.min(saved, 100) : 3;
+};
 
 const TYPE_ICONS = {
   crime: AlertTriangle, fire: Flame, accident: Car, medical: Heart,
@@ -41,40 +48,14 @@ const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
 export default function Home() {
   const [location, setLocation] = useState(DEFAULT_LOC);
-  const [locLabel, setLocLabel] = useState('Inizializzazione GPS...');
-  const [selectedHours, setSelectedHours] = useState(72);
-
-  // Start background sync loop on boot
-  useEffect(() => {
-    startPermanentBackgroundSync();
-  }, []);
-
-  // High-accuracy real-time GPS triangulation
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocLabel('Milano · Centro');
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setLocation(userLoc);
-        setLocLabel(`GPS Attivo (${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)})`);
-      },
-      (err) => {
-        console.warn("GPS High Accuracy Error fallback:", err);
-        setLocLabel('La tua Posizione (GPS)');
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  }, []);
-
-  // Live Query from TanStack Query + Dexie
-  const { data: rawLiveIncidents = [], refetch, isFetching } = useQuery({
-    queryKey: ['incidents-production-v9'],
+  const [hasUserLocation, setHasUserLocation] = useState(false);
+  const [locLabel, setLocLabel] = useState('Roma, Italia');
+  const { data: liveIncidents = [], refetch, isLoading: isApiLoading } = useQuery({
+    queryKey: ['incidents'],
     queryFn: async () => {
-      return await syncSentinelFeedsPermanently();
+      const res = await fetch(apiUrl('/api/incidents?limit=2000'));
+      if (!res.ok) throw new Error('Network response was not ok');
+      return res.json();
     },
     refetchInterval: 15000,
   });
@@ -88,7 +69,7 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false);
   const [showOnlyActive, setShowOnlyActive] = useState(false);
   const [useRadius, setUseRadius] = useState(() => localStorage.getItem('sentinelUseRadius') === 'true');
-  const [radius, setRadius] = useState(() => Number(localStorage.getItem('sentinelRadiusKm') || 200));
+  const [radius, setRadius] = useState(loadSharedRadius);
 
   useEffect(() => {
     localStorage.setItem('sentinelUseRadius', String(useRadius));
@@ -106,13 +87,20 @@ export default function Home() {
     return getPersistentIncidents();
   }, [rawLiveIncidents]);
 
-  // Calculate dynamic distance to exact user GPS coordinates
-  const incidentsWithDistance = useMemo(() => {
-    return baseIncidents.map(inc => ({
-      ...inc,
-      distance: calcDistance(location.lat, location.lng, inc.latitude, inc.longitude)
-    }));
-  }, [baseIncidents, location]);
+    // Poi prova ad aggiornarli con la posizione reale senza bloccare
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setLocation(loc);
+        setHasUserLocation(true);
+        setLocLabel('La tua posizione');
+        loadData(loc);
+      },
+      () => console.warn("Geolocalizzazione fallita o negata"),
+      { timeout: 5000, maximumAge: 60000 }
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveIncidents, isApiLoading]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -126,28 +114,20 @@ export default function Home() {
     );
   };
 
-  const filtered = useMemo(() => {
-    const cutoffTime = Date.now() - selectedHours * 3600 * 1000;
+  const filtered = incidents
+    .filter(i => activeTypes.includes(i.type))
+    .filter(i => !showOnlyActive || i.status === 'active')
+    .filter(i => !useRadius || !hasUserLocation || (i.distance ?? 999999) <= radius)
+    .sort((a, b) => {
+      if (sortBy === 'distance') return (a.distance ?? 999) - (b.distance ?? 999);
+      if (sortBy === 'time') return new Date(b.created_date) - new Date(a.created_date);
+      if (sortBy === 'severity') return SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
+      return 0;
+    });
 
-    return incidentsWithDistance
-      .filter(i => activeTypes.includes(i.type))
-      .filter(i => !showOnlyActive || i.status === 'active')
-      .filter(i => !useRadius || (i.distance ?? 999999) <= radius)
-      .filter(i => {
-        if (!i.created_date) return true;
-        return new Date(i.created_date).getTime() >= cutoffTime;
-      })
-      .sort((a, b) => {
-        if (sortBy === 'distance') return (a.distance ?? 99999) - (b.distance ?? 99999);
-        if (sortBy === 'time') return new Date(b.created_date || 0) - new Date(a.created_date || 0);
-        if (sortBy === 'severity') return (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99);
-        return 0;
-      });
-  }, [incidentsWithDistance, activeTypes, showOnlyActive, useRadius, radius, sortBy, selectedHours]);
-
-  const criticalCount = incidentsWithDistance.filter(i => i.severity === 'critical' && i.status === 'active').length;
-  const activeCount = incidentsWithDistance.filter(i => i.status === 'active').length;
-  const activeFiltersCount = Object.keys(TYPE_CONFIG).length - activeTypes.length + (showOnlyActive ? 1 : 0) + (useRadius ? 1 : 0);
+  const criticalCount = incidents.filter(i => i.severity === 'critical' && i.status === 'active').length;
+  const activeCount = incidents.filter(i => i.status === 'active').length;
+  const categoryFiltersCount = Object.keys(TYPE_CONFIG).length - activeTypes.length;
 
   return (
     <div className="min-h-screen bg-[#0b0e14] text-white" role="main">
@@ -242,7 +222,32 @@ export default function Home() {
                 </span>
               )}
             </button>
-          </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowFilters(true)}
+            aria-label={useRadius ? `Modifica filtro area, ${radius} chilometri` : 'Attiva filtro area'}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+              useRadius
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+            }`}
+          >
+            <MapPin className="w-3 h-3" aria-hidden="true" />
+            {useRadius ? `Area ${radius} km` : 'Area'}
+          </button>
+          <button
+            onClick={() => setShowFilters(true)}
+            aria-label={`Apri filtri${categoryFiltersCount > 0 ? `, ${categoryFiltersCount} attivi` : ''}`}
+            aria-expanded={showFilters}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ml-auto
+              ${categoryFiltersCount > 0
+                ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
+          >
+            <SlidersHorizontal className="w-3 h-3" aria-hidden="true" />
+            Filtri {categoryFiltersCount > 0 ? `(${categoryFiltersCount})` : ''}
+          </button>
         </div>
       </div>
 
@@ -323,10 +328,79 @@ export default function Home() {
             </SheetTitle>
           </SheetHeader>
 
-          <div className="py-4 space-y-6">
-            {/* Filter by Status */}
-            <div>
-              <label className="text-xs font-semibold text-white/50 block mb-2">Stato Evento</label>
+          {/* Active only toggle */}
+          <div className="mb-6">
+            <label className="relative flex min-h-14 w-full cursor-pointer items-center justify-between overflow-hidden rounded-xl bg-gray-100 p-3 dark:bg-gray-800">
+              <input
+                type="checkbox"
+                checked={showOnlyActive}
+                onChange={(event) => setShowOnlyActive(event.target.checked)}
+                aria-label="Mostra solo incidenti attivi"
+                className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+              />
+              <span className="text-gray-900 dark:text-white font-medium">Solo incidenti attivi</span>
+              <span className="pointer-events-none flex h-8 w-8 shrink-0 items-center justify-center" aria-hidden="true">
+                {showOnlyActive
+                  ? <CheckSquare className="h-5 w-5 text-orange-500" />
+                  : <Square className="h-5 w-5 text-gray-500" />
+                }
+              </span>
+            </label>
+          </div>
+
+          <div className="mb-6">
+            <label className="relative mb-3 flex min-h-14 w-full cursor-pointer items-center justify-between overflow-hidden rounded-xl bg-gray-100 p-3 dark:bg-gray-800">
+              <input
+                type="checkbox"
+                checked={useRadius}
+                onChange={(event) => setUseRadius(event.target.checked)}
+                aria-label="Filtra gli incidenti per raggio"
+                className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+              />
+              <span className="text-gray-900 dark:text-white font-medium">Filtra per raggio</span>
+              <span className="pointer-events-none flex h-8 w-8 shrink-0 items-center justify-center" aria-hidden="true">
+                {useRadius
+                  ? <CheckSquare className="h-5 w-5 text-orange-500" />
+                  : <Square className="h-5 w-5 text-gray-500" />
+                }
+              </span>
+            </label>
+            {useRadius && (
+              <>
+                {!hasUserLocation && (
+                  <p className="mb-3 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-300">
+                    Il raggio si applica appena il browser rileva la tua posizione.
+                  </p>
+                )}
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Distanza massima</span>
+                  <Badge variant="outline" className="text-orange-500 border-orange-500">{radius} km</Badge>
+                </div>
+                <div className="mb-3 grid grid-cols-5 gap-2">
+                  {AREA_PRESETS.map((km) => (
+                    <button
+                      key={km}
+                      type="button"
+                      onClick={() => setRadius(km)}
+                      className={`min-h-9 rounded-lg border px-1 text-xs font-semibold transition-colors ${
+                        radius === km
+                          ? 'border-blue-500 bg-blue-500 text-white'
+                          : 'border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                      }`}
+                    >
+                      {km} km
+                    </button>
+                  ))}
+                </div>
+                <Slider value={[radius]} onValueChange={([v]) => setRadius(v)} min={3} max={100} step={1} />
+              </>
+            )}
+          </div>
+
+          {/* Type toggles */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tipo di incidente</span>
               <button
                 onClick={() => setShowOnlyActive(prev => !prev)}
                 className={`w-full flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition-all

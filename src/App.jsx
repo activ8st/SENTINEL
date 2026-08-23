@@ -11,12 +11,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { toast } from 'sonner';
 import { calcDistance } from '@/components/data/mockData';
-import React, { useState, useEffect, useRef } from 'react';
-import { initializeDB } from '@/lib/db';
-import { getPersistentIncidents } from '@/lib/liveSyncEngine';
-import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
-import { SpeedInsights } from "@vercel/speed-insights/react";
-import { Analytics } from "@vercel/analytics/react";
+import { apiUrl } from '@/lib/api';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 
@@ -44,11 +39,34 @@ const AuthenticatedApp = () => {
   const prevIncidentIdsRef = useRef(new Set());
   const isFirstFetchRef = useRef(true);
 
-  // Poll incidents for radar alerts
-  const { data: dbIncidents = [] } = useQuery({
-    queryKey: ['incidents-alerts'],
+  const useRadius = localStorage.getItem('sentinelUseRadius') === 'true';
+  if (!useRadius) return true;
+
+  const radius = Number(localStorage.getItem('sentinelRadiusKm') || settings.notification_radius || 3);
+  const distance = calcDistance(location.lat, location.lng, incident.latitude, incident.longitude);
+  return distance <= radius;
+};
+
+const AlertWatcher = () => {
+  const navigate = useNavigate();
+  const [location, setLocation] = useState(DEFAULT_LOC);
+  const initializedRef = useRef(false);
+  const knownIdsRef = useRef(new Set());
+
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { timeout: 5000, maximumAge: 60000 }
+    );
+  }, []);
+
+  const { data: incidents = [] } = useQuery({
+    queryKey: ['incidents'],
     queryFn: async () => {
-      return getPersistentIncidents();
+      const res = await fetch(apiUrl('/api/incidents?limit=2000'));
+      if (!res.ok) return [];
+      return res.json();
     },
     refetchInterval: 30000,
   });

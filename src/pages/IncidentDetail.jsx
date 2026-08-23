@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import VoteButtons from '@/components/incidents/VoteButtons';
 import { ReliabilityBadge } from '@/components/data/reliability';
+import { apiUrl } from '@/lib/api';
 
 const IncidentMap = lazy(() => import('@/components/incidents/IncidentMap'));
 
@@ -48,18 +49,9 @@ export default function IncidentDetail() {
   const { data: incident, isLoading } = useQuery({
     queryKey: ['incident', incidentId],
     queryFn: async () => {
-      if (!incidentId) return null;
-      // 1. Check persistent incidents cache
-      const persistent = getPersistentIncidents();
-      const foundPersistent = persistent.find(i => String(i.id) === String(incidentId));
-      if (foundPersistent) return foundPersistent;
-
-      // 2. Check static mock incidents
-      const foundMock = MOCK_INCIDENTS.find(i => String(i.id) === String(incidentId));
-      if (foundMock) return foundMock;
-
-      // 3. Fallback helper
-      return getIncidentById(incidentId);
+      const res = await fetch(apiUrl(`/api/incidents/${incidentId}`));
+      if (!res.ok) return null;
+      return res.json();
     },
     enabled: !!incidentId,
     initialData: () => {
@@ -239,9 +231,9 @@ export default function IncidentDetail() {
           <div className={`${sectionCard} p-4 mb-4`}>
             <div className="flex items-center justify-between gap-3 mb-3">
               <span className="text-sm font-semibold text-gray-900 dark:text-white">Fonte e documenti</span>
-              {incident.source && (
+              {(incident.source_label || incident.source) && (
                 <Badge variant="outline" className="text-xs border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300">
-                  {incident.source}
+                  {incident.source_label || incident.source}
                 </Badge>
               )}
             </div>

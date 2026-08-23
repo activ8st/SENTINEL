@@ -15,15 +15,23 @@ import { getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { Bell, BellOff, Trash2, MapPin, ChevronRight, Settings, CheckSquare, Square, ShieldCheck } from 'lucide-react';
+import { Bell, BellOff, Trash2, MapPin, ChevronRight, Settings, CheckSquare, Square } from 'lucide-react';
+import { apiUrl } from '@/lib/api';
 
-const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 }; // Milan center default
+const DEFAULT_LOC = { lat: 41.9028, lng: 12.4964 };
+const AREA_PRESETS = [3, 5, 10, 25, 50];
+
+const loadSharedRadius = () => {
+  const saved = Number(localStorage.getItem('sentinelRadiusKm'));
+  return Number.isFinite(saved) && saved >= 3 ? Math.min(saved, 100) : 3;
+};
 
 export default function Notifications() {
   const navigate = useNavigate();
   const [location, setLocation] = useState(DEFAULT_LOC);
+  const [hasUserLocation, setHasUserLocation] = useState(false);
   const [useRadius, setUseRadius] = useState(() => localStorage.getItem('sentinelUseRadius') === 'true');
-  const [radius, setRadius] = useState(() => Number(localStorage.getItem('sentinelRadiusKm') || 50));
+  const [radius, setRadius] = useState(loadSharedRadius);
   const [readIds, setReadIdsState] = useState(() => {
     try {
       const saved = localStorage.getItem('sentinel_read_ids');
@@ -33,7 +41,10 @@ export default function Notifications() {
 
   useEffect(() => {
     navigator.geolocation?.getCurrentPosition(
-      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => {
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setHasUserLocation(true);
+      },
       () => {},
       { timeout: 5000, maximumAge: 60000 }
     );
@@ -70,7 +81,9 @@ export default function Notifications() {
   const { data: fetchedAlerts = getPersistentIncidents() } = useQuery({
     queryKey: ['incidents-notifications'],
     queryFn: async () => {
-      return getPersistentIncidents();
+      const res = await fetch(apiUrl('/api/incidents?limit=2000'));
+      if (!res.ok) throw new Error('Network response was not ok');
+      return res.json();
     },
     initialData: () => getPersistentIncidents(),
   });
@@ -82,9 +95,9 @@ export default function Notifications() {
         ...i,
         distance: calcDistance(location.lat, location.lng, i.latitude, i.longitude),
       }))
-      .filter(i => !useRadius || i.distance <= radius)
-      .sort((a, b) => new Date(b.created_date || Date.now()) - new Date(a.created_date || Date.now())),
-    [fetchedAlerts, dismissed, location, useRadius, radius]
+      .filter(i => !useRadius || !hasUserLocation || i.distance <= radius)
+      .sort((a, b) => new Date(b.created_date) - new Date(a.created_date)),
+    [fetchedAlerts, dismissed, location, useRadius, hasUserLocation, radius]
   );
 
   const unreadCount = alerts.filter(i => !readIds.has(i.id)).length;
@@ -189,14 +202,33 @@ export default function Notifications() {
           </button>
 
           {useRadius && (
-            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
-              <div className="mb-2 flex items-center justify-between text-xs">
-                <span className="text-slate-500 dark:text-white/60 font-medium">Raggio di notifica personale</span>
-                <span className="text-xs font-bold text-[#10b981] bg-[#10b981]/15 px-3 py-1 rounded-full border border-[#10b981]/30">
-                  {radius} km da te
-                </span>
+            <div className="mt-3">
+              {!hasUserLocation && (
+                <p className="mb-3 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-300">
+                  Il raggio si applica appena il browser rileva la tua posizione.
+                </p>
+              )}
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Distanza massima</span>
+                <Badge variant="outline" className="border-orange-500 text-orange-500">{radius} km</Badge>
               </div>
-              <Slider value={[radius]} onValueChange={([v]) => setRadius(v)} min={5} max={100} step={5} className="my-2" />
+              <div className="mb-3 grid grid-cols-5 gap-2">
+                {AREA_PRESETS.map((km) => (
+                  <button
+                    key={km}
+                    type="button"
+                    onClick={() => setRadius(km)}
+                    className={`min-h-9 rounded-lg border px-1 text-xs font-semibold ${
+                      radius === km
+                        ? 'border-blue-500 bg-blue-500 text-white'
+                        : 'border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                    }`}
+                  >
+                    {km} km
+                  </button>
+                ))}
+              </div>
+              <Slider value={[radius]} onValueChange={([v]) => setRadius(v)} min={3} max={100} step={1} />
             </div>
           )}
         </div>

@@ -6,6 +6,33 @@ import { TYPE_CONFIG } from '@/components/data/mockData';
 
 const coordinateKey = (incident) => `${Number(incident.latitude).toFixed(4)},${Number(incident.longitude).toFixed(4)}`;
 
+const createRadiusCircle = (center, radiusKm, points = 96) => {
+  if (!center || !radiusKm) return null;
+  const coords = [];
+  const earthRadiusKm = 6371;
+  const lat = center.lat * Math.PI / 180;
+  const lng = center.lng * Math.PI / 180;
+  const distance = radiusKm / earthRadiusKm;
+
+  for (let i = 0; i <= points; i += 1) {
+    const bearing = (i / points) * Math.PI * 2;
+    const pointLat = Math.asin(
+      Math.sin(lat) * Math.cos(distance) + Math.cos(lat) * Math.sin(distance) * Math.cos(bearing)
+    );
+    const pointLng = lng + Math.atan2(
+      Math.sin(bearing) * Math.sin(distance) * Math.cos(lat),
+      Math.cos(distance) - Math.sin(lat) * Math.sin(pointLat)
+    );
+    coords.push([pointLng * 180 / Math.PI, pointLat * 180 / Math.PI]);
+  }
+
+  return {
+    type: 'Feature',
+    properties: {},
+    geometry: { type: 'Polygon', coordinates: [coords] },
+  };
+};
+
 const spreadOverlappingIncidents = (incidents = []) => {
   const groups = incidents.reduce((acc, incident) => {
     const key = coordinateKey(incident);
@@ -25,13 +52,16 @@ const spreadOverlappingIncidents = (incidents = []) => {
     }
 
     const index = group.findIndex((item) => item.id === incident.id);
-    const angle = (Math.PI * 2 * index) / group.length;
-    const radius = Math.min(0.004, 0.00045 + group.length * 0.00012);
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    const angle = index * goldenAngle;
+    const ring = Math.floor(Math.sqrt(index));
+    const radius = Math.min(0.018, 0.0011 + ring * 0.00125 + group.length * 0.00008);
+    const latScale = Math.cos(Number(incident.latitude) * Math.PI / 180) || 1;
 
     return {
       incident,
-      markerLatitude: incident.latitude + Math.sin(angle) * radius,
-      markerLongitude: incident.longitude + Math.cos(angle) * radius,
+      markerLatitude: Number(incident.latitude) + Math.sin(angle) * radius,
+      markerLongitude: Number(incident.longitude) + (Math.cos(angle) * radius) / latScale,
     };
   });
 };
@@ -88,6 +118,33 @@ export default function IncidentMap({
     }
   }, [center, zoom]);
 
+  const mapStyle = 'mapbox://styles/mapbox/standard';
+
+  const onMapLoad = (e) => {
+    const map = e.target;
+    map.setConfigProperty('basemap', 'lightPreset', isDark ? 'night' : 'day');
+    // Enable 3D landmarks if available
+    map.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
+  };
+
+  // GeoJSON for Route
+  const radiusCircleGeoJSON = useMemo(
+    () => showRadius ? createRadiusCircle(userLocation, radiusKm) : null,
+    [showRadius, userLocation, radiusKm]
+  );
+
+  const routeGeoJSON = useMemo(() => {
+    if (!routeCoords || routeCoords.length < 2) return null;
+    return {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString',
+        coordinates: routeCoords.map(c => [c[1], c[0]]) // Mapbox expects [lng, lat]
+      }
+    };
+  }, [routeCoords]);
+
   const visibleMarkers = useMemo(() => spreadOverlappingIncidents(incidents), [incidents]);
 
   const containerStyle = height === '100%' 
@@ -95,7 +152,19 @@ export default function IncidentMap({
     : { height, width: '100%', minHeight: '420px', position: 'relative' };
 
   return (
-    <div ref={containerRef} style={containerStyle} className={`overflow-hidden bg-[#090b10] border border-white/10 ${className} relative text-white select-none`}>
+    <div ref={containerRef} style={containerStyle} className={`overflow-hidden ${className}`}>
+      <style>{`
+        @keyframes mapbox-pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        @keyframes user-ring-grow {
+          0% { transform: translate(-50%, -50%) scale(0.75); opacity: 0.45; }
+          70% { opacity: 0.14; }
+          100% { transform: translate(-50%, -50%) scale(2.35); opacity: 0; }
+        }
+      `}</style>
+      
       <Map
         ref={mapRef}
         {...viewState}
@@ -108,13 +177,41 @@ export default function IncidentMap({
       >
         <NavigationControl position="bottom-right" />
 
+        {radiusCircleGeoJSON && (
+          <Source id="user-radius-area" type="geojson" data={radiusCircleGeoJSON}>
+            <Layer
+              id="user-radius-fill"
+              type="fill"
+              paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.08 }}
+            />
+            <Layer
+              id="user-radius-line"
+              type="line"
+              paint={{ 'line-color': '#2563eb', 'line-width': 2, 'line-opacity': 0.55 }}
+            />
+          </Source>
+        )}
+
+        {/* User Location */}
         {userLocation && (
           <Marker latitude={userLocation.lat} longitude={userLocation.lng} anchor="center">
-            <div className="relative flex items-center justify-center">
-              <div className="w-8 h-8 rounded-full bg-[#10b981]/40 animate-ping absolute" />
-              <div className="w-6 h-6 rounded-full bg-[#10b981] border-2 border-white shadow-2xl flex items-center justify-center text-xs font-bold text-black">
-                📍
-              </div>
+            <div style={{ position: 'relative', width: '42px', height: '42px' }}>
+              {[0, 1, 2].map((ring) => (
+                <span
+                  key={ring}
+                  style={{
+                    position: 'absolute', left: '50%', top: '50%', width: `${26 + ring * 9}px`, height: `${26 + ring * 9}px`,
+                    borderRadius: '999px', border: '2px solid rgba(37, 99, 235, 0.65)',
+                    background: 'rgba(59, 130, 246, 0.10)', transform: 'translate(-50%, -50%)',
+                    animation: `user-ring-grow ${2.2 + ring * 0.45}s ease-out infinite`, animationDelay: `${ring * 0.35}s`,
+                  }}
+                />
+              ))}
+              <div style={{
+                position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
+                width: '22px', height: '22px', background: '#2563eb',
+                borderRadius: '50%', border: '4px solid white', boxShadow: '0 0 0 4px rgba(37, 99, 235, 0.22), 0 0 22px #3b82f699'
+              }} />
             </div>
           </Marker>
         )}

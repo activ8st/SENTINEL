@@ -29,10 +29,14 @@ dist-ssr
 *.sw?
 
 .env
-.agent
 
-backend/venv/
-backend/__pycache__/
-*.db
-backend/*.db
+# Python locale
+venv/
 __pycache__/
+*.py[cod]
+.sentinel-cache/
+
+# Database locale generato automaticamente
+sentinel.db
+sentinel.db-wal
+sentinel.db-shm

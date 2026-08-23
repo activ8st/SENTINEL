@@ -16,6 +16,7 @@ import {
   ChevronLeft, ChevronRight, MapPin, Loader2, Check, Shield, Upload, X
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { apiUrl } from '@/lib/api';
 
 const TYPES = [
   { value: 'crime',      emoji: '🚨', label: 'Crimine',          desc: 'Furto, aggressione, vandalismo' },
@@ -133,25 +134,12 @@ export default function Report() {
           source: 'Utente Sentinel',
           official_verified: false
         };
-
-        // 1. Save to LocalStorage persistent cache
-        try {
-          const current = getPersistentIncidents();
-          const updated = [newIncident, ...current];
-          localStorage.setItem('sentinel_live_feed_v2', JSON.stringify(updated));
-        } catch (e) {
-          console.warn('LocalStorage report save warning:', e);
-        }
-
-        // 2. Save to Dexie IndexedDB
-        try {
-          await db.open();
-          await db.incidents.add(newIncident);
-          await db.reports.add(newIncident);
-        } catch (e) {
-          console.warn('Dexie report save warning:', e);
-        }
-
+        const res = await fetch(apiUrl('/api/incidents'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('API error');
         setSuccessId(incidentId);
         toast.success("Segnalazione pubblicata in tempo reale sul network!");
       } catch (e) {
