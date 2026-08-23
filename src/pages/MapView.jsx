@@ -5,12 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import IncidentCard from '@/components/incidents/IncidentCard';
-import { calcDistance, TYPE_CONFIG, MOCK_INCIDENTS } from '@/components/data/mockData';
+import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
 import { apiUrl } from '@/lib/api';
 import { Locate, Layers, X, List, ChevronDown, Navigation, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
-import IncidentMap from '@/components/incidents/IncidentMap';
+const IncidentMap = lazy(() => import('@/components/incidents/IncidentMap'));
 
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 const INITIAL_MAP_ZOOM = 15.8;
@@ -50,7 +50,7 @@ const getIncidentDate = (incident) => new Date(incident.created_date || incident
 const isInTimeWindow = (incident, windowIndex) => {
   const selected = TIME_WINDOWS[windowIndex] || TIME_WINDOWS[0];
   const ageHours = (Date.now() - getIncidentDate(incident).getTime()) / 36e5;
-  return Math.max(0, ageHours) <= (selected ? selected.maxHours : 720);
+  return ageHours >= 0 && ageHours <= selected.maxHours;
 };
 
 export default function MapView() {
@@ -85,7 +85,6 @@ export default function MapView() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const timePickerRef = useRef(null);
   const [refreshingNews, setRefreshingNews] = useState(false);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('sentinelMapTimeWindowHoursV4', String(TIME_WINDOWS[timeWindowIndex].maxHours));
@@ -171,14 +170,14 @@ export default function MapView() {
     }
   }, []);
 
-  const { data: apiIncidents = getPersistentIncidents(), refetch, isFetching } = useQuery({
+  const { data: apiIncidents = [], refetch, isFetching } = useQuery({
     queryKey: ['incidents'],
     queryFn: async () => {
       const res = await fetch(apiUrl('/api/incidents?limit=2000'));
       if (!res.ok) return [];
       return res.json();
     },
-    refetchInterval: 15000,
+    refetchInterval: 10000,
   });
 
   const incidents = useMemo(() => apiIncidents
@@ -448,17 +447,6 @@ export default function MapView() {
           </Button>
         </div>
 
-        {/* Report FAB */}
-        <div className="absolute bottom-6 right-4 z-30">
-          <Button
-            className="w-14 h-14 rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-[0_8px_30px_rgb(249,115,22,0.4)] transition-transform hover:scale-105 active:scale-95"
-            onClick={() => setIsReportModalOpen(true)}
-            aria-label="Segnala Emergenza"
-          >
-            <Plus className="w-7 h-7" />
-          </Button>
-        </div>
-
         {/* Selected incident preview */}
         <AnimatePresence>
           {selectedIncident && !showList && (
@@ -597,12 +585,6 @@ export default function MapView() {
           </Button>
         </SheetContent>
       </Sheet>
-
-      <ReportIncidentModal 
-        isOpen={isReportModalOpen} 
-        onClose={() => setIsReportModalOpen(false)} 
-        userLocation={location} 
-      />
     </div>
   );
 }

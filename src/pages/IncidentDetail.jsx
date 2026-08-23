@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { getIncidentById, TYPE_CONFIG, SEVERITY_CONFIG, STATUS_CONFIG, MOCK_INCIDENTS } from '@/components/data/mockData';
-import { getPersistentIncidents } from '@/lib/liveSyncEngine';
+import { getIncidentById, TYPE_CONFIG, SEVERITY_CONFIG, STATUS_CONFIG } from '@/components/data/mockData';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -53,12 +52,7 @@ export default function IncidentDetail() {
       if (!res.ok) return null;
       return res.json();
     },
-    enabled: !!incidentId,
-    initialData: () => {
-      if (!incidentId) return null;
-      const persistent = getPersistentIncidents();
-      return persistent.find(i => String(i.id) === String(incidentId)) || MOCK_INCIDENTS.find(i => String(i.id) === String(incidentId));
-    }
+    enabled: !!incidentId
   });
 
   useEffect(() => {

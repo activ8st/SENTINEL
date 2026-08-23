@@ -13,7 +13,7 @@ export default function Sidebar() {
   };
 
   const NAV_ITEMS = [
-    { name: 'Feed', icon: Home, path: '/Home' },
+    { name: 'Feed', icon: Home, path: '/' },
     { name: 'Mappa', icon: MapIcon, path: createPageUrl('MapView') },
     { name: 'Segnala', icon: PlusSquare, path: createPageUrl('Report') },
     { name: 'Alerts', icon: Bell, path: createPageUrl('Notifications') },
@@ -24,8 +24,8 @@ export default function Sidebar() {
     <aside className={`hidden md:flex flex-col h-screen sticky top-0 left-0 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-white/5 transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/5">
         {!collapsed && (
-          <Link to="/Home" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <img src="/logo.svg" alt="Sentinel" className="w-8 h-8 rounded-lg object-cover" />
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <img src="/logo.png" alt="Sentinel" className="w-8 h-8 rounded-lg object-cover" />
             <span className="font-bold text-lg tracking-tight text-gray-900 dark:text-white">Sentinel</span>
           </Link>
         )}
@@ -44,7 +44,7 @@ export default function Sidebar() {
             to={item.path}
             className={({ isActive }) => `
               flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200
-              ${isActive ? 'bg-[#10b981]/15 text-[#10b981] font-bold' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5'}
+              ${isActive ? 'bg-orange-500/10 text-orange-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5'}
             `}
           >
             <item.icon className="w-6 h-6 flex-shrink-0" />

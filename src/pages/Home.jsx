@@ -87,7 +87,7 @@ export default function Home() {
       setLoading(false);
       return;
     }
-
+    
     // Mostra subito i dati con la posizione di default
     loadData(location);
 

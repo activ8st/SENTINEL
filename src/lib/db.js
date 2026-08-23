@@ -13,13 +13,10 @@ db.version(1).stores({
 export const initializeDB = async () => {
   try {
     await db.open();
-    // Refresh stale mock incidents with fresh timestamps
-    await db.incidents.clear();
-    const freshIncidents = MOCK_INCIDENTS.map(inc => ({
-      ...inc,
-      created_date: inc.created_date || new Date().toISOString()
-    }));
-    await db.incidents.bulkAdd(freshIncidents);
+    const count = await db.incidents.count();
+    if (count === 0) {
+      await db.incidents.bulkAdd(MOCK_INCIDENTS);
+    }
   } catch (err) {
     console.error('Failed to open or seed db', err);
   }

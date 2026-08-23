@@ -53,11 +53,6 @@ import MapView from './pages/MapView';
 import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
 import Report from './pages/Report';
-import LandingPage from './pages/LandingPage';
-import Platform from './pages/Platform';
-import Manifesto from './pages/Manifesto';
-import Contact from './pages/Contact';
-import Auth from './pages/Auth';
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -67,15 +62,10 @@ export const PAGES = {
     "Notifications": Notifications,
     "Profile": Profile,
     "Report": Report,
-    "LandingPage": LandingPage,
-    "Platform": Platform,
-    "Manifesto": Manifesto,
-    "Contact": Contact,
-    "Auth": Auth,
 }
 
 export const pagesConfig = {
-    mainPage: "LandingPage",
+    mainPage: "Home",
     Pages: PAGES,
     Layout: __Layout,
 };
