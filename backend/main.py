@@ -5,9 +5,9 @@ import re
 import threading
 import uuid
 from contextlib import asynccontextmanager, suppress
-from typing import List
+from typing import List, Optional
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, selectinload
 
@@ -27,6 +27,31 @@ _refresh_state = {
     "last_error": None,
     "last_result": None,
 }
+
+ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
+ip_rate_limits: dict[str, list[float]] = {}
+
+
+def check_rate_limit(request: Request) -> None:
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    now = datetime.datetime.now(datetime.timezone.utc).timestamp()
+    timestamps = [timestamp for timestamp in ip_rate_limits.get(client_ip, []) if now - timestamp < 60]
+    if len(timestamps) >= 5:
+        raise HTTPException(
+            status_code=429,
+            detail="Troppe segnalazioni inviate in poco tempo. Riprova tra 1 minuto.",
+        )
+    timestamps.append(now)
+    ip_rate_limits[client_ip] = timestamps
+
+
+def verify_admin_key(x_admin_key: Optional[str] = Header(None, alias="X-Admin-Key")) -> None:
+    if not ADMIN_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="ADMIN_SECRET_KEY non configurata.")
+    if not x_admin_key:
+        raise HTTPException(status_code=401, detail="Header X-Admin-Key mancante.")
+    if x_admin_key != ADMIN_SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Chiave Admin non valida.")
 
 
 def run_incident_refresh() -> dict:
@@ -75,6 +100,13 @@ async def lifespan(_app: FastAPI):
         with suppress(asyncio.CancelledError):
             await refresh_task
 
+
+allowed_origins_raw = os.getenv("ALLOWED_ORIGINS", "*").strip()
+allowed_origins = (
+    ["*"]
+    if allowed_origins_raw == "*"
+    else [origin.strip() for origin in allowed_origins_raw.split(",") if origin.strip()]
+)
 
 app = FastAPI(title="Sentinel API", version="1.0.0", lifespan=lifespan)
 
