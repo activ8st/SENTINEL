@@ -1,7 +1,9 @@
 const configuredBaseUrl = String(import.meta.env.VITE_API_URL || '').trim();
-const localBaseUrl = import.meta.env.DEV ? 'http://127.0.0.1:8000' : '';
+const defaultBaseUrl = import.meta.env.DEV
+  ? 'http://127.0.0.1:8000'
+  : 'https://sentinel-api-6hlm.onrender.com';
 
-export const API_BASE_URL = (configuredBaseUrl || localBaseUrl).replace(/\/$/, '');
+export const API_BASE_URL = (configuredBaseUrl || defaultBaseUrl).replace(/\/$/, '');
 export const isSentinelApiConfigured = Boolean(API_BASE_URL);
 
 export const apiUrl = (path) => {
