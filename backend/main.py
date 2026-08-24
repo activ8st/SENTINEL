@@ -1,33 +1,15 @@
-from fastapi import FastAPI, Depends, HTTPException, Header, Request
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from typing import List, Optional
-import uuid
+import asyncio
 import datetime
 import os
-from contextlib import asynccontextmanager
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import re
 import threading
+import uuid
+from contextlib import asynccontextmanager, suppress
+from typing import List, Optional
 
-# Helper function to load .env if python-dotenv is not installed
-def load_env_file():
-    env_path = os.path.join(os.path.dirname(__file__), ".env")
-    if os.path.exists(env_path):
-        with open(env_path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    key, value = line.split("=", 1)
-                    os.environ.setdefault(key.strip(), value.strip())
-
-load_env_file()
-
-ADMIN_SECRET_KEY = os.environ.get("ADMIN_SECRET_KEY")
-if not ADMIN_SECRET_KEY:
-    raise RuntimeError(
-        "ADMIN_SECRET_KEY non impostata. Imposta questa variabile "
-        "d'ambiente prima di avviare il server (vedi .env.example)."
-    )
+from fastapi import FastAPI, Depends, Header, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session, selectinload
 
 from . import models, schemas
 from .database import engine, get_db
@@ -36,58 +18,97 @@ from sqlalchemy import text
 
 models.Base.metadata.create_all(bind=engine)
 
-# Auto-migrate SQLite schema additions if needed
-with engine.connect() as conn:
-    try:
-        conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR DEFAULT 'user'"))
-        conn.commit()
-    except Exception:
-        pass
+AUTO_REFRESH_MINUTES = max(5, int(os.getenv("SENTINEL_AUTO_REFRESH_MINUTES", "15")))
+_refresh_lock = threading.Lock()
+_refresh_state = {
+    "running": False,
+    "last_started_at": None,
+    "last_finished_at": None,
+    "last_error": None,
+    "last_result": None,
+}
 
-# In-memory IP Rate Limiting (5 requests / 60 seconds per IP)
-ip_rate_limits = {}
+ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
+ip_rate_limits: dict[str, list[float]] = {}
 
-def check_rate_limit(request: Request):
+
+def check_rate_limit(request: Request) -> None:
     client_ip = request.client.host if request.client else "127.0.0.1"
-    now = datetime.datetime.utcnow().timestamp()
-    timestamps = ip_rate_limits.get(client_ip, [])
-    timestamps = [ts for ts in timestamps if now - ts < 60]
+    now = datetime.datetime.now(datetime.timezone.utc).timestamp()
+    timestamps = [timestamp for timestamp in ip_rate_limits.get(client_ip, []) if now - timestamp < 60]
     if len(timestamps) >= 5:
         raise HTTPException(
             status_code=429,
-            detail="Troppe segnalazioni inviate in poco tempo. Riprova tra 1 minuto."
+            detail="Troppe segnalazioni inviate in poco tempo. Riprova tra 1 minuto.",
         )
     timestamps.append(now)
     ip_rate_limits[client_ip] = timestamps
 
-def verify_admin_key(x_admin_key: Optional[str] = Header(None, alias="X-Admin-Key")):
+
+def verify_admin_key(x_admin_key: Optional[str] = Header(None, alias="X-Admin-Key")) -> None:
+    if not ADMIN_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="ADMIN_SECRET_KEY non configurata.")
     if not x_admin_key:
         raise HTTPException(status_code=401, detail="Header X-Admin-Key mancante.")
     if x_admin_key != ADMIN_SECRET_KEY:
         raise HTTPException(status_code=403, detail="Chiave Admin non valida.")
 
-def run_scraper_in_background():
+
+def run_incident_refresh() -> dict:
+    if not _refresh_lock.acquire(blocking=False):
+        return {"status": "already_running", **_refresh_state}
+
+    _refresh_state.update(
+        running=True,
+        last_started_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        last_error=None,
+    )
     try:
-        from .fetch_live_incidents import main as fetch_live_incidents_main
-        thread = threading.Thread(target=fetch_live_incidents_main)
-        thread.start()
-    except Exception as e:
-        print(f"Failed to start scraper: {e}")
+        from .fetch_live_incidents import main as fetch_live_incidents
+
+        result = fetch_live_incidents()
+        _refresh_state["last_result"] = result
+        return {"status": "completed", **result}
+    except Exception as exc:
+        _refresh_state["last_error"] = str(exc)
+        raise
+    finally:
+        _refresh_state.update(
+            running=False,
+            last_finished_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        )
+        _refresh_lock.release()
+
+
+async def automatic_incident_refresh() -> None:
+    await asyncio.sleep(2)
+    while True:
+        try:
+            await asyncio.to_thread(run_incident_refresh)
+        except Exception as exc:
+            print(f"Aggiornamento automatico notizie fallito: {exc}")
+        await asyncio.sleep(AUTO_REFRESH_MINUTES * 60)
+
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(run_scraper_in_background, 'interval', minutes=15)
-    scheduler.start()
-    run_scraper_in_background()
-    yield
-    scheduler.shutdown()
+async def lifespan(_app: FastAPI):
+    refresh_task = asyncio.create_task(automatic_incident_refresh())
+    try:
+        yield
+    finally:
+        refresh_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await refresh_task
+
+
+allowed_origins_raw = os.getenv("ALLOWED_ORIGINS", "*").strip()
+allowed_origins = (
+    ["*"]
+    if allowed_origins_raw == "*"
+    else [origin.strip() for origin in allowed_origins_raw.split(",") if origin.strip()]
+)
 
 app = FastAPI(title="Sentinel API", version="1.0.0", lifespan=lifespan)
-
-# Configurazione CORS (Environment Aware)
-allowed_origins_raw = os.environ.get("ALLOWED_ORIGINS", "*")
-allowed_origins = [o.strip() for o in allowed_origins_raw.split(",")] if allowed_origins_raw != "*" else ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -96,6 +117,27 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
+def incident_in_allowed_area(incident: models.Incident) -> bool:
+    try:
+        from .fetch_live_incidents import is_allowed_area
+
+        return is_allowed_area(incident.city or "", float(incident.latitude), float(incident.longitude))
+    except Exception:
+        return False
+
+
+def attach_incident_metadata(incident: models.Incident) -> models.Incident:
+    incident.media_urls = [media.url for media in incident.media]
+    match = re.search(
+        r"\bFonte:\s*(.+?)\.\s+Localizzazione:",
+        incident.description or "",
+        flags=re.I,
+    )
+    incident.source_label = match.group(1).strip() if match else incident.source
+    return incident
 
 # Auth Mock
 @app.get("/api/users/me", response_model=schemas.User)
@@ -109,28 +151,40 @@ def get_current_user(db: Session = Depends(get_db)):
     return user
 
 @app.get("/api/incidents", response_model=List[schemas.Incident])
-def get_incidents(skip: int = 0, limit: int = 500, db: Session = Depends(get_db)):
-    # ONLY return incidents with status == 'active'
-    incidents = db.query(models.Incident).filter(models.Incident.status == "active").offset(skip).limit(limit).all()
+def get_incidents(skip: int = 0, limit: int = 2000, db: Session = Depends(get_db)):
+    safe_limit = min(max(limit, 1), 5000)
+    all_incidents = (
+        db.query(models.Incident)
+        .options(selectinload(models.Incident.media))
+        .order_by(models.Incident.created_date.desc())
+        .all()
+    )
+    incidents = [inc for inc in all_incidents if incident_in_allowed_area(inc)][skip:skip + safe_limit]
     for inc in incidents:
-        inc.media_urls = [m.url for m in inc.media]
+        attach_incident_metadata(inc)
     return incidents
 
 @app.post("/api/incidents/refresh")
-def refresh_incidents():
+async def refresh_incidents():
     try:
-        from .fetch_live_incidents import main as fetch_live_incidents
-        return fetch_live_incidents()
+        return await asyncio.to_thread(run_incident_refresh)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/api/incidents/refresh/status")
+def refresh_incidents_status():
+    return {
+        **_refresh_state,
+        "interval_minutes": AUTO_REFRESH_MINUTES,
+    }
 
 @app.get("/api/incidents/{incident_id}", response_model=schemas.Incident)
 def get_incident(incident_id: str, db: Session = Depends(get_db)):
     incident = db.query(models.Incident).filter(models.Incident.id == incident_id, models.Incident.status == "active").first()
     if not incident:
-        raise HTTPException(status_code=404, detail="Incidente non trovato o in attesa di moderazione.")
-    incident.media_urls = [m.url for m in incident.media]
-    return incident
+        raise HTTPException(status_code=404, detail="Incident not found")
+    return attach_incident_metadata(incident)
 
 @app.post("/api/incidents", response_model=schemas.Incident)
 def create_incident(request: Request, incident: schemas.IncidentCreate, db: Session = Depends(get_db)):

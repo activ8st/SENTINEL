@@ -32,7 +32,12 @@ dist-ssr
 .agent
 
 backend/venv/
+venv/
 backend/__pycache__/
+*.py[cod]
 *.db
+*.db-wal
+*.db-shm
 backend/*.db
 __pycache__/
+.sentinel-cache/
