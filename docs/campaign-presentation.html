@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel - Marketing Campaign</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #09090b;
+            --text-color: #fafafa;
+            --primary: #f97316;
+            --primary-glow: rgba(249, 115, 22, 0.4);
+            --secondary: #fb923c;
+            --card-bg: rgba(24, 24, 27, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(249, 115, 22, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(249, 115, 22, 0.05), transparent 25%);
+        }
+
+        .presentation-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .slide {
+            position: absolute;
+            width: 80%;
+            max-width: 1000px;
+            height: 70%;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 60px;
+            opacity: 0;
+            transform: scale(0.9) translateY(30px);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px var(--primary-glow);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .slide.prev {
+            opacity: 0;
+            transform: scale(0.9) translateX(-50px);
+        }
+
+        .slide.next {
+            opacity: 0;
+            transform: scale(0.9) translateX(50px);
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff, #a1a1aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            color: var(--primary);
+        }
+
+        p, li {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            color: #d4d4d8;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            margin-left: 20px;
+        }
+
+        .highlight {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .progress-container {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            z-index: 20;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            display: flex;
+            gap: 15px;
+            z-index: 20;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+
+        button:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Slide specific styles */
+        .title-slide {
+            text-align: center;
+            align-items: center;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .metric-card h3 {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: rgba(249, 115, 22, 0.15);
+            color: var(--secondary);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="presentation-container">
+        <!-- SLIDE 1 -->
+        <div class="slide title-slide active" id="slide-0">
+            <div class="tag">GTM STRATEGY</div>
+            <h1>SENTINEL</h1>
+            <p style="font-size: 1.5rem; color: #a1a1aa; margin-top: 10px;">Marketing Campaign & Product Launch</p>
+            <div style="margin-top: 40px; width: 60px; height: 60px; border-radius: 15px; background: var(--primary); display: flex; justify-content: center; align-items: center; box-shadow: 0 0 30px var(--primary-glow);">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+        </div>
+
+        <!-- SLIDE 2 -->
+        <div class="slide" id="slide-1">
+            <h2>🎯 L'Obiettivo (Goal)</h2>
+            <p>Non stiamo solo lanciando un'app, stiamo creando il nuovo <span class="highlight">standard per la sicurezza cittadina</span> in Italia.</p>
+            
+            <div class="grid-2" style="margin-top: 40px;">
+                <div class="metric-card">
+                    <h3>Awareness</h3>
+                    <p>Dominare l'algoritmo di TikTok e Reels con video virali shock/utili nei primi 7 giorni.</p>
+                </div>
+                <div class="metric-card">
+                    <h3>Acquisition</h3>
+                    <p>Convertire il traffico social in +10k Sign Up durante la settimana di lancio Beta.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3 -->
+        <div class="slide" id="slide-2">
+            <h2>👥 Il Pubblico (Target)</h2>
+            <p>Dobbiamo colpire chi ha bisogno di info veloci e non guarda i TG.</p>
+            
+            <ul style="margin-top: 30px; list-style-type: none; margin-left: 0;">
+                <li style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px;">🎒</div>
+                    <div>
+                        <strong style="color: white; display: block;">Studenti Fuori Sede & Pendolari</strong>
+                        <span style="font-size: 1rem;">Si spostano coi mezzi, odiano gli imprevisti e gli scioperi.</span>
+                    </div>
+                </li>
+                <li style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px;">⚡</div>
+                    <div>
+                        <strong style="color: white; display: block;">Gen Z / Millennials (16-35)</strong>
+                        <span style="font-size: 1rem;">Vogliono sapere cosa succede nel loro quartiere istantaneamente.</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- SLIDE 4 -->
+        <div class="slide" id="slide-3">
+            <h2>🧠 Il Posizionamento</h2>
+            <div style="background: rgba(249, 115, 22, 0.05); border-left: 4px solid var(--primary); padding: 25px; border-radius: 0 15px 15px 0; margin-top: 20px;">
+                <p style="font-style: italic; font-size: 1.4rem; color: white;">"Non siamo un sito di news. Siamo la mappa segreta che ti dà i superpoteri sulla tua città."</p>
+            </div>
+            
+            <p style="margin-top: 30px;">Invece di dire <em>"Scarica la nostra app di notizie"</em> (noioso), diremo:</p>
+            <p><span class="highlight">"Ho trovato il radar che ti mostra in tempo reale le emergenze intorno a te."</span></p>
+        </div>
+
+        <!-- SLIDE 5 -->
+        <div class="slide" id="slide-4">
+            <h2>📱 Content Plan (Lancio)</h2>
+            <p>La nostra strategia si basa su video brevi ad alto impatto (Short-form Video).</p>
+            
+            <div style="background: rgba(255,255,255,0.05); padding: 25px; border-radius: 15px; margin-top: 20px;">
+                <h4 style="color: white; font-size: 1.2rem; margin-bottom: 10px;">Video 1: Lo Shock Value (Day 1)</h4>
+                <p style="font-size: 1.1rem;">"Cosa diavolo sta succedendo in Italia oggi?" -> Mostra la mappa piena di allerte rosse.</p>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.05); padding: 25px; border-radius: 15px; margin-top: 15px;">
+                <h4 style="color: white; font-size: 1.2rem; margin-bottom: 10px;">Video 2: L'Utilità (Day 3)</h4>
+                <p style="font-size: 1.1rem;">"Come evitare di rimanere bloccati per strada" -> Focus sui filtri e raggio d'azione.</p>
+            </div>
+        </div>
+
+        <!-- SLIDE 6 -->
+        <div class="slide" id="slide-5" style="text-align: center; align-items: center;">
+            <div class="tag" style="background: rgba(255,255,255,0.1); color: white; border: none;">NEXT STEPS</div>
+            <h2 style="font-size: 3rem; margin-top: 20px;">Ready to Launch 🚀</h2>
+            <p style="margin-bottom: 40px; margin-top: 20px;">Registriamo lo schermo. Montiamo l'audio. Pubblichiamo.</p>
+            <button style="width: auto; height: auto; padding: 15px 30px; border-radius: 30px; font-weight: bold; font-size: 1.1rem; background: var(--primary); border: none;" onclick="alert('Campagna Attivata!')">Deploy Campaign</button>
+        </div>
+
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="controls">
+        <button id="prev-btn" onclick="prevSlide()" disabled>&#8592;</button>
+        <button id="next-btn" onclick="nextSlide()">&#8594;</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progress-bar');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        function updateSlides() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active', 'prev', 'next');
+                
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else if (index < currentSlide) {
+                    slide.classList.add('prev');
+                } else {
+                    slide.classList.add('next');
+                }
+            });
+
+            // Update Progress Bar
+            const progress = (currentSlide / (slides.length - 1)) * 100;
+            progressBar.style.width = progress + '%';
+
+            // Update Buttons
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlides();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlides();
+            }
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // Touch/Swipe Support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) nextSlide();
+            if (touchEndX > touchStartX + 50) prevSlide();
+        }
+
+        // Initialize
+        updateSlides();
+    </script>
+</body>
+</html>

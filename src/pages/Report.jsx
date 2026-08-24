@@ -11,11 +11,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { TYPE_CONFIG } from '@/components/data/mockData';
+import { getPersistentIncidents } from '@/lib/liveSyncEngine';
 import {
   ChevronLeft, ChevronRight, MapPin, Loader2, Check, Shield, Upload, X
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { apiUrl } from '@/lib/api';
 
 const TYPES = [
   { value: 'crime',      emoji: '🚨', label: 'Crimine',          desc: 'Furto, aggressione, vandalismo' },
@@ -41,6 +41,7 @@ export default function Report() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1=type, 2=details, 3=confirm
   const [successId, setSuccessId] = useState(null);
+  const [pendingReview, setPendingReview] = useState(false);
   const [form, setForm] = useState({
     type: '', title: '', description: '', severity: 'medium',
     latitude: null, longitude: null, address: '', city: '',
@@ -114,20 +115,47 @@ export default function Report() {
     mutate: async (data) => {
       try {
         const incidentId = 'inc-' + Date.now();
-        const payload = {
+        const newIncident = {
           id: incidentId,
-          ...data,
-          status: 'active'
+          title: data.title || 'Segnalazione Utente',
+          description: data.description || 'Segnalazione in tempo reale inviata dalla community Sentinel.',
+          type: data.type || 'other',
+          severity: data.severity || 'medium',
+          status: 'active',
+          latitude: data.latitude || DEFAULT_LOC.lat,
+          longitude: data.longitude || DEFAULT_LOC.lng,
+          address: data.address || 'Posizione Rilevata',
+          city: data.city || 'Italia',
+          is_live: true,
+          viewers_count: 1,
+          reports_count: 1,
+          created_date: new Date().toISOString(),
+          source: 'Utente Sentinel',
+          official_verified: false
         };
-        const res = await fetch(apiUrl('/api/incidents'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error('API error');
+
+        // 1. Save to LocalStorage persistent cache
+        try {
+          const current = getPersistentIncidents();
+          const updated = [newIncident, ...current];
+          localStorage.setItem('sentinel_live_feed_v2', JSON.stringify(updated));
+        } catch (e) {
+          console.warn('LocalStorage report save warning:', e);
+        }
+
+        // 2. Save to Dexie IndexedDB
+        try {
+          await db.open();
+          await db.incidents.add(newIncident);
+          await db.reports.add(newIncident);
+        } catch (e) {
+          console.warn('Dexie report save warning:', e);
+        }
+
         setSuccessId(incidentId);
+        toast.success("Segnalazione pubblicata in tempo reale sul network!");
       } catch (e) {
-        toast.error('Errore nella segnalazione. Riprova.');
+        toast.error(e.message || 'Errore nella pubblicazione della segnalazione.');
       }
     },
     isPending: false
@@ -147,13 +175,19 @@ export default function Report() {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-          className="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center mb-6"
+          className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 ${pendingReview ? 'bg-amber-500' : 'bg-green-500'}`}
         >
           <Check className="w-10 h-10 text-white" />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Segnalazione inviata!</h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-8">Grazie. La tua segnalazione aiuta la comunità a restare al sicuro.</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            {pendingReview ? 'Segnalazione in Revisione' : 'Segnalazione inviata!'}
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md">
+            {pendingReview
+              ? 'La tua segnalazione è stata ricevuta ed è in fase di verifica da parte dei moderatori. Diventerà visibile sulla mappa dopo l\'approvazione.'
+              : 'Grazie. La tua segnalazione aiuta la comunità a restare al sicuro.'}
+          </p>
           <div className="flex flex-col gap-3">
             <Button
               className="bg-orange-500 hover:bg-orange-600 text-white"

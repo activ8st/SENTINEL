@@ -3,14 +3,26 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState({ id: 'user-1', name: 'User', karma: 100 });
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const isDev = import.meta.env.DEV;
+  const [user, setUser] = useState(isDev ? { name: 'Dev User', role: 'admin' } : null);
+  const [isAuthenticated, setIsAuthenticated] = useState(isDev);
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
+  const [authChecked, setAuthChecked] = useState(true);
+
+  const checkUserAuth = () => {
+    // Non facciamo nulla, gestiamo lo stato manualmente via login() per ora.
+    setAuthChecked(true);
+  };
+
+  const login = (userData) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+  };
 
   const navigateToLogin = () => {
-    console.log("Mock navigate to login");
+    window.location.href = '/Auth';
   };
 
   const logout = () => {
@@ -24,6 +36,9 @@ export const AuthProvider = ({ children }) => {
     isLoadingAuth,
     isLoadingPublicSettings,
     authError,
+    authChecked,
+    checkUserAuth,
+    login,
     navigateToLogin,
     logout
   };

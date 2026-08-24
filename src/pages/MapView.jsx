@@ -1,65 +1,49 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import IncidentCard from '@/components/incidents/IncidentCard';
-import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
+import { calcDistance, TYPE_CONFIG, MOCK_INCIDENTS } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
-import { apiUrl } from '@/lib/api';
-import { Locate, Layers, X, List, ChevronDown, Navigation, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Locate, Layers, X, List, ChevronDown, Navigation, ChevronLeft, ChevronRight, RefreshCw, Plus, Clock } from 'lucide-react';
+import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
-const IncidentMap = lazy(() => import('@/components/incidents/IncidentMap'));
+import IncidentMap from '@/components/incidents/IncidentMap';
+
+import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
 
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
-const INITIAL_MAP_ZOOM = 15.8;
 
 const TIME_WINDOWS = [
-  { key: 'h-1', maxHours: 1, label: '1 ora' },
   ...Array.from({ length: 8 }, (_, i) => ({
-    key: `h-${(i + 1) * 3}`,
+    key: `h-${i}`,
     maxHours: (i + 1) * 3,
-    label: `${(i + 1) * 3} ore`,
+    label: `Ultime ${(i + 1) * 3} ore`,
   })),
   ...Array.from({ length: 29 }, (_, i) => ({
     key: `d-${i + 2}`,
     maxHours: 24 * (i + 2),
-    label: `${i + 2} giorni`,
+    label: `Ultimi ${i + 2} giorni`,
   })),
 ];
 
-const HOURLY_TIME_WINDOW_COUNT = 9;
-const DEFAULT_TIME_WINDOW_INDEX = TIME_WINDOWS.length - 1; // Ultimi 30 giorni
-const formatTimeWindowLabel = (window) => {
-  if (window.maxHours === 1) return 'Ultima ora';
-  return window.maxHours <= 24 ? `Ultime ${window.label}` : `Ultimi ${window.label}`;
-};
-const AREA_PRESETS = [3, 5, 10, 25, 50];
-const loadSharedRadius = () => {
-  const saved = Number(localStorage.getItem('sentinelRadiusKm') || localStorage.getItem('sentinelRadiusKmV3'));
-  return Number.isFinite(saved) && saved >= 3 ? Math.min(saved, 100) : 3;
-};
-const loadSharedRadiusEnabled = () => {
-  const saved = localStorage.getItem('sentinelUseRadius');
-  if (saved !== null) return saved === 'true';
-  return localStorage.getItem('sentinelUseRadiusV3') !== 'false';
-};
 const getIncidentDate = (incident) => new Date(incident.created_date || incident.last_seen_at || Date.now());
 
 const isInTimeWindow = (incident, windowIndex) => {
   const selected = TIME_WINDOWS[windowIndex] || TIME_WINDOWS[0];
   const ageHours = (Date.now() - getIncidentDate(incident).getTime()) / 36e5;
-  return ageHours >= 0 && ageHours <= selected.maxHours;
+  return Math.max(0, ageHours) <= (selected ? selected.maxHours : 720);
 };
 
 export default function MapView() {
   const [mapReady, setMapReady] = useState(false);
   const [location, setLocation] = useState(DEFAULT_LOC);
-  const [hasUserLocation, setHasUserLocation] = useState(false);
   const [activeFilters, setActiveFilters] = useState(Object.keys(TYPE_CONFIG));
-  const [radius, setRadius] = useState(loadSharedRadius);
-  const [useRadius, setUseRadius] = useState(loadSharedRadiusEnabled);
+  const [radius, setRadius] = useState(() => Number(localStorage.getItem('sentinelRadiusKm') || 200));
+  const [useRadius, setUseRadius] = useState(() => localStorage.getItem('sentinelUseRadius') === 'true');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [followUser, setFollowUser] = useState(false);
@@ -67,39 +51,13 @@ export default function MapView() {
   const [routeCoords, setRouteCoords] = useState(null);
   const [routeTarget, setRouteTarget] = useState(null);
   const [routeIncident, setRouteIncident] = useState(null);
-  const [timeWindowIndex, setTimeWindowIndex] = useState(() => {
-    const savedHours = Number(localStorage.getItem('sentinelMapTimeWindowHoursV4'));
-    const savedHoursIndex = TIME_WINDOWS.findIndex(window => window.maxHours === savedHours);
-    if (savedHoursIndex >= 0) return savedHoursIndex;
-
-    // Migra la vecchia selezione basata sull'indice senza spostare il periodo scelto.
-    const legacyIndex = Number(localStorage.getItem('sentinelMapTimeWindowIndexV3'));
-    if (Number.isInteger(legacyIndex) && legacyIndex >= 0 && legacyIndex <= 36) {
-      const legacyHours = legacyIndex < 8 ? (legacyIndex + 1) * 3 : (legacyIndex - 6) * 24;
-      const migratedIndex = TIME_WINDOWS.findIndex(window => window.maxHours === legacyHours);
-      if (migratedIndex >= 0) return migratedIndex;
-    }
-
-    return DEFAULT_TIME_WINDOW_INDEX;
-  });
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const timePickerRef = useRef(null);
+  const [timeWindowIndex, setTimeWindowIndex] = useState(() => Number(localStorage.getItem('sentinelTimeWindowIndex') || 0));
   const [refreshingNews, setRefreshingNews] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('sentinelMapTimeWindowHoursV4', String(TIME_WINDOWS[timeWindowIndex].maxHours));
+    localStorage.setItem('sentinelTimeWindowIndex', String(timeWindowIndex));
   }, [timeWindowIndex]);
-
-  useEffect(() => {
-    if (!showTimePicker) return undefined;
-
-    const closeTimePicker = (event) => {
-      if (!timePickerRef.current?.contains(event.target)) setShowTimePicker(false);
-    };
-
-    document.addEventListener('pointerdown', closeTimePicker);
-    return () => document.removeEventListener('pointerdown', closeTimePicker);
-  }, [showTimePicker]);
 
   useEffect(() => {
     localStorage.setItem('sentinelUseRadius', String(useRadius));
@@ -121,7 +79,7 @@ export default function MapView() {
       const [destLat, destLng] = routeTo.split(',').map(Number);
       setRouteTarget({ lat: destLat, lng: destLng });
       if (incidentId) {
-        fetch(apiUrl(`/api/incidents/${incidentId}`))
+        fetch(`http://localhost:8000/api/incidents/${incidentId}`)
           .then(r => r.json())
           .then(inc => setRouteIncident(inc))
           .catch(() => {});
@@ -150,8 +108,6 @@ export default function MapView() {
           const userLat = pos.coords.latitude;
           const userLng = pos.coords.longitude;
           setLocation({ lat: userLat, lng: userLng });
-          setHasUserLocation(true);
-          setFollowUser(true);
           fetchRoute(userLat, userLng);
         },
         () => {
@@ -160,38 +116,32 @@ export default function MapView() {
       );
     } else {
       navigator.geolocation?.getCurrentPosition(
-        (pos) => {
-          setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setHasUserLocation(true);
-          setFollowUser(true);
-        },
+        (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         () => {}
       );
     }
   }, []);
 
-  const { data: apiIncidents = [], refetch, isFetching } = useQuery({
+  const { data: apiIncidents = getPersistentIncidents(), refetch, isFetching } = useQuery({
     queryKey: ['incidents'],
     queryFn: async () => {
-      const res = await fetch(apiUrl('/api/incidents?limit=2000'));
-      if (!res.ok) return [];
-      return res.json();
+      return await syncSentinelFeedsPermanently();
     },
-    refetchInterval: 10000,
+    refetchInterval: 15000,
   });
 
   const incidents = useMemo(() => apiIncidents
     .filter(i => activeFilters.includes(i.type))
     .filter(i => isInTimeWindow(i, timeWindowIndex))
     .filter(i => {
-      if (!useRadius || !hasUserLocation) return true;
+      if (!useRadius) return true;
       return calcDistance(location.lat, location.lng, i.latitude, i.longitude) <= radius;
     })
     .map(i => ({
       ...i,
       distance: calcDistance(location.lat, location.lng, i.latitude, i.longitude),
     }))
-    .sort((a, b) => a.distance - b.distance), [apiIncidents, activeFilters, timeWindowIndex, useRadius, hasUserLocation, radius, location]);
+    .sort((a, b) => a.distance - b.distance), [apiIncidents, activeFilters, timeWindowIndex, useRadius, radius, location]);
 
   const moveTimeWindow = (direction) => {
     setTimeWindowIndex(current => {
@@ -203,7 +153,7 @@ export default function MapView() {
   const refreshLiveNews = async () => {
     setRefreshingNews(true);
     try {
-      await fetch(apiUrl('/api/incidents/refresh'), { method: 'POST' });
+      await fetch('http://localhost:8000/api/incidents/refresh', { method: 'POST' });
       await refetch();
     } finally {
       setRefreshingNews(false);
@@ -218,25 +168,22 @@ export default function MapView() {
     navigator.geolocation?.getCurrentPosition(
       (pos) => {
         setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setHasUserLocation(true);
         setFollowUser(true);
       },
       () => {}
     );
   };
 
-  const categoryFiltersCount = Object.keys(TYPE_CONFIG).length - activeFilters.length;
+  const activeFiltersCount = Object.keys(TYPE_CONFIG).length - activeFilters.length + (useRadius ? 1 : 0) + (timeWindowIndex > 0 ? 1 : 0);
 
   // Memoizzati per evitare re-render inutili della mappa → niente lag
   const mapCenter = useMemo(() => {
     if (routeTarget) return [(location.lat + routeTarget.lat) / 2, (location.lng + routeTarget.lng) / 2];
-    if (followUser || (useRadius && hasUserLocation)) return [location.lat, location.lng];
-    return [DEFAULT_LOC.lat, DEFAULT_LOC.lng];
-  }, [routeTarget, location, followUser, hasUserLocation, useRadius]);
+    if (followUser) return [location.lat, location.lng];
+    return [42.5, 12.5];
+  }, [routeTarget, location, followUser]);
 
-  const mapZoom = routeTarget
-    ? 8
-    : INITIAL_MAP_ZOOM;
+  const mapZoom = routeTarget ? 8 : followUser ? 13 : 6;
 
   const handleIncidentClick = useCallback((inc) => {
     setSelectedIncident({ ...inc, distance: calcDistance(location.lat, location.lng, inc.latitude, inc.longitude) });
@@ -271,7 +218,7 @@ export default function MapView() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowList(s => !s)}
-            className={`flex min-h-10 items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               showList ? 'bg-orange-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
@@ -280,12 +227,12 @@ export default function MapView() {
           </button>
           <button
             onClick={() => setShowFilters(true)}
-            className={`flex min-h-10 items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              categoryFiltersCount > 0 ? 'bg-orange-500/10 dark:bg-orange-500/20 text-orange-500 dark:text-orange-400 border border-orange-500/40' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              activeFiltersCount > 0 ? 'bg-orange-500/10 dark:bg-orange-500/20 text-orange-500 dark:text-orange-400 border border-orange-500/40' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            Filtri {categoryFiltersCount > 0 ? `(${categoryFiltersCount})` : ''}
+            Filtri {activeFiltersCount > 0 ? `(${activeFiltersCount})` : ''}
           </button>
         </div>
       </div>
@@ -312,7 +259,7 @@ export default function MapView() {
                 center={mapCenter}
                 zoom={mapZoom}
                 height="100%"
-                showRadius={useRadius && hasUserLocation}
+                showRadius={useRadius}
                 radiusKm={radius}
                 routeCoords={routeCoords}
                 routeTarget={routeTarget}
@@ -325,104 +272,44 @@ export default function MapView() {
 
         {/* Locate button */}
         <div className="absolute top-3 left-4 right-4 z-30 flex items-center justify-between gap-2 pointer-events-none">
-          <div
-            ref={timePickerRef}
-            className="relative flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-white/95 dark:bg-gray-900/95 px-2 py-1 shadow pointer-events-auto"
-          >
-            <button
-              onClick={() => moveTimeWindow(-1)}
-              disabled={timeWindowIndex <= 0}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-35"
-              aria-label="Riduci il periodo mostrato"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowTimePicker(open => !open)}
-              className="flex h-8 min-w-[132px] max-w-[170px] items-center justify-center gap-1.5 rounded-full px-2 text-center text-xs font-semibold text-gray-900 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
-              aria-haspopup="dialog"
-              aria-expanded={showTimePicker}
-              aria-label={`Seleziona periodo. Attualmente ${formatTimeWindowLabel(TIME_WINDOWS[timeWindowIndex])}`}
-            >
-              <span className="truncate">{formatTimeWindowLabel(TIME_WINDOWS[timeWindowIndex])}</span>
-              <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 transition-transform ${showTimePicker ? 'rotate-180' : ''}`} />
-            </button>
+          <div className="flex items-center gap-1 rounded-full border border-gray-200 dark:border-white/10 bg-white/95 dark:bg-gray-900/95 p-1 shadow-md backdrop-blur pointer-events-auto">
             <button
               onClick={() => moveTimeWindow(1)}
               disabled={timeWindowIndex >= TIME_WINDOWS.length - 1}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-35"
-              aria-label="Aumenta il periodo mostrato"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-35 transition-colors"
+              aria-label="Mostra periodo precedente"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center justify-center gap-1.5 px-3 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-[13px] font-semibold text-gray-900 dark:text-white outline-none min-w-[130px]">
+                  <Clock className="w-3.5 h-3.5 text-orange-500" />
+                  {TIME_WINDOWS[timeWindowIndex]?.label}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="max-h-[60vh] overflow-y-auto rounded-xl shadow-xl border-gray-200 dark:border-gray-800 w-[180px]">
+                {TIME_WINDOWS.map((window, index) => (
+                  <DropdownMenuItem 
+                    key={window.key} 
+                    onClick={() => setTimeWindowIndex(index)}
+                    className={`rounded-lg cursor-pointer my-0.5 ${index === timeWindowIndex ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 font-semibold' : 'text-gray-700 dark:text-gray-300'}`}
+                  >
+                    {window.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <button
+              onClick={() => moveTimeWindow(-1)}
+              disabled={timeWindowIndex <= 0}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-35 transition-colors"
+              aria-label="Mostra periodo successivo"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
-
-            <AnimatePresence>
-              {showTimePicker && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                  transition={{ duration: 0.14 }}
-                  className="absolute left-0 top-12 z-50 w-[320px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-white/15 bg-gray-950 text-white shadow-2xl"
-                  role="dialog"
-                  aria-label="Seleziona il periodo degli eventi"
-                >
-                  <div className="border-b border-white/10 px-3 py-2.5">
-                    <p className="text-sm font-semibold">Periodo eventi</p>
-                    <p className="mt-0.5 text-xs text-gray-400">Mostra gli eventi da oggi fino al periodo scelto</p>
-                  </div>
-
-                  <div className="max-h-[310px] overflow-y-auto p-3">
-                    <p className="mb-2 text-xs font-medium text-gray-400">Ultime 24 ore</p>
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {TIME_WINDOWS.slice(0, HOURLY_TIME_WINDOW_COUNT).map((window, index) => (
-                        <button
-                          key={window.key}
-                          type="button"
-                          onClick={() => {
-                            setTimeWindowIndex(index);
-                            setShowTimePicker(false);
-                          }}
-                          className={`h-9 rounded-md text-xs font-semibold transition-colors ${
-                            timeWindowIndex === index
-                              ? 'bg-orange-500 text-white'
-                              : 'bg-white/[0.07] text-gray-200 hover:bg-white/15'
-                          }`}
-                        >
-                          {window.maxHours}h
-                        </button>
-                      ))}
-                    </div>
-
-                    <p className="mb-2 mt-4 text-xs font-medium text-gray-400">Da 2 a 30 giorni</p>
-                    <div className="grid grid-cols-5 gap-1.5">
-                      {TIME_WINDOWS.slice(HOURLY_TIME_WINDOW_COUNT).map((window, offset) => {
-                        const index = offset + HOURLY_TIME_WINDOW_COUNT;
-                        return (
-                          <button
-                            key={window.key}
-                            type="button"
-                            onClick={() => {
-                              setTimeWindowIndex(index);
-                              setShowTimePicker(false);
-                            }}
-                            className={`h-9 rounded-md text-xs font-semibold transition-colors ${
-                              timeWindowIndex === index
-                                ? 'bg-orange-500 text-white'
-                                : 'bg-white/[0.07] text-gray-200 hover:bg-white/15'
-                            }`}
-                            aria-label={`Ultimi ${window.label}`}
-                          >
-                            {offset + 2}g
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
           <div className="flex items-center gap-2 pointer-events-auto">
             <Button
@@ -444,6 +331,17 @@ export default function MapView() {
             onClick={locateUser}
           >
             <Locate className="w-5 h-5" />
+          </Button>
+        </div>
+
+        {/* Report FAB */}
+        <div className="absolute bottom-6 right-4 z-30">
+          <Button
+            className="w-14 h-14 rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-[0_8px_30px_rgb(249,115,22,0.4)] transition-transform hover:scale-105 active:scale-95"
+            onClick={() => setIsReportModalOpen(true)}
+            aria-label="Segnala Emergenza"
+          >
+            <Plus className="w-7 h-7" />
           </Button>
         </div>
 
@@ -507,39 +405,21 @@ export default function MapView() {
 
           <div className="mb-6">
             <button
-              type="button"
               onClick={() => setUseRadius(r => !r)}
-              className="flex min-h-14 cursor-pointer items-center justify-between w-full p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-3 active:scale-[0.99]"
+              className="flex items-center justify-between w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-3"
             >
-              <span className="text-gray-900 dark:text-white font-medium text-sm">Filtro area</span>
-              <div className={`pointer-events-none w-12 h-6 rounded-full transition-colors ${useRadius ? 'bg-orange-500' : 'bg-gray-600'} relative`}>
-                <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${useRadius ? 'translate-x-6' : 'translate-x-0.5'}`} />
+              <span className="text-gray-900 dark:text-white font-medium text-sm">Filtra per raggio</span>
+              <div className={`w-10 h-5 rounded-full transition-colors ${useRadius ? 'bg-orange-500' : 'bg-gray-600'} relative`}>
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${useRadius ? 'translate-x-5' : 'translate-x-0.5'}`} />
               </div>
             </button>
             {useRadius && (
               <>
-                {!hasUserLocation && (
-                  <p className="mb-3 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-300">
-                    Il raggio si applica appena il browser rileva la tua posizione.
-                  </p>
-                )}
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-600 dark:text-gray-300">Raggio</span>
                   <Badge variant="outline" className="text-orange-500 dark:text-orange-400 border-orange-500">{radius} km</Badge>
                 </div>
-                <div className="mb-3 grid grid-cols-4 gap-2">
-                  {AREA_PRESETS.map((km) => (
-                    <button
-                      key={km}
-                      type="button"
-                      onClick={() => { setRadius(km); setUseRadius(true); }}
-                      className={`min-h-9 rounded-lg border px-2 text-xs font-semibold transition-colors ${radius === km ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200'}`}
-                    >
-                      {km} km
-                    </button>
-                  ))}
-                </div>
-                <Slider value={[radius]} onValueChange={([v]) => setRadius(v)} min={3} max={100} step={1} />
+                <Slider value={[radius]} onValueChange={([v]) => setRadius(v)} min={5} max={500} step={5} />
               </>
             )}
           </div>
@@ -548,8 +428,7 @@ export default function MapView() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Tipo incidente</span>
               <button
-                type="button"
-                className="min-h-9 px-2 text-xs text-orange-500 dark:text-orange-400 font-medium"
+                className="text-xs text-orange-500 dark:text-orange-400 font-medium"
                 onClick={() => setActiveFilters(
                   activeFilters.length === Object.keys(TYPE_CONFIG).length ? [] : Object.keys(TYPE_CONFIG)
                 )}
@@ -563,7 +442,6 @@ export default function MapView() {
                 return (
                   <button
                     key={key}
-                    type="button"
                     onClick={() => toggleFilter(key)}
                     className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all ${
                       active ? `${cfg.bg} ${cfg.text} border-current/30` : 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700'
@@ -585,6 +463,12 @@ export default function MapView() {
           </Button>
         </SheetContent>
       </Sheet>
+
+      <ReportIncidentModal 
+        isOpen={isReportModalOpen} 
+        onClose={() => setIsReportModalOpen(false)} 
+        userLocation={location} 
+      />
     </div>
   );
 }

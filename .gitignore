@@ -1,6 +1,7 @@
 #env
 .env
 .env.*
+!.env.example
 
 # Logs
 logs
@@ -28,14 +29,10 @@ dist-ssr
 *.sw?
 
 .env
+.agent
 
-# Python locale
-venv/
+backend/venv/
+backend/__pycache__/
+*.db
+backend/*.db
 __pycache__/
-*.py[cod]
-.sentinel-cache/
-
-# Database locale generato automaticamente
-sentinel.db
-sentinel.db-wal
-sentinel.db-shm

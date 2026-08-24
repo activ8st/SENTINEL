@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowBigUp, ArrowBigDown } from 'lucide-react';
 import { toast } from 'sonner';
-import { apiUrl } from '@/lib/api';
 
 export default function VoteButtons({ incident }) {
   const [user, setUser] = useState({ id: 'user-1', name: 'User', karma: 100 });
@@ -47,7 +46,7 @@ export default function VoteButtons({ incident }) {
 
     setLoading(true);
     
-    fetch(apiUrl(`/api/incidents/${incident.id}/vote?upvote=${newVote === 'up'}`), {
+    fetch(`http://localhost:8000/api/incidents/${incident.id}/vote?upvote=${newVote === 'up'}`, {
       method: 'PATCH'
     })
       .catch(() => {

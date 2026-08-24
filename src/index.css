@@ -2,6 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile Rigid Layout Protection (Locks horizontal scrolling, enables pure vertical pan) */
+html, body, #root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip !important;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+body {
+  overscroll-behavior-x: none;
+}
+
+/* Stacking Cards Sticky Logic - Ultra-Sleek & Aesthetic */
+:root {
+  --card-top-offset: 20px;
+}
+
+.stacking-cards-container {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  overflow: visible !important;
+}
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow: visible !important;
+}
+
+.card-item {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: calc(var(--index) * var(--card-top-offset) + 105px) !important;
+  min-height: 260px;
+  border-radius: 2rem;
+  overflow: hidden;
+  box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.45);
+  margin-bottom: 24px;
+  z-index: calc(var(--index) * 10);
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.75rem;
+  height: 100%;
+}
+
+@media (min-width: 768px) {
+  .card-content {
+    flex-direction: row;
+    align-items: center;
+    padding: 2.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --card-top-offset: 14px;
+  }
+  .stacking-cards-container {
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
+  .card-item {
+    top: calc(var(--index) * var(--card-top-offset) + 95px) !important;
+    min-height: 240px;
+    border-radius: 1.5rem;
+    margin-bottom: 16px;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -65,7 +145,6 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --emergency: 0 100% 50%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -79,10 +158,57 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* HIGH-ACCESSIBILITY LIGHT MODE OVERRIDES */
+html.light-theme {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html.light-theme main,
+html.light-theme section {
+  background-color: transparent;
+}
+
+html.light-theme div[class*="bg-[#050505]"],
+html.light-theme div[class*="bg-[#0a0a0a]"],
+html.light-theme div[class*="bg-[#0c0c0c]"] {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.04) !important;
+}
+
+html.light-theme .text-white {
+  color: #0f172a !important;
+}
+
+html.light-theme .text-white\/70,
+html.light-theme .text-white\/60,
+html.light-theme .text-white\/50,
+html.light-theme .text-white\/40 {
+  color: #475569 !important;
+}
+
+html.light-theme .border-white\/10,
+html.light-theme .border-white\/15,
+html.light-theme .border-white\/20 {
+  border-color: #cbd5e1 !important;
+}
+
+html.light-theme .footer-container {
+  background-color: #f1f5f9 !important;
+  border-top-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html.light-theme nav {
+  background-color: rgba(248, 250, 252, 0.95) !important;
+  border-bottom-color: #cbd5e1 !important;
 }

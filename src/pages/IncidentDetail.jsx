@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { getIncidentById, TYPE_CONFIG, SEVERITY_CONFIG, STATUS_CONFIG } from '@/components/data/mockData';
+import { getIncidentById, TYPE_CONFIG, SEVERITY_CONFIG, STATUS_CONFIG, MOCK_INCIDENTS } from '@/components/data/mockData';
+import { getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -22,7 +23,6 @@ import {
 } from 'lucide-react';
 import VoteButtons from '@/components/incidents/VoteButtons';
 import { ReliabilityBadge } from '@/components/data/reliability';
-import { apiUrl } from '@/lib/api';
 
 const IncidentMap = lazy(() => import('@/components/incidents/IncidentMap'));
 
@@ -48,11 +48,25 @@ export default function IncidentDetail() {
   const { data: incident, isLoading } = useQuery({
     queryKey: ['incident', incidentId],
     queryFn: async () => {
-      const res = await fetch(apiUrl(`/api/incidents/${incidentId}`));
-      if (!res.ok) return null;
-      return res.json();
+      if (!incidentId) return null;
+      // 1. Check persistent incidents cache
+      const persistent = getPersistentIncidents();
+      const foundPersistent = persistent.find(i => String(i.id) === String(incidentId));
+      if (foundPersistent) return foundPersistent;
+
+      // 2. Check static mock incidents
+      const foundMock = MOCK_INCIDENTS.find(i => String(i.id) === String(incidentId));
+      if (foundMock) return foundMock;
+
+      // 3. Fallback helper
+      return getIncidentById(incidentId);
     },
-    enabled: !!incidentId
+    enabled: !!incidentId,
+    initialData: () => {
+      if (!incidentId) return null;
+      const persistent = getPersistentIncidents();
+      return persistent.find(i => String(i.id) === String(incidentId)) || MOCK_INCIDENTS.find(i => String(i.id) === String(incidentId));
+    }
   });
 
   useEffect(() => {
@@ -225,9 +239,9 @@ export default function IncidentDetail() {
           <div className={`${sectionCard} p-4 mb-4`}>
             <div className="flex items-center justify-between gap-3 mb-3">
               <span className="text-sm font-semibold text-gray-900 dark:text-white">Fonte e documenti</span>
-              {(incident.source_label || incident.source) && (
+              {incident.source && (
                 <Badge variant="outline" className="text-xs border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300">
-                  {incident.source_label || incident.source}
+                  {incident.source}
                 </Badge>
               )}
             </div>

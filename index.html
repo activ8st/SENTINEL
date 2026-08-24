@@ -1,14 +1,80 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link rel="alternate icon" type="image/png" href="/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <link rel="manifest" href="/manifest.json" />
-    <title>Sentinel</title>
+    <link rel="canonical" href="https://sentinel-app.it/" />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+    
+    <!-- SEO Meta Tags -->
+    <meta name="google-site-verification" content="google278e56a581a0f5a8" />
+    <title>Sentinel Italia — App Sicurezza Urbana & Mappa Emergenze in Tempo Reale</title>
+    <meta name="description" content="Sentinel Italia è la prima piattaforma di sicurezza urbana partecipata. Mappa 3D, notifiche di quartiere in tempo reale, news verificate e allerte per famiglie, pendolari e cittadini." />
+    <meta name="keywords" content="Sentinel, Sentinel Italia, Sentinel App, sicurezza urbana Italia, app sicurezza cittadini, mappa crimini Milano, allerte in tempo reale, sicurezza quartiere, mappa emergenze Italia" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://sentinel-italy.vercel.app/" />
+    <meta property="og:title" content="Sentinel Italia — App Sicurezza Urbana & Mappa Emergenze in Tempo Reale" />
+    <meta property="og:description" content="Sentinel Italia è la prima piattaforma di sicurezza urbana partecipata. Mappa 3D, notifiche di quartiere in tempo reale, news verificate e allerte per famiglie, pendolari e cittadini." />
+    <meta property="og:image" content="https://sentinel-italy.vercel.app/sentinel_hero_map.png" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://sentinel-italy.vercel.app/" />
+    <meta name="twitter:title" content="Sentinel Italia — App Sicurezza Urbana in Tempo Reale" />
+    <meta name="twitter:description" content="Mappa 3D, notizie locali verificate e allerte di quartiere in tempo reale." />
+    <meta name="twitter:image" content="https://sentinel-italy.vercel.app/sentinel_hero_map.png" />
+
+    <!-- Structured Data (JSON-LD) for Search Engine Rich Snippets -->
+    <script type="application/ld+json">
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Sentinel Italia",
+        "alternateName": ["Sentinel App", "Sentinel Safety"],
+        "applicationCategory": "SafetyApplication",
+        "operatingSystem": "iOS, Android, Web",
+        "url": "https://sentinel-italy.vercel.app/",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        },
+        "description": "Piattaforma di sicurezza urbana partecipata e tracciamento emergenze in tempo reale con moderazione preventiva e fonti verificate."
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Sentinel Italia",
+        "url": "https://sentinel-italy.vercel.app/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://sentinel-italy.vercel.app/Home?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+    </script>
   </head>
-  <body>
-    <div id="root"></div>
+  <body class="bg-[#050505] text-white">
+    <div id="root">
+      <div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#050505; color:white; font-family:sans-serif; text-align:center; padding:20px;">
+        <div style="position:relative; margin-bottom:20px;">
+          <img src="/logo.svg" alt="Sentinel Logo" style="width:64px; height:64px; border-radius:16px; object-fit:cover;" />
+          <div style="position:absolute; inset:-4px; border-radius:20px; border:2px solid #10b981; opacity:0.6; animation:pulse 2s infinite;"></div>
+        </div>
+        <h1 style="font-size:20px; font-weight:800; margin:0 0 6px 0; letter-spacing: -0.02em;">Sentinel</h1>
+        <p style="font-size:12px; color:rgba(255,255,255,0.5); margin:0;">Inizializzazione network di sicurezza...</p>
+        <style>
+          @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.08); opacity: 0.8; } }
+        </style>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
