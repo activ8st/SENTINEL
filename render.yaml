@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: sentinel-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sentinel-db
+          property: connectionString
+      - key: ALLOWED_ORIGINS
+        value: https://sentinel-app.it,https://sentinel-italy.vercel.app
+      - key: SENTINEL_AUTO_REFRESH_ENABLED
+        value: true
+      - key: SENTINEL_AUTO_REFRESH_MINUTES
+        value: 15
+
+databases:
+  - name: sentinel-db
+    plan: free
+    databaseName: sentinel
+    user: sentinel

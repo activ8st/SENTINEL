@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import IncidentMap from '@/components/incidents/IncidentMap';
 
 import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
+import { apiFetch, isSentinelApiConfigured } from '@/lib/sentinelApi';
 
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
@@ -79,7 +80,9 @@ export default function MapView() {
       const [destLat, destLng] = routeTo.split(',').map(Number);
       setRouteTarget({ lat: destLat, lng: destLng });
       if (incidentId) {
-        fetch(`http://localhost:8000/api/incidents/${incidentId}`)
+        (isSentinelApiConfigured
+          ? apiFetch(`/api/incidents/${incidentId}`)
+          : Promise.reject(new Error('API non configurata')))
           .then(r => r.json())
           .then(inc => setRouteIncident(inc))
           .catch(() => {});
@@ -153,7 +156,9 @@ export default function MapView() {
   const refreshLiveNews = async () => {
     setRefreshingNews(true);
     try {
-      await fetch('http://localhost:8000/api/incidents/refresh', { method: 'POST' });
+      if (isSentinelApiConfigured) {
+        await apiFetch('/api/incidents/refresh', { method: 'POST', timeoutMs: 300000 });
+      }
       await refetch();
     } finally {
       setRefreshingNews(false);

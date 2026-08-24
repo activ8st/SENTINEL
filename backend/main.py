@@ -12,13 +12,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, selectinload
 
 from . import models, schemas
-from .database import engine, get_db
+from .database import engine, ensure_schema_compatibility, get_db
 from .moderation import moderate_user_report, ModerationAction
 from sqlalchemy import text
 
 models.Base.metadata.create_all(bind=engine)
+ensure_schema_compatibility()
 
 AUTO_REFRESH_MINUTES = max(5, int(os.getenv("SENTINEL_AUTO_REFRESH_MINUTES", "15")))
+AUTO_REFRESH_ENABLED = os.getenv("SENTINEL_AUTO_REFRESH_ENABLED", "true").strip().lower() in {
+    "1", "true", "yes", "on"
+}
 _refresh_lock = threading.Lock()
 _refresh_state = {
     "running": False,
@@ -92,13 +96,14 @@ async def automatic_incident_refresh() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    refresh_task = asyncio.create_task(automatic_incident_refresh())
+    refresh_task = asyncio.create_task(automatic_incident_refresh()) if AUTO_REFRESH_ENABLED else None
     try:
         yield
     finally:
-        refresh_task.cancel()
-        with suppress(asyncio.CancelledError):
-            await refresh_task
+        if refresh_task is not None:
+            refresh_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await refresh_task
 
 
 allowed_origins_raw = os.getenv("ALLOWED_ORIGINS", "*").strip()
@@ -113,10 +118,15 @@ app = FastAPI(title="Sentinel API", version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_credentials=allowed_origins != ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok", "auto_refresh": AUTO_REFRESH_ENABLED}
 
 
 

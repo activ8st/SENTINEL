@@ -9,9 +9,9 @@ class User(Base):
     id = Column(String, primary_key=True, index=True)
     name = Column(String, index=True)
     karma = Column(Integer, default=100)
-    strikes = Column(Integer, default=0)
-    is_read_only = Column(Boolean, default=False)
-    role = Column(String, default="user")
+    strikes = Column(Integer, default=0, server_default="0")
+    is_read_only = Column(Boolean, default=False, server_default="false")
+    role = Column(String, default="user", server_default="user")
 
 class Incident(Base):
     __tablename__ = "incidents"
@@ -39,7 +39,7 @@ class Incident(Base):
 
     reported_by_id = Column(String, ForeignKey("users.id"))
     reporter_karma = Column(Integer, default=0)
-    fake_votes = Column(Integer, default=0)
+    fake_votes = Column(Integer, default=0, server_default="0")
 
     media = relationship("Media", back_populates="incident", cascade="all, delete-orphan")
 

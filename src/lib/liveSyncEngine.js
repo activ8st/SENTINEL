@@ -16,6 +16,7 @@
 
 import { fetchAllLiveSentinelFeeds, getColdBootRealLiveFeeds } from '@/lib/newsScraper';
 import { db } from '@/lib/db';
+import { fetchApiIncidents, isSentinelApiConfigured } from '@/lib/sentinelApi';
 
 const STORAGE_KEY = 'sentinel_live_production_v9';
 
@@ -53,7 +54,21 @@ export const getPersistentIncidents = () => {
 
 export const syncSentinelFeedsPermanently = async () => {
   try {
-    const liveFeeds = await fetchAllLiveSentinelFeeds();
+    let liveFeeds = [];
+
+    if (isSentinelApiConfigured) {
+      try {
+        liveFeeds = await fetchApiIncidents();
+      } catch (apiError) {
+        console.warn('Sentinel API sync warning:', apiError);
+      }
+    }
+
+    // Keep the current browser sources as a no-downtime fallback until the
+    // online API is configured, or whenever it is temporarily unavailable.
+    if (liveFeeds.length === 0) {
+      liveFeeds = await fetchAllLiveSentinelFeeds();
+    }
     const titleMap = new Map();
 
     // 1. Ingest User Reports submitted via the app (IndexedDB db.reports)

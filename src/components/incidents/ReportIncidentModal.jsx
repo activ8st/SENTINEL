@@ -4,6 +4,7 @@ import { TYPE_CONFIG } from '@/components/data/mockData';
 import { Button } from '@/components/ui/button';
 import { X, Send, MapPin, Loader2, AlertCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/sentinelApi';
 
 export default function ReportIncidentModal({ isOpen, onClose, userLocation }) {
   const [step, setStep] = useState(1);
@@ -35,7 +36,7 @@ export default function ReportIncidentModal({ isOpen, onClose, userLocation }) {
     };
 
     try {
-      const res = await fetch('http://localhost:8000/api/incidents/user-report', {
+      const res = await apiFetch('/api/incidents/user-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
