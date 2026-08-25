@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { MapPin, Clock, ExternalLink, Share2, Heart, Volume2, VolumeX, ShieldCheck, ChevronRight } from 'lucide-react';
@@ -39,7 +39,28 @@ export default function IncidentCard({ incident, distance, unread = false }) {
   const [isLiked, setIsLiked] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
 
-  const heroImage = incident.hero_image || HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+  // Initial Hero Image selection
+  const defaultFallback = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+  const initialImage = (incident.hero_image && incident.hero_image.startsWith('http')) 
+    ? incident.hero_image 
+    : defaultFallback;
+
+  const [imgSrc, setImgSrc] = useState(initialImage);
+
+  useEffect(() => {
+    const freshDefault = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+    const freshImage = (incident.hero_image && incident.hero_image.startsWith('http')) 
+      ? incident.hero_image 
+      : freshDefault;
+    setImgSrc(freshImage);
+  }, [incident, typeKey]);
+
+  const handleImageError = () => {
+    const fallback = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+    if (imgSrc !== fallback) {
+      setImgSrc(fallback);
+    }
+  };
 
   const handleShare = (e) => {
     e.preventDefault();
@@ -67,11 +88,12 @@ export default function IncidentCard({ incident, distance, unread = false }) {
                     border-white/10 shadow-2xl hover:border-[#10b981]/50
                     border-l-4 ${severity.border} ${unread ? 'ring-2 ring-emerald-500/40' : ''}`}>
       
-      {/* 1. Full-Bleed 16:9 Media Hero Banner */}
+      {/* 1. Full-Bleed 16:9 Media Hero Banner with Crash-Proof Error Handling */}
       <div className="relative aspect-video w-full overflow-hidden bg-slate-900 group">
         <img
-          src={heroImage}
-          alt={incident.title}
+          src={imgSrc}
+          alt=""
+          onError={handleImageError}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-90"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1017] via-black/20 to-transparent" />
