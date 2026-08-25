@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { MapPin, Clock, ExternalLink, Share2, Heart, Volume2, VolumeX, ShieldCheck, ChevronRight } from 'lucide-react';
@@ -17,7 +17,10 @@ const safeFormatTimeAgo = (dateStr) => {
   }
 };
 
-// High Definition Curated Category Hero Images (Statue of Justice, Range Rover, Police, Firefighters, Storm)
+// Sleek inline SVG fallback image data URI so Chrome NEVER renders a broken image icon
+const SVG_EMERGENCY_FALLBACK = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'><rect width='100%' height='100%' fill='%230f172a'/><circle cx='400' cy='225' r='180' fill='none' stroke='%2310b981' stroke-width='2' opacity='0.25'/><circle cx='400' cy='225' r='120' fill='none' stroke='%2310b981' stroke-width='2' opacity='0.35'/><circle cx='400' cy='225' r='60' fill='none' stroke='%2310b981' stroke-width='2' opacity='0.45'/><circle cx='400' cy='225' r='8' fill='%2310b981'/><path d='M400 45 L400 405 M225 225 L575 225' stroke='%2310b981' stroke-width='1.5' opacity='0.2'/><text x='50%' y='85%' text-anchor='middle' fill='%2310b981' font-family='sans-serif' font-size='20' font-weight='bold' letter-spacing='4'>SENTINEL MONITORING HUB</text></svg>";
+
+// Guaranteed HD Unsplash Hero Images per Category
 const HERO_IMAGES_BY_TYPE = {
   crime: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1000&q=80',
   accident: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1000&q=80',
@@ -39,8 +42,20 @@ export default function IncidentCard({ incident, distance, unread = false }) {
   const [isLiked, setIsLiked] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
 
-  // Guaranteed high definition hero image matching category (Statua della Giustizia, Range Rover, Polizia)
-  const heroImageSrc = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+  // Initial hero image setup
+  const categoryHdImage = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+  const [imgSrc, setImgSrc] = useState(categoryHdImage);
+
+  useEffect(() => {
+    const freshImage = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+    setImgSrc(freshImage);
+  }, [incident, typeKey]);
+
+  const handleImageError = (e) => {
+    if (imgSrc !== SVG_EMERGENCY_FALLBACK) {
+      setImgSrc(SVG_EMERGENCY_FALLBACK);
+    }
+  };
 
   const handleShare = (e) => {
     e.preventDefault();
@@ -68,11 +83,12 @@ export default function IncidentCard({ incident, distance, unread = false }) {
                     border-white/10 shadow-2xl hover:border-[#10b981]/50
                     border-l-4 ${severity.border} ${unread ? 'ring-2 ring-emerald-500/40' : ''}`}>
       
-      {/* 1. Full-Bleed 16:9 Media Hero Banner (Statua della Giustizia, Range Rover, Polizia HD) */}
-      <div className="relative aspect-video w-full overflow-hidden bg-slate-900 group">
+      {/* 1. Full-Bleed 16:9 Media Hero Banner with Guaranteed Inline SVG Radar Fallback */}
+      <div className="relative aspect-video w-full overflow-hidden bg-slate-950 group">
         <img
-          src={heroImageSrc}
-          alt={incident.title}
+          src={imgSrc}
+          alt=""
+          onError={handleImageError}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-90"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1017] via-black/20 to-transparent" />
