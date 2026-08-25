@@ -92,7 +92,7 @@ export default function IncidentCard({ incident, distance, unread = false }) {
                     border-white/10 shadow-2xl hover:border-[#10b981]/50
                     border-l-4 ${severity.border} ${unread ? 'ring-2 ring-emerald-500/40' : ''}`}>
       
-      {/* 1. Full-Bleed 16:9 Media Hero Banner with 0ms Automatic HD Category Fallback */}
+      {/* 1. Full-Bleed 16:9 Media Hero Banner (Sound Toggle Top-Right + Heart Like Bottom-Right / NO LIVE RED BADGE) */}
       <div className="relative aspect-video w-full overflow-hidden bg-slate-900 group">
         <img
           src={imgSrc}
@@ -120,13 +120,6 @@ export default function IncidentCard({ incident, distance, unread = false }) {
         >
           <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
         </button>
-
-        {/* Live Pulse Badge Top Left */}
-        {incident.is_live && (
-          <span className="absolute top-3 left-3 flex items-center gap-1.5 bg-red-600/95 text-white text-[10px] font-black px-3 py-1 rounded-full animate-pulse shadow-lg tracking-wider">
-            🔴 LIVE BROADCAST
-          </span>
-        )}
       </div>
 
       {/* 2. Content Body (Citizen Style) */}
@@ -169,7 +162,7 @@ export default function IncidentCard({ incident, distance, unread = false }) {
           {incident.description || 'Monitoraggio perimetrale attivo ed in aggiornamento continuo dalle fonti ufficiali.'}
         </p>
 
-        {/* 3. Action Bar (Direct Source Link + Share + Details) */}
+        {/* 3. Action Bar (Direct Source Link + Share + Details / NO FAKE COUNTERS / NO DRONE 3D) */}
         <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between text-xs text-white/60">
           
           <div className="flex items-center gap-2">
