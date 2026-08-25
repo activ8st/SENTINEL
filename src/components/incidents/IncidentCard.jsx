@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { MapPin, Clock, ExternalLink, Video, Eye, MessageSquare, Share2, Heart, Volume2, VolumeX, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Clock, ExternalLink, Share2, Heart, Volume2, VolumeX, ShieldCheck, ChevronRight } from 'lucide-react';
 import { TYPE_CONFIG, SEVERITY_CONFIG } from '@/components/data/mockData';
-import AerialView from '@/components/incidents/AerialView';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -38,7 +36,6 @@ export default function IncidentCard({ incident, distance, unread = false }) {
   const severityKey = incident.severity && SEVERITY_CONFIG[incident.severity] ? incident.severity : 'medium';
   const severity = SEVERITY_CONFIG[severityKey];
 
-  const [showAerial, setShowAerial] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
 
@@ -55,7 +52,7 @@ export default function IncidentCard({ incident, distance, unread = false }) {
       }).catch(() => {});
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Link copiato negli appunti!');
+      alert('Link dell\'allerta copiato negli appunti!');
     }
   };
 
@@ -111,8 +108,9 @@ export default function IncidentCard({ incident, distance, unread = false }) {
         
         {/* Source Pill */}
         <div className="flex items-center gap-2 mb-2.5">
-          <span className="text-[11px] font-black bg-white/10 text-white/90 border border-white/15 px-3 py-1 rounded-full uppercase tracking-wider">
-            🛡️ {incident.source || 'ANSA Ufficiale'}
+          <span className="inline-flex items-center gap-1 text-[11px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full uppercase tracking-wider">
+            <ShieldCheck className="w-3 h-3" />
+            {incident.source || 'Fonte Ufficiale'}
           </span>
         </div>
 
@@ -145,72 +143,46 @@ export default function IncidentCard({ incident, distance, unread = false }) {
           {incident.description || 'Monitoraggio perimetrale attivo ed in aggiornamento continuo dalle fonti ufficiali.'}
         </p>
 
-        {/* 3. Social Stats Bar (Views, Media, Comments, Share) */}
+        {/* 3. Action Bar (100% Authentic Data: Direct Source Link + Share + Details) */}
         <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between text-xs text-white/60">
           
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 text-[11px] font-bold text-white/70">
-              <Eye className="w-3.5 h-3.5 text-slate-400" />
-              {(12.4 + (incident.id ? incident.id.length * 1.5 : 5)).toFixed(1)}K
-            </span>
-
-            <span className="flex items-center gap-1 text-[11px] font-bold text-white/70">
-              <ImageIcon className="w-3.5 h-3.5 text-slate-400" />
-              {4 + (incident.reports_count || 1)}
-            </span>
-
-            <span className="flex items-center gap-1 text-[11px] font-bold text-white/70">
-              <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
-              {18 + (incident.viewers_count || 12)}
-            </span>
-          </div>
-
           <div className="flex items-center gap-2">
-            {/* Drone 3D Trigger */}
-            <Dialog open={showAerial} onOpenChange={setShowAerial}>
-              <DialogTrigger asChild>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setShowAerial(true);
-                  }}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 px-2.5 py-1 rounded-lg transition-colors"
-                >
-                  <Video className="w-3 h-3 text-red-500" />
-                  Drone 3D
-                </button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl p-0 bg-black border-slate-800 text-white overflow-hidden rounded-2xl">
-                <DialogTitle className="sr-only">Vista Drone 3D per {incident.title}</DialogTitle>
-                <AerialView incident={incident} onClose={() => setShowAerial(false)} />
-              </DialogContent>
-            </Dialog>
-
-            {/* Direct Official Link */}
-            {incident.source_url && (
+            {/* Direct Link to Official News Article */}
+            {incident.source_url ? (
               <a
                 href={incident.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-xl transition-colors"
               >
-                <ExternalLink className="w-3 h-3" />
-                Fonte
+                <ExternalLink className="w-3.5 h-3.5" />
+                Fonte Ufficiale
               </a>
+            ) : (
+              <span className="text-[11px] font-bold text-white/40">
+                Fonte Verificata
+              </span>
             )}
+          </div>
 
+          <div className="flex items-center gap-2">
             {/* Share Button */}
             <button
               type="button"
               onClick={handleShare}
-              className="inline-flex items-center gap-1 text-[11px] font-bold text-white/90 hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg transition-colors border border-white/10"
+              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition-colors border border-white/15"
             >
-              <Share2 className="w-3 h-3" />
+              <Share2 className="w-3.5 h-3.5" />
               Condividi
             </button>
+
+            <Link
+              to={createPageUrl('IncidentDetail') + `?id=${incident.id}`}
+              className="inline-flex items-center gap-0.5 text-white/60 hover:text-[#10b981] font-bold transition-colors text-[11px] ml-1"
+            >
+              Dettagli <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
         </div>
