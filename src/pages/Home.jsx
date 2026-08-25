@@ -11,7 +11,7 @@ import { syncSentinelFeedsPermanently, getPersistentIncidents, startPermanentBac
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import {
-  Navigation, RefreshCw, SlidersHorizontal,
+  Globe, Navigation, RefreshCw, SlidersHorizontal, ChevronDown,
   AlertTriangle, Flame, Car, Heart, Eye, Radio, CloudLightning, HelpCircle,
   CheckSquare, Square, Shield
 } from 'lucide-react';
@@ -27,7 +27,7 @@ const TIME_WINDOWS = [
   { hours: 12, label: 'Ultime 12h' },
   { hours: 24, label: 'Ultime 24h' },
   { hours: 48, label: 'Ultime 48h' },
-  { hours: 72, label: 'Ultime 72h (3 Giorni)' },
+  { hours: 72, label: 'Ultime 72h' },
 ];
 
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -41,8 +41,8 @@ const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
 export default function Home() {
   const [location, setLocation] = useState(DEFAULT_LOC);
-  const [locLabel, setLocLabel] = useState('Inizializzazione GPS...');
-  const [selectedHours, setSelectedHours] = useState(72);
+  const [locLabel, setLocLabel] = useState('Tutta Italia');
+  const [selectedHours, setSelectedHours] = useState(24);
 
   // Start background sync loop on boot
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function Home() {
   // High-accuracy real-time GPS triangulation
   useEffect(() => {
     if (!navigator.geolocation) {
-      setLocLabel('Milano · Centro');
+      setLocLabel('Tutta Italia');
       return;
     }
 
@@ -64,7 +64,7 @@ export default function Home() {
       },
       (err) => {
         console.warn("GPS High Accuracy Error fallback:", err);
-        setLocLabel('La tua Posizione (GPS)');
+        setLocLabel('Tutta Italia');
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -72,7 +72,7 @@ export default function Home() {
 
   // Live Query from TanStack Query + Dexie
   const { data: rawLiveIncidents = [], refetch, isFetching } = useQuery({
-    queryKey: ['incidents-production-v9'],
+    queryKey: ['incidents-production-v10'],
     queryFn: async () => {
       return await syncSentinelFeedsPermanently();
     },
@@ -82,7 +82,7 @@ export default function Home() {
   const readStatuses = useLiveQuery(() => db.readStatus.toArray(), []) || [];
   const readIncidentIds = new Set(readStatuses.map(rs => rs.incidentId));
 
-  const [sortBy, setSortBy] = useState('distance');
+  const [sortBy, setSortBy] = useState('time');
   const [activeTypes, setActiveTypes] = useState(Object.keys(TYPE_CONFIG));
   const [showFilters, setShowFilters] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -150,145 +150,97 @@ export default function Home() {
   const activeFiltersCount = Object.keys(TYPE_CONFIG).length - activeTypes.length + (showOnlyActive ? 1 : 0) + (useRadius ? 1 : 0);
 
   return (
-    <div className="min-h-screen bg-[#0b0e14] text-white" role="main">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#0b0e14]/95 backdrop-blur border-b border-white/10">
-        <div className="px-4 pt-4 pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <img src="/logo.svg" alt="Sentinel Logo" className="w-9 h-9 rounded-xl object-cover shadow-sm" />
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-bold text-white leading-none">Sentinel</h1>
-                  <span className="text-[10px] font-black bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
-                    LIVE BROADCAST
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <Navigation className="w-3 h-3 text-[#10b981]" />
-                  <span className="text-xs text-white/60 font-medium">{locLabel}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {criticalCount > 0 && (
-                <Badge className="bg-red-600 text-white text-xs animate-pulse font-bold px-2.5 py-1">
-                  {criticalCount} critico
-                </Badge>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white/60 hover:text-white hover:bg-white/10 w-9 h-9"
-                onClick={handleRefresh}
-                disabled={refreshing || isFetching}
-                aria-label={refreshing ? 'Aggiornamento in corso...' : 'Aggiorna feed'}
-              >
-                <RefreshCw className={`w-4 h-4 ${refreshing || isFetching ? 'animate-spin' : ''}`} aria-hidden="true" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Time Window & Sort Bar */}
-        <div className="px-4 pb-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-          {/* Hours Filter Pills */}
-          <div className="flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10 shrink-0">
-            {TIME_WINDOWS.map(tw => (
-              <button
-                key={tw.hours}
-                onClick={() => setSelectedHours(tw.hours)}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all ${
-                  selectedHours === tw.hours
-                    ? 'bg-[#10b981] text-black shadow'
-                    : 'text-white/60 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                {tw.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Sort bar */}
-          <div className="flex items-center gap-1.5 ml-auto shrink-0">
-            {SORT_OPTIONS.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setSortBy(opt.value)}
-                aria-pressed={sortBy === opt.value}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-colors
-                  ${sortBy === opt.value
-                    ? 'bg-white/20 text-white border border-white/30'
-                    : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
-              >
-                {opt.label}
-              </button>
-            ))}
+    <div className="min-h-screen bg-[#000000] text-white pb-24" role="main">
+      
+      {/* 1. Citizen Header Row: Globe / Area Selector Left + Time Filter Right */}
+      <div className="sticky top-0 z-40 bg-[#000000]/95 backdrop-blur border-b border-white/10 px-4 py-3">
+        <div className="max-w-xl mx-auto flex items-center justify-between">
+          
+          {/* Left: Globe Nationwide Selector */}
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-white/90" />
             <button
               onClick={() => setShowFilters(true)}
-              aria-label={`Apri filtri${activeFiltersCount > 0 ? `, ${activeFiltersCount} attivi` : ''}`}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-colors
-                ${activeFiltersCount > 0
-                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                  : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'}`}
+              className="flex items-center gap-1.5 text-base font-extrabold text-white hover:text-[#10b981] transition-colors"
             >
-              <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Filtri</span>
-              {activeFiltersCount > 0 && (
-                <span className="w-4 h-4 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center font-bold">
-                  {activeFiltersCount}
-                </span>
-              )}
+              <span>{locLabel}</span>
+              <ChevronDown className="w-4 h-4 text-white/60" />
             </button>
           </div>
+
+          {/* Right: Time Window Selector */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/15 text-xs font-bold text-white/90">
+              <span className="text-white/60">Ultime</span>
+              <select
+                value={selectedHours}
+                onChange={(e) => setSelectedHours(Number(e.target.value))}
+                className="bg-transparent text-white font-black cursor-pointer outline-none"
+              >
+                {TIME_WINDOWS.map(tw => (
+                  <option key={tw.hours} value={tw.hours} className="bg-black text-white">
+                    {tw.hours}h
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white/60 hover:text-white hover:bg-white/10 w-8 h-8 rounded-full"
+              onClick={handleRefresh}
+              disabled={refreshing || isFetching}
+              aria-label="Aggiorna feed"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing || isFetching ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+
         </div>
       </div>
 
-      {/* Feed List */}
-      <div className="p-4 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-xs text-white/60 font-medium">
-            <strong className="text-white font-bold">{activeCount}</strong> attivi ·{' '}
-            <strong className="text-[#10b981] font-bold">{filtered.length}</strong> eventi live nelle {selectedHours}h
+      {/* 2. Single-Column Citizen Social Feed Container */}
+      <div className="px-3 pt-4 max-w-xl mx-auto space-y-5">
+        
+        {/* Active Stats Header */}
+        <div className="flex items-center justify-between px-1 text-xs text-white/50 font-semibold">
+          <span>
+            <strong className="text-white font-bold">{activeCount}</strong> eventi attivi nel radar
+          </span>
+          <span className="text-[#10b981] font-bold">
+            {filtered.length} in evidenza
           </span>
         </div>
 
         {filtered.length === 0 ? (
-          <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/5">
-            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3 text-white/40">
-              <Shield className="w-6 h-6" />
+          <div className="text-center py-20 bg-[#0d1017] rounded-3xl border border-white/10 p-6">
+            <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-4 text-white/40">
+              <Shield className="w-7 h-7" />
             </div>
-            <p className="text-sm text-white/80 font-bold mb-1">Nessun evento rilevato nelle ultime {selectedHours} ore</p>
-            <p className="text-xs text-white/50 max-w-sm mx-auto mb-4">
-              La tua area è tranquilla. Aumenta la finestra temporale fino a 72h o resetta i filtri.
+            <h3 className="text-base font-extrabold text-white mb-1">Nessun evento nelle ultime {selectedHours}h</h3>
+            <p className="text-xs text-white/50 max-w-sm mx-auto mb-5">
+              Il radar Sentinel monitora le fonti ufficali in tempo reale. Espandi la finestra temporale a 72h.
             </p>
             <Button
               size="sm"
-              variant="outline"
-              onClick={() => {
-                setSelectedHours(72);
-                setActiveTypes(Object.keys(TYPE_CONFIG));
-                setShowOnlyActive(false);
-                setUseRadius(false);
-              }}
-              className="text-xs border-white/20 text-white hover:bg-white/10"
+              onClick={() => setSelectedHours(72)}
+              className="bg-[#10b981] text-black font-extrabold text-xs rounded-xl px-5 py-2 hover:bg-[#10b981]/90"
             >
-              Mostra eventi fino a 72h
+              Mostra Allerte a 72h
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-6">
             <AnimatePresence mode="popLayout">
               {filtered.map(inc => (
                 <motion.div
                   key={inc.id}
                   layout
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.25 }}
                 >
                   <IncidentCard
                     incident={inc}
@@ -300,6 +252,7 @@ export default function Home() {
             </AnimatePresence>
           </div>
         )}
+
       </div>
 
       {/* Filter Sheet */}
