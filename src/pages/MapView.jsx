@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import IncidentCard from '@/components/incidents/IncidentCard';
 import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
-import { Locate, SlidersHorizontal, ChevronDown, Globe, Navigation, RefreshCw, X, Shield } from 'lucide-react';
+import { SlidersHorizontal, Globe, Navigation, RefreshCw, X } from 'lucide-react';
 import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
 import IncidentMap from '@/components/incidents/IncidentMap';
 import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
@@ -32,11 +31,10 @@ export default function MapView() {
   const [useRadius, setUseRadius] = useState(() => localStorage.getItem('sentinelUseRadius') === 'true');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState(null);
-  const [showList, setShowList] = useState(false);
   const [refreshingNews, setRefreshingNews] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
-  // 1. Instant High-Accuracy GPS Triangulation (Google Maps Style)
+  // 1. Instant High-Accuracy GPS Triangulation
   useEffect(() => {
     if (!navigator.geolocation) return;
 
@@ -56,7 +54,7 @@ export default function MapView() {
 
   // Live Query from TanStack Query
   const { data: rawLiveIncidents = [], refetch, isFetching } = useQuery({
-    queryKey: ['incidents-map-v10'],
+    queryKey: ['incidents-map-v11'],
     queryFn: async () => {
       return await syncSentinelFeedsPermanently();
     },
@@ -117,7 +115,7 @@ export default function MapView() {
       {/* 1. Top Floating Controls Bar */}
       <div className="absolute top-4 inset-x-4 z-20 max-w-xl mx-auto flex items-center justify-between gap-2 pointer-events-none">
         
-        {/* Left: Time Window & GPS Badge */}
+        {/* Left: GPS & Time Selector */}
         <div className="pointer-events-auto flex items-center gap-2 bg-[#0d1017]/90 backdrop-blur-md p-1.5 px-3 rounded-full border border-white/15 shadow-2xl">
           <button
             onClick={handleRecenterUser}
@@ -142,7 +140,7 @@ export default function MapView() {
           </select>
         </div>
 
-        {/* Right: Quick Action Floating Buttons */}
+        {/* Right: Action Buttons */}
         <div className="pointer-events-auto flex items-center gap-2">
           <Button
             size="sm"
@@ -150,7 +148,7 @@ export default function MapView() {
             className="bg-[#0d1017]/90 hover:bg-[#141721] text-white border border-white/15 rounded-full text-xs font-bold shadow-2xl h-8 px-3"
           >
             <Globe className="w-3.5 h-3.5 mr-1" />
-            Italia
+            Hubs
           </Button>
 
           <Button
@@ -179,7 +177,7 @@ export default function MapView() {
           incidents={filteredIncidents}
           center={mapCenter}
           userLocation={userGpsActive ? location : null}
-          zoom={userGpsActive ? 13.5 : 6}
+          zoom={userGpsActive ? 12.5 : 6}
           onIncidentClick={(inc) => {
             setSelectedIncident(inc);
             setMapCenter([inc.latitude, inc.longitude]);
@@ -187,21 +185,21 @@ export default function MapView() {
         />
       </div>
 
-      {/* 3. Bottom Drawer Card Popup when Pin Selected */}
+      {/* 3. Responsive Incident Card Popup Panel (Desktop: Bottom-Right Floating Panel / Mobile: Bottom Drawer) */}
       <AnimatePresence>
         {selectedIncident && (
           <motion.div
-            initial={{ y: '100%', opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 280 }}
-            className="absolute inset-x-3 bottom-3 z-30 max-w-xl mx-auto"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+            className="absolute z-30 md:bottom-6 md:right-6 md:left-auto md:max-w-md w-full bottom-0 inset-x-0 p-3 md:p-0"
           >
-            <div className="relative">
+            <div className="relative shadow-2xl">
               <button
                 type="button"
                 onClick={() => setSelectedIncident(null)}
-                className="absolute -top-3 right-3 w-8 h-8 rounded-full bg-black border border-white/20 text-white flex items-center justify-center shadow-2xl z-40 hover:bg-slate-900"
+                className="absolute -top-3 right-3 w-8 h-8 rounded-full bg-black border border-white/20 text-white flex items-center justify-center shadow-2xl z-40 hover:bg-slate-900 transition-transform hover:scale-110"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -237,7 +235,7 @@ export default function MapView() {
                   onClick={() => setUseRadius(prev => !prev)}
                   className={`text-xs font-bold ${useRadius ? 'text-[#10b981]' : 'text-white/40'}`}
                 >
-                  {useRadius ? `Attivo: entro ${radius} km` : 'Disattivato (Tutta Italia)'}
+                  {useRadius ? `Attivo: entro ${radius} km` : 'Disattivato (Tutti gli Hubs)'}
                 </button>
               </div>
               {useRadius && (
