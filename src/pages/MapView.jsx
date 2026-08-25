@@ -24,7 +24,7 @@ const TIME_WINDOWS = [
 export default function MapView() {
   const [location, setLocation] = useState(DEFAULT_LOC);
   const [userGpsActive, setUserGpsActive] = useState(false);
-  const [mapCenter, setMapCenter] = useState(null);
+  const [mapCenter, setMapCenter] = useState([DEFAULT_LOC.lat, DEFAULT_LOC.lng]);
   const [activeTypes, setActiveTypes] = useState(Object.keys(TYPE_CONFIG));
   const [selectedHours, setSelectedHours] = useState(72);
   const [radius, setRadius] = useState(() => Number(localStorage.getItem('sentinelRadiusKm') || 200));
@@ -54,7 +54,7 @@ export default function MapView() {
 
   // Live Query from TanStack Query
   const { data: rawLiveIncidents = [], refetch, isFetching } = useQuery({
-    queryKey: ['incidents-map-v11'],
+    queryKey: ['incidents-map-v12'],
     queryFn: async () => {
       return await syncSentinelFeedsPermanently();
     },
@@ -105,8 +105,8 @@ export default function MapView() {
     }
   };
 
-  const handleRecenterNation = () => {
-    setMapCenter([42.5, 12.5]);
+  const handleRecenterMilano = () => {
+    setMapCenter([45.4642, 9.1900]);
   };
 
   return (
@@ -144,11 +144,11 @@ export default function MapView() {
         <div className="pointer-events-auto flex items-center gap-2">
           <Button
             size="sm"
-            onClick={handleRecenterNation}
+            onClick={handleRecenterMilano}
             className="bg-[#0d1017]/90 hover:bg-[#141721] text-white border border-white/15 rounded-full text-xs font-bold shadow-2xl h-8 px-3"
           >
             <Globe className="w-3.5 h-3.5 mr-1" />
-            Hubs
+            Milano Hub
           </Button>
 
           <Button
@@ -171,13 +171,13 @@ export default function MapView() {
 
       </div>
 
-      {/* 2. Full-Screen 3D Map View Container */}
+      {/* 2. Full-Screen 3D Map View Container (Default Zoom 12.5) */}
       <div className="w-full h-full">
         <IncidentMap
           incidents={filteredIncidents}
           center={mapCenter}
           userLocation={userGpsActive ? location : null}
-          zoom={userGpsActive ? 12.5 : 6}
+          zoom={12.5}
           onIncidentClick={(inc) => {
             setSelectedIncident(inc);
             setMapCenter([inc.latitude, inc.longitude]);

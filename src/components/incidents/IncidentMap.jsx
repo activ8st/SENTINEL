@@ -57,7 +57,7 @@ export default function IncidentMap({
   const [viewState, setViewState] = useState({
     latitude: activeCenter[0],
     longitude: activeCenter[1],
-    zoom: zoom,
+    zoom: zoom || 12.5,
     pitch: 45,
     bearing: -15
   });
