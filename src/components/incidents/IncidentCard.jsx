@@ -17,7 +17,7 @@ const safeFormatTimeAgo = (dateStr) => {
   }
 };
 
-// Fallback high quality emergency hero images for cards
+// Reliable HD emergency hero images for cards by category
 const HERO_IMAGES_BY_TYPE = {
   crime: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1000&q=80',
   accident: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1000&q=80',
@@ -39,30 +39,31 @@ export default function IncidentCard({ incident, distance, unread = false }) {
   const [isLiked, setIsLiked] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
 
-  // Determine initial image URL with high-definition category fallback
-  const defaultFallback = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
-  const initialSrc = (incident.hero_image || incident.image || incident.thumbnail) && 
-                     typeof (incident.hero_image || incident.image || incident.thumbnail) === 'string' &&
-                     (incident.hero_image || incident.image || incident.thumbnail).startsWith('http')
-    ? (incident.hero_image || incident.image || incident.thumbnail)
-    : defaultFallback;
+  // Guaranteed fallback HD image
+  const guaranteedCategoryHdImage = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
 
-  const [imgSrc, setImgSrc] = useState(initialSrc);
+  // Determine initial image URL safely
+  const rawRssImage = incident.hero_image || incident.image || incident.thumbnail;
+  const validRssImage = (rawRssImage && typeof rawRssImage === 'string' && rawRssImage.startsWith('https://'))
+    ? rawRssImage
+    : null;
+
+  const [imgSrc, setImgSrc] = useState(validRssImage || guaranteedCategoryHdImage);
 
   useEffect(() => {
-    const freshDefault = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
-    const freshSrc = (incident.hero_image || incident.image || incident.thumbnail) && 
-                     typeof (incident.hero_image || incident.image || incident.thumbnail) === 'string' &&
-                     (incident.hero_image || incident.image || incident.thumbnail).startsWith('http')
+    const categoryHdImage = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+    const freshRssImage = (incident.hero_image || incident.image || incident.thumbnail) && 
+                           typeof (incident.hero_image || incident.image || incident.thumbnail) === 'string' &&
+                           (incident.hero_image || incident.image || incident.thumbnail).startsWith('https://')
       ? (incident.hero_image || incident.image || incident.thumbnail)
-      : freshDefault;
-    setImgSrc(freshSrc);
+      : categoryHdImage;
+    setImgSrc(freshRssImage);
   }, [incident, typeKey]);
 
   const handleImageError = () => {
-    const fallback = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
-    if (imgSrc !== fallback) {
-      setImgSrc(fallback);
+    const categoryHdImage = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+    if (imgSrc !== categoryHdImage) {
+      setImgSrc(categoryHdImage);
     }
   };
 
@@ -92,7 +93,7 @@ export default function IncidentCard({ incident, distance, unread = false }) {
                     border-white/10 shadow-2xl hover:border-[#10b981]/50
                     border-l-4 ${severity.border} ${unread ? 'ring-2 ring-emerald-500/40' : ''}`}>
       
-      {/* 1. Full-Bleed 16:9 Media Hero Banner (Sound Toggle Top-Right + Heart Like Bottom-Right / NO LIVE RED BADGE) */}
+      {/* 1. Full-Bleed 16:9 Media Hero Banner with Guaranteed Category HD Fallback */}
       <div className="relative aspect-video w-full overflow-hidden bg-slate-900 group">
         <img
           src={imgSrc}
@@ -162,7 +163,7 @@ export default function IncidentCard({ incident, distance, unread = false }) {
           {incident.description || 'Monitoraggio perimetrale attivo ed in aggiornamento continuo dalle fonti ufficiali.'}
         </p>
 
-        {/* 3. Action Bar (Direct Source Link + Share + Details / NO FAKE COUNTERS / NO DRONE 3D) */}
+        {/* 3. Action Bar (Direct Source Link + Share + Details) */}
         <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between text-xs text-white/60">
           
           <div className="flex items-center gap-2">
