@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { MapPin, Clock, ExternalLink, Share2, Heart, Volume2, VolumeX, ShieldCheck, ChevronRight } from 'lucide-react';
@@ -17,7 +17,7 @@ const safeFormatTimeAgo = (dateStr) => {
   }
 };
 
-// Reliable HD emergency hero images for cards by category
+// High Definition Curated Category Hero Images (Statue of Justice, Range Rover, Police, Firefighters, Storm)
 const HERO_IMAGES_BY_TYPE = {
   crime: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1000&q=80',
   accident: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1000&q=80',
@@ -26,15 +26,6 @@ const HERO_IMAGES_BY_TYPE = {
   weather: 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&w=1000&q=80',
   suspicious: 'https://images.unsplash.com/photo-1508873696983-2df515122519?auto=format&fit=crop&w=1000&q=80',
   other: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1000&q=80'
-};
-
-const normalizeImageUrl = (url) => {
-  if (!url || typeof url !== 'string') return null;
-  let clean = url.trim();
-  if (clean.startsWith('//')) return 'https:' + clean;
-  if (clean.startsWith('http://')) return clean.replace('http://', 'https://');
-  if (clean.startsWith('https://')) return clean;
-  return null;
 };
 
 export default function IncidentCard({ incident, distance, unread = false }) {
@@ -48,28 +39,8 @@ export default function IncidentCard({ incident, distance, unread = false }) {
   const [isLiked, setIsLiked] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
 
-  // Guaranteed fallback HD image
-  const categoryHdImage = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
-
-  // Determine initial image URL safely
-  const rawImage = incident.hero_image || incident.image || incident.thumbnail;
-  const initialSrc = normalizeImageUrl(rawImage) || categoryHdImage;
-
-  const [imgSrc, setImgSrc] = useState(initialSrc);
-
-  useEffect(() => {
-    const categoryFallback = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
-    const freshRaw = incident.hero_image || incident.image || incident.thumbnail;
-    const freshSrc = normalizeImageUrl(freshRaw) || categoryFallback;
-    setImgSrc(freshSrc);
-  }, [incident, typeKey]);
-
-  const handleImageError = () => {
-    const categoryFallback = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
-    if (imgSrc !== categoryFallback) {
-      setImgSrc(categoryFallback);
-    }
-  };
+  // Guaranteed high definition hero image matching category (Statua della Giustizia, Range Rover, Polizia)
+  const heroImageSrc = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
 
   const handleShare = (e) => {
     e.preventDefault();
@@ -97,12 +68,11 @@ export default function IncidentCard({ incident, distance, unread = false }) {
                     border-white/10 shadow-2xl hover:border-[#10b981]/50
                     border-l-4 ${severity.border} ${unread ? 'ring-2 ring-emerald-500/40' : ''}`}>
       
-      {/* 1. Full-Bleed 16:9 Media Hero Banner with Guaranteed Category HD Fallback */}
+      {/* 1. Full-Bleed 16:9 Media Hero Banner (Statua della Giustizia, Range Rover, Polizia HD) */}
       <div className="relative aspect-video w-full overflow-hidden bg-slate-900 group">
         <img
-          src={imgSrc}
-          alt=""
-          onError={handleImageError}
+          src={heroImageSrc}
+          alt={incident.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-90"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1017] via-black/20 to-transparent" />
