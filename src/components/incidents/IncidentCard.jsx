@@ -28,6 +28,15 @@ const HERO_IMAGES_BY_TYPE = {
   other: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1000&q=80'
 };
 
+const normalizeImageUrl = (url) => {
+  if (!url || typeof url !== 'string') return null;
+  let clean = url.trim();
+  if (clean.startsWith('//')) return 'https:' + clean;
+  if (clean.startsWith('http://')) return clean.replace('http://', 'https://');
+  if (clean.startsWith('https://')) return clean;
+  return null;
+};
+
 export default function IncidentCard({ incident, distance, unread = false }) {
   if (!incident) return null;
 
@@ -40,30 +49,25 @@ export default function IncidentCard({ incident, distance, unread = false }) {
   const [isMuted, setIsMuted] = useState(true);
 
   // Guaranteed fallback HD image
-  const guaranteedCategoryHdImage = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+  const categoryHdImage = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
 
   // Determine initial image URL safely
-  const rawRssImage = incident.hero_image || incident.image || incident.thumbnail;
-  const validRssImage = (rawRssImage && typeof rawRssImage === 'string' && rawRssImage.startsWith('https://'))
-    ? rawRssImage
-    : null;
+  const rawImage = incident.hero_image || incident.image || incident.thumbnail;
+  const initialSrc = normalizeImageUrl(rawImage) || categoryHdImage;
 
-  const [imgSrc, setImgSrc] = useState(validRssImage || guaranteedCategoryHdImage);
+  const [imgSrc, setImgSrc] = useState(initialSrc);
 
   useEffect(() => {
-    const categoryHdImage = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
-    const freshRssImage = (incident.hero_image || incident.image || incident.thumbnail) && 
-                           typeof (incident.hero_image || incident.image || incident.thumbnail) === 'string' &&
-                           (incident.hero_image || incident.image || incident.thumbnail).startsWith('https://')
-      ? (incident.hero_image || incident.image || incident.thumbnail)
-      : categoryHdImage;
-    setImgSrc(freshRssImage);
+    const categoryFallback = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+    const freshRaw = incident.hero_image || incident.image || incident.thumbnail;
+    const freshSrc = normalizeImageUrl(freshRaw) || categoryFallback;
+    setImgSrc(freshSrc);
   }, [incident, typeKey]);
 
   const handleImageError = () => {
-    const categoryHdImage = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
-    if (imgSrc !== categoryHdImage) {
-      setImgSrc(categoryHdImage);
+    const categoryFallback = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+    if (imgSrc !== categoryFallback) {
+      setImgSrc(categoryFallback);
     }
   };
 
