@@ -17,6 +17,17 @@ const safeFormatTimeAgo = (dateStr) => {
   }
 };
 
+// Fallback high quality emergency hero images for cards
+const HERO_IMAGES_BY_TYPE = {
+  crime: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1000&q=80',
+  accident: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1000&q=80',
+  fire: 'https://images.unsplash.com/photo-1599827553209-6f17e9e2009d?auto=format&fit=crop&w=1000&q=80',
+  traffic: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=1000&q=80',
+  weather: 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&w=1000&q=80',
+  suspicious: 'https://images.unsplash.com/photo-1508873696983-2df515122519?auto=format&fit=crop&w=1000&q=80',
+  other: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1000&q=80'
+};
+
 export default function IncidentCard({ incident, distance, unread = false }) {
   if (!incident) return null;
 
@@ -27,15 +38,33 @@ export default function IncidentCard({ incident, distance, unread = false }) {
 
   const [isLiked, setIsLiked] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  const [imgError, setImgError] = useState(false);
 
-  // Check if article has a valid hero image URL
-  const rawImage = incident.hero_image || incident.image || incident.thumbnail;
-  const hasValidImage = rawImage && typeof rawImage === 'string' && rawImage.startsWith('http') && !imgError;
+  // Determine initial image URL with high-definition category fallback
+  const defaultFallback = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+  const initialSrc = (incident.hero_image || incident.image || incident.thumbnail) && 
+                     typeof (incident.hero_image || incident.image || incident.thumbnail) === 'string' &&
+                     (incident.hero_image || incident.image || incident.thumbnail).startsWith('http')
+    ? (incident.hero_image || incident.image || incident.thumbnail)
+    : defaultFallback;
+
+  const [imgSrc, setImgSrc] = useState(initialSrc);
 
   useEffect(() => {
-    setImgError(false);
-  }, [incident]);
+    const freshDefault = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+    const freshSrc = (incident.hero_image || incident.image || incident.thumbnail) && 
+                     typeof (incident.hero_image || incident.image || incident.thumbnail) === 'string' &&
+                     (incident.hero_image || incident.image || incident.thumbnail).startsWith('http')
+      ? (incident.hero_image || incident.image || incident.thumbnail)
+      : freshDefault;
+    setImgSrc(freshSrc);
+  }, [incident, typeKey]);
+
+  const handleImageError = () => {
+    const fallback = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+    if (imgSrc !== fallback) {
+      setImgSrc(fallback);
+    }
+  };
 
   const handleShare = (e) => {
     e.preventDefault();
@@ -63,60 +92,52 @@ export default function IncidentCard({ incident, distance, unread = false }) {
                     border-white/10 shadow-2xl hover:border-[#10b981]/50
                     border-l-4 ${severity.border} ${unread ? 'ring-2 ring-emerald-500/40' : ''}`}>
       
-      {/* 1. Full-Bleed 16:9 Media Hero Banner - ONLY RENDERED IF VALID IMAGE EXISTS */}
-      {hasValidImage && (
-        <div className="relative aspect-video w-full overflow-hidden bg-slate-900 group">
-          <img
-            src={rawImage}
-            alt=""
-            onError={() => setImgError(true)}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-90"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0d1017] via-black/20 to-transparent" />
+      {/* 1. Full-Bleed 16:9 Media Hero Banner with 0ms Automatic HD Category Fallback */}
+      <div className="relative aspect-video w-full overflow-hidden bg-slate-900 group">
+        <img
+          src={imgSrc}
+          alt=""
+          onError={handleImageError}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-90"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1017] via-black/20 to-transparent" />
 
-          {/* Mute/Sound Toggle Top Right */}
-          <button
-            type="button"
-            onClick={() => setIsMuted(!isMuted)}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 backdrop-blur border border-white/20 text-white flex items-center justify-center hover:bg-black/80 transition-all z-10"
-          >
-            {isMuted ? <VolumeX className="w-4 h-4 text-white/80" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-          </button>
+        {/* Mute/Sound Toggle Top Right */}
+        <button
+          type="button"
+          onClick={() => setIsMuted(!isMuted)}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 backdrop-blur border border-white/20 text-white flex items-center justify-center hover:bg-black/80 transition-all z-10"
+        >
+          {isMuted ? <VolumeX className="w-4 h-4 text-white/80" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+        </button>
 
-          {/* Floating Heart Like Button Bottom Right */}
-          <button
-            type="button"
-            onClick={() => setIsLiked(!isLiked)}
-            className={`absolute bottom-3 right-3 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all z-10
-              ${isLiked ? 'bg-red-600 text-white scale-110' : 'bg-white text-black hover:bg-slate-200'}`}
-          >
-            <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-          </button>
+        {/* Floating Heart Like Button Bottom Right */}
+        <button
+          type="button"
+          onClick={() => setIsLiked(!isLiked)}
+          className={`absolute bottom-3 right-3 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all z-10
+            ${isLiked ? 'bg-red-600 text-white scale-110' : 'bg-white text-black hover:bg-slate-200'}`}
+        >
+          <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+        </button>
 
-          {/* Live Pulse Badge Top Left */}
-          {incident.is_live && (
-            <span className="absolute top-3 left-3 flex items-center gap-1.5 bg-red-600/95 text-white text-[10px] font-black px-3 py-1 rounded-full animate-pulse shadow-lg tracking-wider">
-              🔴 LIVE BROADCAST
-            </span>
-          )}
-        </div>
-      )}
+        {/* Live Pulse Badge Top Left */}
+        {incident.is_live && (
+          <span className="absolute top-3 left-3 flex items-center gap-1.5 bg-red-600/95 text-white text-[10px] font-black px-3 py-1 rounded-full animate-pulse shadow-lg tracking-wider">
+            🔴 LIVE BROADCAST
+          </span>
+        )}
+      </div>
 
       {/* 2. Content Body (Citizen Style) */}
       <div className="p-5 flex flex-col flex-1">
         
-        {/* Header Row: Source Pill + Live Badge if no image */}
-        <div className="flex items-center justify-between gap-2 mb-2.5">
+        {/* Source Pill */}
+        <div className="flex items-center gap-2 mb-2.5">
           <span className="inline-flex items-center gap-1 text-[11px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full uppercase tracking-wider">
             <ShieldCheck className="w-3 h-3" />
             {incident.source || 'Fonte Ufficiale'}
           </span>
-
-          {!hasValidImage && incident.is_live && (
-            <span className="flex items-center gap-1 bg-red-600/90 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full animate-pulse shadow">
-              🔴 LIVE
-            </span>
-          )}
         </div>
 
         {/* Big Bold Headline */}
