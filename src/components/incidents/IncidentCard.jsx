@@ -17,10 +17,7 @@ const safeFormatTimeAgo = (dateStr) => {
   }
 };
 
-// Sleek inline SVG fallback image data URI so Chrome NEVER renders a broken image icon
-const SVG_EMERGENCY_FALLBACK = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'><rect width='100%' height='100%' fill='%230f172a'/><circle cx='400' cy='225' r='180' fill='none' stroke='%2310b981' stroke-width='2' opacity='0.25'/><circle cx='400' cy='225' r='120' fill='none' stroke='%2310b981' stroke-width='2' opacity='0.35'/><circle cx='400' cy='225' r='60' fill='none' stroke='%2310b981' stroke-width='2' opacity='0.45'/><circle cx='400' cy='225' r='8' fill='%2310b981'/><path d='M400 45 L400 405 M225 225 L575 225' stroke='%2310b981' stroke-width='1.5' opacity='0.2'/><text x='50%' y='85%' text-anchor='middle' fill='%2310b981' font-family='sans-serif' font-size='20' font-weight='bold' letter-spacing='4'>SENTINEL MONITORING HUB</text></svg>";
-
-// Guaranteed HD Unsplash Hero Images per Category
+// Guaranteed High Definition Hero Images per Category / Emoji (Statue of Justice, Range Rover, Police, Fire)
 const HERO_IMAGES_BY_TYPE = {
   crime: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1000&q=80',
   accident: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1000&q=80',
@@ -29,6 +26,24 @@ const HERO_IMAGES_BY_TYPE = {
   weather: 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&w=1000&q=80',
   suspicious: 'https://images.unsplash.com/photo-1508873696983-2df515122519?auto=format&fit=crop&w=1000&q=80',
   other: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1000&q=80'
+};
+
+const getLikedIncidentsFromStorage = () => {
+  try {
+    const raw = localStorage.getItem('sentinel_liked_incidents');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+};
+
+const saveLikedIncidentsToStorage = (likedArray) => {
+  try {
+    localStorage.setItem('sentinel_liked_incidents', JSON.stringify(likedArray));
+    window.dispatchEvent(new Event('sentinel_likes_updated'));
+  } catch (e) {
+    console.warn('Liked storage error:', e);
+  }
 };
 
 export default function IncidentCard({ incident, distance, unread = false }) {
@@ -42,20 +57,33 @@ export default function IncidentCard({ incident, distance, unread = false }) {
   const [isLiked, setIsLiked] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
 
-  // Initial hero image setup
-  const categoryHdImage = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
-  const [imgSrc, setImgSrc] = useState(categoryHdImage);
-
+  // Sync liked state with localStorage
   useEffect(() => {
-    const freshImage = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
-    setImgSrc(freshImage);
-  }, [incident, typeKey]);
+    const currentLikes = getLikedIncidentsFromStorage();
+    const exists = currentLikes.some(item => (typeof item === 'string' ? item === incident.id : item.id === incident.id));
+    setIsLiked(exists);
+  }, [incident]);
 
-  const handleImageError = (e) => {
-    if (imgSrc !== SVG_EMERGENCY_FALLBACK) {
-      setImgSrc(SVG_EMERGENCY_FALLBACK);
+  const toggleLike = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const currentLikes = getLikedIncidentsFromStorage();
+    let updatedLikes = [];
+
+    const exists = currentLikes.some(item => (typeof item === 'string' ? item === incident.id : item.id === incident.id));
+    if (exists) {
+      updatedLikes = currentLikes.filter(item => (typeof item === 'string' ? item !== incident.id : item.id !== incident.id));
+      setIsLiked(false);
+    } else {
+      updatedLikes = [incident, ...currentLikes];
+      setIsLiked(true);
     }
+
+    saveLikedIncidentsToStorage(updatedLikes);
   };
+
+  // Guaranteed high definition hero image matching category
+  const heroImageSrc = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
 
   const handleShare = (e) => {
     e.preventDefault();
@@ -83,12 +111,11 @@ export default function IncidentCard({ incident, distance, unread = false }) {
                     border-white/10 shadow-2xl hover:border-[#10b981]/50
                     border-l-4 ${severity.border} ${unread ? 'ring-2 ring-emerald-500/40' : ''}`}>
       
-      {/* 1. Full-Bleed 16:9 Media Hero Banner with Guaranteed Inline SVG Radar Fallback */}
-      <div className="relative aspect-video w-full overflow-hidden bg-slate-950 group">
+      {/* 1. Full-Bleed 16:9 Media Hero Banner (Statua della Giustizia, Range Rover, Polizia HD) */}
+      <div className="relative aspect-video w-full overflow-hidden bg-slate-900 group">
         <img
-          src={imgSrc}
+          src={heroImageSrc}
           alt=""
-          onError={handleImageError}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-90"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1017] via-black/20 to-transparent" />
@@ -102,12 +129,13 @@ export default function IncidentCard({ incident, distance, unread = false }) {
           {isMuted ? <VolumeX className="w-4 h-4 text-white/80" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
         </button>
 
-        {/* Floating Heart Like Button Bottom Right */}
+        {/* Persistent Heart Like Button Bottom Right */}
         <button
           type="button"
-          onClick={() => setIsLiked(!isLiked)}
+          onClick={toggleLike}
           className={`absolute bottom-3 right-3 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all z-10
-            ${isLiked ? 'bg-red-600 text-white scale-110' : 'bg-white text-black hover:bg-slate-200'}`}
+            ${isLiked ? 'bg-red-600 text-white scale-110' : 'bg-white/90 text-black hover:bg-white'}`}
+          title={isLiked ? 'Rimuovi dai Preferiti' : 'Salva nei Preferiti'}
         >
           <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
         </button>

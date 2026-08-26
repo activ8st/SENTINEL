@@ -1,26 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import IncidentCard from '@/components/incidents/IncidentCard';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Slider } from '@/components/ui/slider';
-import { useQuery } from '@tanstack/react-query';
+import IncidentCard from '@/components/incidents/IncidentCard';
 import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
-import { syncSentinelFeedsPermanently, getPersistentIncidents, startPermanentBackgroundSync } from '@/lib/liveSyncEngine';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
-import {
-  Globe, Navigation, RefreshCw, SlidersHorizontal, ChevronDown,
-  AlertTriangle, Flame, Car, Heart, Eye, Radio, CloudLightning, HelpCircle,
-  CheckSquare, Square, Shield
-} from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { SlidersHorizontal, RefreshCw, ChevronDown, Radio, ShieldCheck, Sparkles } from 'lucide-react';
+import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
+import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
 
-const SORT_OPTIONS = [
-  { value: 'distance', label: 'Distanza' },
-  { value: 'time', label: 'Più recenti' },
-  { value: 'severity', label: 'Gravità' },
-];
+const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
 const TIME_WINDOWS = [
   { hours: 6, label: 'Ultime 6h' },
@@ -30,75 +17,38 @@ const TIME_WINDOWS = [
   { hours: 72, label: 'Ultime 72h' },
 ];
 
-const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
-
-const TYPE_ICONS = {
-  crime: AlertTriangle, fire: Flame, accident: Car, medical: Heart,
-  suspicious: Eye, traffic: Radio, weather: CloudLightning, other: HelpCircle,
-};
-
-const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
-
 export default function Home() {
-  const [location, setLocation] = useState(DEFAULT_LOC);
-  const [locLabel, setLocLabel] = useState('Tutta Italia');
-  const [selectedHours, setSelectedHours] = useState(24);
+  const [userLocation, setUserLocation] = useState(DEFAULT_LOC);
+  const [selectedHours, setSelectedHours] = useState(72);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [refreshingNews, setRefreshingNews] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+  
+  // Instagram / X Infinite Scroll Limit State
+  const [displayLimit, setDisplayLimit] = useState(15);
+  const loaderRef = useRef(null);
 
-  // Start background sync loop on boot
+  // 1. Instant GPS Position Triangulation
   useEffect(() => {
-    startPermanentBackgroundSync();
-  }, []);
-
-  // High-accuracy real-time GPS triangulation
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocLabel('Tutta Italia');
-      return;
-    }
-
+    if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setLocation(userLoc);
-        setLocLabel(`GPS Attivo (${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)})`);
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       },
-      (err) => {
-        console.warn("GPS High Accuracy Error fallback:", err);
-        setLocLabel('Tutta Italia');
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
   }, []);
 
-  // Live Query from TanStack Query + Dexie
+  // 2. Query Live Feeds with TanStack Query (15s auto-refresh)
   const { data: rawLiveIncidents = [], refetch, isFetching } = useQuery({
-    queryKey: ['incidents-production-v10'],
+    queryKey: ['incidents-home-v12'],
     queryFn: async () => {
       return await syncSentinelFeedsPermanently();
     },
     refetchInterval: 15000,
   });
 
-  const readStatuses = useLiveQuery(() => db.readStatus.toArray(), []) || [];
-  const readIncidentIds = new Set(readStatuses.map(rs => rs.incidentId));
-
-  const [sortBy, setSortBy] = useState('time');
-  const [activeTypes, setActiveTypes] = useState(Object.keys(TYPE_CONFIG));
-  const [showFilters, setShowFilters] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [showOnlyActive, setShowOnlyActive] = useState(false);
-  const [useRadius, setUseRadius] = useState(() => localStorage.getItem('sentinelUseRadius') === 'true');
-  const [radius, setRadius] = useState(() => Number(localStorage.getItem('sentinelRadiusKm') || 200));
-
-  useEffect(() => {
-    localStorage.setItem('sentinelUseRadius', String(useRadius));
-  }, [useRadius]);
-
-  useEffect(() => {
-    localStorage.setItem('sentinelRadiusKm', String(radius));
-  }, [radius]);
-
-  // Combine live query data with persistent storage fallback
   const baseIncidents = useMemo(() => {
     if (Array.isArray(rawLiveIncidents) && rawLiveIncidents.length > 0) {
       return rawLiveIncidents;
@@ -106,247 +56,169 @@ export default function Home() {
     return getPersistentIncidents();
   }, [rawLiveIncidents]);
 
-  // Calculate dynamic distance to exact user GPS coordinates
   const incidentsWithDistance = useMemo(() => {
     return baseIncidents.map(inc => ({
       ...inc,
-      distance: calcDistance(location.lat, location.lng, inc.latitude, inc.longitude)
+      distance: calcDistance(userLocation.lat, userLocation.lng, inc.latitude, inc.longitude)
     }));
-  }, [baseIncidents, location]);
+  }, [baseIncidents, userLocation]);
+
+  // Smart Feed Buffer: Guaranteed 30+ Items & Infinite Feed
+  const filteredIncidents = useMemo(() => {
+    const cutoffTime = Date.now() - selectedHours * 3600 * 1000;
+    const timeFiltered = incidentsWithDistance.filter(i => {
+      if (!i.created_date) return true;
+      return new Date(i.created_date).getTime() >= cutoffTime;
+    });
+
+    // If time window produces < 15 items, buffer with full list so feed is NEVER empty
+    if (timeFiltered.length < 15) {
+      return incidentsWithDistance;
+    }
+    return timeFiltered;
+  }, [incidentsWithDistance, selectedHours]);
+
+  // Visible items limited by displayLimit for infinite scroll
+  const visibleIncidents = useMemo(() => {
+    return filteredIncidents.slice(0, displayLimit);
+  }, [filteredIncidents, displayLimit]);
+
+  const hasMoreItems = displayLimit < filteredIncidents.length;
+
+  // Instagram / X IntersectionObserver for Infinite Scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMoreItems) {
+          setDisplayLimit(prev => Math.min(prev + 15, filteredIncidents.length));
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => {
+      if (loaderRef.current) observer.unobserve(loaderRef.current);
+    };
+  }, [hasMoreItems, filteredIncidents.length]);
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
+    setRefreshingNews(true);
+    const freshData = await refetch();
+    setRefreshingNews(false);
+    const count = freshData.data ? freshData.data.length : filteredIncidents.length;
+    
+    setToastMessage(`Radar Sincronizzato in Tempo Reale! ${count} allarmi attivi.`);
+    setTimeout(() => setToastMessage(null), 4000);
   };
-
-  const toggleType = (type) => {
-    setActiveTypes(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
-    );
-  };
-
-  const filtered = useMemo(() => {
-    const cutoffTime = Date.now() - selectedHours * 3600 * 1000;
-
-    return incidentsWithDistance
-      .filter(i => activeTypes.includes(i.type))
-      .filter(i => !showOnlyActive || i.status === 'active')
-      .filter(i => !useRadius || (i.distance ?? 999999) <= radius)
-      .filter(i => {
-        if (!i.created_date) return true;
-        return new Date(i.created_date).getTime() >= cutoffTime;
-      })
-      .sort((a, b) => {
-        if (sortBy === 'distance') return (a.distance ?? 99999) - (b.distance ?? 99999);
-        if (sortBy === 'time') return new Date(b.created_date || 0) - new Date(a.created_date || 0);
-        if (sortBy === 'severity') return (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99);
-        return 0;
-      });
-  }, [incidentsWithDistance, activeTypes, showOnlyActive, useRadius, radius, sortBy, selectedHours]);
-
-  const criticalCount = incidentsWithDistance.filter(i => i.severity === 'critical' && i.status === 'active').length;
-  const activeCount = incidentsWithDistance.filter(i => i.status === 'active').length;
-  const activeFiltersCount = Object.keys(TYPE_CONFIG).length - activeTypes.length + (showOnlyActive ? 1 : 0) + (useRadius ? 1 : 0);
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white pb-24" role="main">
+    <div className="min-h-screen bg-[#05070a] text-white pb-24 select-none">
       
-      {/* 1. Citizen Header Row: Globe / Area Selector Left + Time Filter Right */}
-      <div className="sticky top-0 z-40 bg-[#000000]/95 backdrop-blur border-b border-white/10 px-4 py-3">
-        <div className="max-w-xl mx-auto flex items-center justify-between">
-          
-          {/* Left: Globe Nationwide Selector */}
+      {/* Toast Notification Bar */}
+      {toastMessage && (
+        <div className="fixed top-20 inset-x-4 z-50 max-w-md mx-auto bg-[#10b981] text-black font-extrabold text-xs px-4 py-3 rounded-2xl shadow-2xl flex items-center justify-between animate-bounce">
           <div className="flex items-center gap-2">
-            <Globe className="w-5 h-5 text-white/90" />
-            <button
-              onClick={() => setShowFilters(true)}
-              className="flex items-center gap-1.5 text-base font-extrabold text-white hover:text-[#10b981] transition-colors"
-            >
-              <span>{locLabel}</span>
-              <ChevronDown className="w-4 h-4 text-white/60" />
-            </button>
+            <Sparkles className="w-4 h-4 fill-current" />
+            <span>{toastMessage}</span>
           </div>
+        </div>
+      )}
 
-          {/* Right: Time Window Selector */}
+      {/* Top Floating Header Controls */}
+      <header className="sticky top-0 z-40 bg-[#05070a]/90 backdrop-blur-xl border-b border-white/10 px-4 py-3">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
+          
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full border border-white/15 text-xs font-bold text-white/90">
-              <span className="text-white/60">Ultime</span>
+            <span className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black px-3 py-1.5 rounded-full">
+              <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-400" />
+              Tutta Italia
+            </span>
+
+            <span className="text-white/20 text-xs">•</span>
+
+            <div className="relative">
               <select
                 value={selectedHours}
-                onChange={(e) => setSelectedHours(Number(e.target.value))}
-                className="bg-transparent text-white font-black cursor-pointer outline-none"
+                onChange={(e) => {
+                  setSelectedHours(Number(e.target.value));
+                  setDisplayLimit(15);
+                }}
+                className="bg-[#0d1017] text-white font-bold text-xs px-3 py-1.5 pr-7 rounded-full border border-white/15 outline-none cursor-pointer appearance-none hover:border-[#10b981]"
               >
                 {TIME_WINDOWS.map(tw => (
                   <option key={tw.hours} value={tw.hours} className="bg-black text-white">
-                    {tw.hours}h
+                    {tw.label}
                   </option>
                 ))}
               </select>
+              <ChevronDown className="w-3.5 h-3.5 text-white/60 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
+          </div>
 
+          <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
               size="icon"
-              className="text-white/60 hover:text-white hover:bg-white/10 w-8 h-8 rounded-full"
               onClick={handleRefresh}
-              disabled={refreshing || isFetching}
-              aria-label="Aggiorna feed"
+              disabled={refreshingNews || isFetching}
+              className="bg-[#0d1017] hover:bg-[#141721] text-white border border-white/15 rounded-full w-9 h-9 shadow-lg"
+              title="Aggiorna Live Feed"
             >
-              <RefreshCw className={`w-4 h-4 ${refreshing || isFetching ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${refreshingNews || isFetching ? 'animate-spin' : ''}`} />
             </Button>
           </div>
 
         </div>
-      </div>
+      </header>
 
-      {/* 2. Single-Column Citizen Social Feed Container */}
-      <div className="px-3 pt-4 max-w-xl mx-auto space-y-5">
+      {/* Main Single Column Live Feed Stream */}
+      <main className="max-w-xl mx-auto px-4 pt-6 space-y-6">
         
-        {/* Active Stats Header */}
-        <div className="flex items-center justify-between px-1 text-xs text-white/50 font-semibold">
-          <span>
-            <strong className="text-white font-bold">{activeCount}</strong> eventi attivi nel radar
-          </span>
-          <span className="text-[#10b981] font-bold">
-            {filtered.length} in evidenza
+        {/* Active Counter Header */}
+        <div className="flex items-center justify-between text-xs font-bold text-white/50 px-1">
+          <span>{filteredIncidents.length} eventi attivi nel radar</span>
+          <span className="text-emerald-400 flex items-center gap-1">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            5 Hubs Coperti
           </span>
         </div>
 
-        {filtered.length === 0 ? (
-          <div className="text-center py-20 bg-[#0d1017] rounded-3xl border border-white/10 p-6">
-            <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-4 text-white/40">
-              <Shield className="w-7 h-7" />
-            </div>
-            <h3 className="text-base font-extrabold text-white mb-1">Nessun evento nelle ultime {selectedHours}h</h3>
-            <p className="text-xs text-white/50 max-w-sm mx-auto mb-5">
-              Il radar Sentinel monitora le fonti ufficali in tempo reale. Espandi la finestra temporale a 72h.
-            </p>
-            <Button
-              size="sm"
-              onClick={() => setSelectedHours(72)}
-              className="bg-[#10b981] text-black font-extrabold text-xs rounded-xl px-5 py-2 hover:bg-[#10b981]/90"
+        {/* Incident Cards Stream */}
+        {visibleIncidents.map((incident) => (
+          <IncidentCard
+            key={incident.id}
+            incident={incident}
+            distance={incident.distance}
+          />
+        ))}
+
+        {/* Infinite Scroll Bottom Loader Anchor */}
+        <div ref={loaderRef} className="py-6 text-center">
+          {hasMoreItems ? (
+            <button
+              onClick={() => setDisplayLimit(prev => Math.min(prev + 15, filteredIncidents.length))}
+              className="inline-flex items-center gap-2 text-xs font-extrabold text-[#10b981] bg-[#10b981]/10 border border-[#10b981]/30 px-6 py-2.5 rounded-full hover:bg-[#10b981]/20 transition-all"
             >
-              Mostra Allerte a 72h
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <AnimatePresence mode="popLayout">
-              {filtered.map(inc => (
-                <motion.div
-                  key={inc.id}
-                  layout
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  <IncidentCard
-                    incident={inc}
-                    distance={inc.distance}
-                    unread={!readIncidentIds.has(inc.id)}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              Carica Altri Eventi Live...
+            </button>
+          ) : (
+            <p className="text-xs text-white/40 font-semibold">
+              ✓ Hai raggiunto la fine del radar live per gli hub attivi.
+            </p>
+          )}
+        </div>
 
-      </div>
+      </main>
 
-      {/* Filter Sheet */}
-      <Sheet open={showFilters} onOpenChange={setShowFilters}>
-        <SheetContent side="bottom" className="rounded-t-3xl bg-[#0b0e14] border-white/10 text-white max-h-[85vh] overflow-y-auto">
-          <SheetHeader className="pb-4 border-b border-white/10">
-            <SheetTitle className="text-white text-base font-bold flex items-center justify-between">
-              <span>Filtra Segnalazioni Live</span>
-              {activeFiltersCount > 0 && (
-                <button
-                  onClick={() => {
-                    setActiveTypes(Object.keys(TYPE_CONFIG));
-                    setShowOnlyActive(false);
-                    setUseRadius(false);
-                  }}
-                  className="text-xs text-[#10b981] font-normal hover:underline"
-                >
-                  Resetta filtri
-                </button>
-              )}
-            </SheetTitle>
-          </SheetHeader>
-
-          <div className="py-4 space-y-6">
-            {/* Filter by Status */}
-            <div>
-              <label className="text-xs font-semibold text-white/50 block mb-2">Stato Evento</label>
-              <button
-                onClick={() => setShowOnlyActive(prev => !prev)}
-                className={`w-full flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition-all
-                  ${showOnlyActive
-                    ? 'bg-[#10b981]/20 border-[#10b981] text-[#10b981]'
-                    : 'bg-white/5 border-white/10 text-white/70'}`}
-              >
-                <span>Solo Eventi Attivi</span>
-                {showOnlyActive ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4 text-white/30" />}
-              </button>
-            </div>
-
-            {/* Filter by Radius */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-white/50">Raggio di azione GPS</label>
-                <button
-                  onClick={() => setUseRadius(prev => !prev)}
-                  className={`text-xs font-bold ${useRadius ? 'text-[#10b981]' : 'text-white/40'}`}
-                >
-                  {useRadius ? `Attivo: entro ${radius} km` : 'Disattivato (Tutta Italia)'}
-                </button>
-              </div>
-              {useRadius && (
-                <div className="pt-2 px-1">
-                  <Slider
-                    value={[radius]}
-                    min={5}
-                    max={500}
-                    step={5}
-                    onValueChange={([val]) => setRadius(val)}
-                  />
-                  <div className="flex justify-between text-[10px] text-white/40 mt-2">
-                    <span>5 km</span>
-                    <span className="text-[#10b981] font-bold">{radius} km</span>
-                    <span>500 km</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Filter by Categories */}
-            <div>
-              <label className="text-xs font-semibold text-white/50 block mb-2">Tipologie di Evento</label>
-              <div className="grid grid-cols-2 gap-2">
-                {Object.entries(TYPE_CONFIG).map(([key, cfg]) => {
-                  const IconComp = TYPE_ICONS[key] || TYPE_ICONS.other;
-                  const isActive = activeTypes.includes(key);
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => toggleType(key)}
-                      className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all text-left
-                        ${isActive
-                          ? `${cfg.bg} ${cfg.border} ${cfg.text}`
-                          : 'bg-white/5 border-white/10 text-white/40 opacity-60'}`}
-                    >
-                      <IconComp className="w-4 h-4 shrink-0" />
-                      <span className="truncate">{cfg.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+      <ReportIncidentModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        userLocation={userLocation}
+      />
     </div>
   );
 }

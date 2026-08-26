@@ -1,69 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
-import { useMutation } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import {
-  Bell, MapPin, Crown, LogOut, ChevronRight, Sun, Moon,
-  AlertTriangle, Flame, Car, Heart, Radio, CloudLightning,
-  Lock, HelpCircle, Shield, Loader2, User as UserIcon
+  MapPin, Sun, Moon, Heart, Shield, Loader2, Star, Sparkles
 } from 'lucide-react';
-import PrivacySheet from '@/components/common/PrivacySheet';
 import HistorySection from '@/components/profile/HistorySection';
+import IncidentCard from '@/components/incidents/IncidentCard';
 import { getReliabilityLevel, getNextTier } from '@/components/data/reliability';
 import { toast } from 'sonner';
 
-const NOTIFY_TYPES = [
-  { key: 'notify_crime',    emoji: '🚨', label: 'Crimini' },
-  { key: 'notify_fire',     emoji: '🔥', label: 'Incendi' },
-  { key: 'notify_accident', emoji: '🚗', label: 'Incidenti stradali' },
-  { key: 'notify_medical',  emoji: '🏥', label: 'Emergenze mediche' },
-  { key: 'notify_traffic',  emoji: '🚦', label: 'Traffico' },
-  { key: 'notify_weather',  emoji: '⛈️', label: 'Meteo' },
-];
-
-const COMING_SOON_ITEMS = [
-  { emoji: '📍', label: 'Luoghi salvati', desc: 'Monitora zone specifiche', comingSoon: true },
-  { emoji: '❓', label: 'Aiuto e supporto', desc: 'FAQ e contatti', comingSoon: true },
-];
+const getLikedIncidentsFromStorage = () => {
+  try {
+    const raw = localStorage.getItem('sentinel_liked_incidents');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+};
 
 export default function Profile() {
   const [user, setUser] = useState({ id: 'user-1', full_name: 'Nikolay V.', karma: 120, email: 'nikolay@sentinel.it' });
-  const [loading, setLoading] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [likedIncidents, setLikedIncidents] = useState(getLikedIncidentsFromStorage);
   const [settings, setSettings] = useState(() => {
-    const defaults = {
-      notification_radius: 20,
-      notify_crime: true,
-      notify_fire: true,
-      notify_accident: true,
-      notify_medical: true,
-      notify_traffic: true,
-      notify_weather: true,
-    };
+    const defaults = { notification_radius: 20 };
     try {
       return { ...defaults, ...JSON.parse(localStorage.getItem('sentinel_notify_settings') || '{}') };
     } catch {
       return defaults;
     }
   });
-
-  const [notificationPermission, setNotificationPermission] = useState(() => (
-    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported'
-  ));
 
   const updateSetting = (key, value) => {
     setSettings(s => ({ ...s, [key]: value }));
@@ -73,30 +44,22 @@ export default function Profile() {
     localStorage.setItem('sentinel_notify_settings', JSON.stringify(settings));
   }, [settings]);
 
-  const requestBrowserNotifications = async () => {
-    if (typeof window === 'undefined' || !('Notification' in window)) {
-      toast.error('Questo browser non supporta le notifiche di sistema');
-      return;
-    }
+  // Synchronize liked items dynamically across app
+  useEffect(() => {
+    const handleLikesUpdated = () => {
+      setLikedIncidents(getLikedIncidentsFromStorage());
+    };
 
-    const permission = await Notification.requestPermission();
-    setNotificationPermission(permission);
-    if (permission === 'granted') {
-      toast.success('Notifiche browser attivate');
-    } else {
-      toast.error('Notifiche browser non autorizzate');
-    }
-  };
+    window.addEventListener('sentinel_likes_updated', handleLikesUpdated);
+    window.addEventListener('storage', handleLikesUpdated);
+
+    return () => {
+      window.removeEventListener('sentinel_likes_updated', handleLikesUpdated);
+      window.removeEventListener('storage', handleLikesUpdated);
+    };
+  }, []);
 
   const { theme, toggleTheme } = useLanguageTheme();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#050505] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#10b981] animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#050505] text-slate-900 dark:text-white pb-28 transition-colors duration-300 font-sans" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
@@ -117,7 +80,7 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         
         {/* User Card */}
         <div className="bg-white dark:bg-[#0c0c0c] rounded-2xl p-5 border border-slate-200 dark:border-white/10 shadow-md">
@@ -168,6 +131,42 @@ export default function Profile() {
             </div>
           );
         })()}
+
+        {/* 🌟 NEW: ALLERTE PREFERITE & SALVATE RECAP SECTION */}
+        <div className="bg-white dark:bg-[#0c0c0c] rounded-2xl p-5 border border-slate-200 dark:border-white/10 shadow-md space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Heart className="w-5 h-5 text-red-500 fill-current" />
+              <h2 className="font-extrabold text-slate-900 dark:text-white text-base">Le Mie Allerte Salvate & Preferite</h2>
+            </div>
+            <Badge variant="outline" className="bg-red-5 text-red-500 border-red-500/30 text-xs font-black">
+              {likedIncidents.length} salvati
+            </Badge>
+          </div>
+
+          {likedIncidents.length > 0 ? (
+            <div className="space-y-4 pt-2">
+              {likedIncidents.map((incident) => {
+                const item = typeof incident === 'string' ? { id: incident, title: 'Allerta Salvata', description: 'Allerta salvata nel tuo profilo.' } : incident;
+                return (
+                  <IncidentCard
+                    key={item.id}
+                    incident={item}
+                    distance={item.distance}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-slate-50 dark:bg-[#08090d] rounded-xl border border-dashed border-slate-300 dark:border-white/10 p-6">
+              <Sparkles className="w-8 h-8 text-slate-400 dark:text-white/30 mx-auto mb-2" />
+              <p className="text-xs font-bold text-slate-700 dark:text-white/80">Nessuna allerta salvata nei preferiti</p>
+              <p className="text-[11px] text-slate-500 dark:text-white/50 mt-1 max-w-xs mx-auto">
+                Clicca sull'icona a forma di cuore 🤍 su qualsiasi notizia nel Feed o in Mappa per ritrovarla in questa sezione.
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Notification Radius Slider */}
         <div className="bg-white dark:bg-[#0c0c0c] rounded-2xl p-5 border border-slate-200 dark:border-white/10 shadow-md">
