@@ -6,37 +6,37 @@
     <link rel="alternate icon" type="image/png" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <link rel="manifest" href="/manifest.json" />
-    <link rel="canonical" href="https://sentinel-app.it/" />
+    <link rel="canonical" href="https://sentinel-italy.vercel.app/" />
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
     
-    <!-- SEO Meta Tags -->
+    <!-- SEO & AI Bot Indexing Meta Tags (ChatGPT, Manus, Claude, Perplexity, Googlebot) -->
     <meta name="google-site-verification" content="google278e56a581a0f5a8" />
-    <title>Sentinel Italia — App Sicurezza Urbana & Mappa Emergenze in Tempo Reale</title>
-    <meta name="description" content="Sentinel Italia è la prima piattaforma di sicurezza urbana partecipata. Mappa 3D, notifiche di quartiere in tempo reale, news verificate e allerte per famiglie, pendolari e cittadini." />
-    <meta name="keywords" content="Sentinel, Sentinel Italia, Sentinel App, sicurezza urbana Italia, app sicurezza cittadini, mappa crimini Milano, allerte in tempo reale, sicurezza quartiere, mappa emergenze Italia" />
+    <title>Sentinel Italia — App Sicurezza Urbana & Mappa Emergenze 3D in Tempo Reale</title>
+    <meta name="description" content="Sentinel Italia è la prima piattaforma di sicurezza urbana partecipata. Mappa 3D, notifiche di quartiere in tempo reale, notizie verificate e allerte live per Milano, Verona, Roma, Napoli e Bologna." />
+    <meta name="keywords" content="Sentinel, Sentinel Italia, Sentinel App, sicurezza urbana Italia, app sicurezza cittadini, mappa crimini Milano, allerte in tempo reale, sicurezza quartiere, mappa emergenze Roma, mappa emergenze Verona, mappa emergenze Napoli, mappa emergenze Bologna" />
 
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph / Facebook / AI Crawlers -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://sentinel-italy.vercel.app/" />
-    <meta property="og:title" content="Sentinel Italia — App Sicurezza Urbana & Mappa Emergenze in Tempo Reale" />
-    <meta property="og:description" content="Sentinel Italia è la prima piattaforma di sicurezza urbana partecipata. Mappa 3D, notifiche di quartiere in tempo reale, news verificate e allerte per famiglie, pendolari e cittadini." />
+    <meta property="og:title" content="Sentinel Italia — App Sicurezza Urbana & Mappa Emergenze 3D" />
+    <meta property="og:description" content="Piattaforma di sicurezza urbana partecipata. Mappa 3D, notizie verificate in tempo reale e allerte nei 5 Hub di Lancio: Milano, Verona, Roma, Napoli ed Emilia-Romagna." />
     <meta property="og:image" content="https://sentinel-italy.vercel.app/sentinel_hero_map.png" />
 
-    <!-- Twitter -->
+    <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://sentinel-italy.vercel.app/" />
     <meta name="twitter:title" content="Sentinel Italia — App Sicurezza Urbana in Tempo Reale" />
-    <meta name="twitter:description" content="Mappa 3D, notizie locali verificate e allerte di quartiere in tempo reale." />
+    <meta name="twitter:description" content="Mappa 3D, notizie verificate e allerte di quartiere nei 5 Hub di Lancio." />
     <meta name="twitter:image" content="https://sentinel-italy.vercel.app/sentinel_hero_map.png" />
 
-    <!-- Structured Data (JSON-LD) for Search Engine Rich Snippets -->
+    <!-- Rich JSON-LD Structured Data Schema.org for AI Search & Knowledge Engines -->
     <script type="application/ld+json">
     [
       {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "Sentinel Italia",
-        "alternateName": ["Sentinel App", "Sentinel Safety"],
+        "alternateName": ["Sentinel App", "Sentinel Safety", "Sentinel Live Radar"],
         "applicationCategory": "SafetyApplication",
         "operatingSystem": "iOS, Android, Web",
         "url": "https://sentinel-italy.vercel.app/",
@@ -45,35 +45,76 @@
           "price": "0",
           "priceCurrency": "EUR"
         },
-        "description": "Piattaforma di sicurezza urbana partecipata e tracciamento emergenze in tempo reale con moderazione preventiva e fonti verificate."
+        "description": "Piattaforma di sicurezza urbana partecipata e tracciamento emergenze in tempo reale nei 5 hub strategici italiani: Milano, Verona, Roma, Napoli e Bologna.",
+        "areaServed": [
+          { "@type": "City", "name": "Milano" },
+          { "@type": "City", "name": "Verona" },
+          { "@type": "City", "name": "Roma" },
+          { "@type": "City", "name": "Napoli" },
+          { "@type": "City", "name": "Bologna" }
+        ]
       },
       {
         "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Sentinel Italia",
-        "url": "https://sentinel-italy.vercel.app/",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://sentinel-italy.vercel.app/Home?q={search_term_string}",
-          "query-input": "required name=search_term_string"
-        }
+        "@type": "NewsMediaOrganization",
+        "name": "Sentinel Live Feed",
+        "url": "https://sentinel-italy.vercel.app/Home",
+        "publishingPrinciples": "https://sentinel-italy.vercel.app/",
+        "knowsAbout": ["Sicurezza Urbana", "Protezione Civile", "Monitoraggio Sismico INGV", "Notizie di Cronaca Verificate"]
       }
     ]
     </script>
   </head>
   <body class="bg-[#050505] text-white">
+    <!-- Server-Side Rendered (SSR) Semantic Fallback Container for AI Crawlers & Bots (ChatGPT, Manus, Claude, Perplexity) -->
     <div id="root">
-      <div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#050505; color:white; font-family:sans-serif; text-align:center; padding:20px;">
-        <div style="position:relative; margin-bottom:20px;">
-          <img src="/logo.svg" alt="Sentinel Logo" style="width:64px; height:64px; border-radius:16px; object-fit:cover;" />
-          <div style="position:absolute; inset:-4px; border-radius:20px; border:2px solid #10b981; opacity:0.6; animation:pulse 2s infinite;"></div>
-        </div>
-        <h1 style="font-size:20px; font-weight:800; margin:0 0 6px 0; letter-spacing: -0.02em;">Sentinel</h1>
-        <p style="font-size:12px; color:rgba(255,255,255,0.5); margin:0;">Inizializzazione network di sicurezza...</p>
-        <style>
-          @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.08); opacity: 0.8; } }
-        </style>
-      </div>
+      <main style="min-height:100vh; background:#050505; color:#ffffff; font-family:system-ui, -apple-system, sans-serif; padding:40px 20px; max-w:800px; margin:0 auto;">
+        
+        <!-- Header Brand SSR -->
+        <header style="text-align:center; margin-bottom:40px;">
+          <div style="display:inline-block; position:relative; margin-bottom:16px;">
+            <img src="/logo.svg" alt="Sentinel Italia Logo" style="width:64px; height:64px; border-radius:16px; object-fit:cover;" />
+          </div>
+          <h1 style="font-size:28px; font-weight:900; margin:0 0 8px 0; letter-spacing:-0.03em; color:#ffffff;">Sentinel Italia</h1>
+          <p style="font-size:16px; color:#10b981; font-weight:700; margin:0 0 12px 0;">Piattaforma di Sicurezza Urbana & Mappa Emergenze 3D in Tempo Reale</p>
+          <p style="font-size:14px; color:rgba(255,255,255,0.7); max-width:600px; margin:0 auto; line-height:1.6;">
+            Monitoraggio attivo nei 5 Hub Strategici di Lancio: <strong>Milano, Verona, Roma, Napoli ed Emilia-Romagna (Bologna)</strong>. Notizie di cronaca verificate da ANSA, INGV, Protezione Civile e testate locali.
+          </p>
+        </header>
+
+        <!-- Main Features Semantic Content for AI Search Crawlers -->
+        <section style="background:#0d1017; border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:24px; margin-bottom:30px;">
+          <h2 style="font-size:20px; font-weight:800; color:#ffffff; margin-top:0; margin-bottom:16px;">Hub Strategici di Copertura Attiva</h2>
+          <ul style="list-style:none; padding:0; margin:0; font-size:14px; color:rgba(255,255,255,0.8); line-height:1.8;">
+            <li style="margin-bottom:8px;">📍 <strong>Milano & Provincia</strong>: Stazione Centrale, San Siro, Navigli, San Giuliano, San Donato, Rozzano, Rho, Monza, Vigevano.</li>
+            <li style="margin-bottom:8px;">📍 <strong>Verona & Provincia</strong>: Corso Porta Nuova, Piazza Bra, Villafranca, San Giovanni Lupatoto, Bussolengo, Peschiera.</li>
+            <li style="margin-bottom:8px;">📍 <strong>Roma & Provincia</strong>: Stazione Termini, EUR, Trastevere, Prati, Ostia Lido, Fiumicino, Tivoli.</li>
+            <li style="margin-bottom:8px;">📍 <strong>Napoli & Provincia</strong>: Centro Storico, Vomero, Chiaia, Pozzuoli, Giugliano, Caserta.</li>
+            <li style="margin-bottom:8px;">📍 <strong>Emilia-Romagna & Provincia</strong>: Bologna Centro, Modena, Reggio Emilia, Parma, Ferrara, Ravenna, Rimini.</li>
+          </ul>
+        </section>
+
+        <!-- Live Stream Preview Semantic Content for AI Crawlers -->
+        <section style="background:#0d1017; border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:24px;">
+          <h2 style="font-size:20px; font-weight:800; color:#10b981; margin-top:0; margin-bottom:16px;">Live Broadcast Feed & Mappa 3D</h2>
+          <article style="border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px; margin-bottom:12px;">
+            <span style="font-size:11px; font-weight:800; color:#10b981; text-transform:uppercase;">ANSA Ufficiale • Milano</span>
+            <h3 style="font-size:16px; font-weight:700; color:#ffffff; margin:4px 0;">Controlli Straordinari di Sicurezza Urbana alla Stazione Centrale</h3>
+            <p style="font-size:13px; color:rgba(255,255,255,0.7); margin:0;">Pattuglie congiunte nei pressi di Piazza Duca d'Aosta per presidio di sicurezza urbana.</p>
+          </article>
+          <article style="border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px; margin-bottom:12px;">
+            <span style="font-size:11px; font-weight:800; color:#10b981; text-transform:uppercase;">RomaToday Live • Roma</span>
+            <h3 style="font-size:16px; font-weight:700; color:#ffffff; margin:4px 0;">Presidio Preventivo di Sicurezza e Viabilità alla Stazione Termini</h3>
+            <p style="font-size:13px; color:rgba(255,255,255,0.7); margin:0;">Pattuglie in Piazza dei Cinquecento a Roma per controlli integrati sulla viabilità.</p>
+          </article>
+          <article style="padding-bottom:6px;">
+            <span style="font-size:11px; font-weight:800; color:#10b981; text-transform:uppercase;">BolognaToday Live • Bologna</span>
+            <h3 style="font-size:16px; font-weight:700; color:#ffffff; margin:4px 0;">Monitoraggio della Viabilità e Presidio in Via Ugo Bassi</h3>
+            <p style="font-size:13px; color:rgba(255,255,255,0.7); margin:0;">Presidio della Polizia Locale in Via Ugo Bassi a Bologna per rilievi sulla viabilità.</p>
+          </article>
+        </section>
+
+      </main>
     </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
