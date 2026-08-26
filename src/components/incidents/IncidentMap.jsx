@@ -77,7 +77,6 @@ export default function IncidentMap({
 
   useEffect(() => {
     if (center && mapRef.current) {
-      // Offset latitude slightly so marker appears centered in visible top half
       const targetLat = center[0] - 0.004;
       mapRef.current.flyTo({
         center: [center[1], targetLat],
@@ -91,19 +90,19 @@ export default function IncidentMap({
 
   const visibleMarkers = useMemo(() => spreadOverlappingIncidents(incidents), [incidents]);
 
-  const containerStyle = height === '100%' 
-    ? { position: 'relative', width: '100%', height: '100%', minHeight: '420px' } 
-    : { height, width: '100%', minHeight: '420px', position: 'relative' };
-
   return (
-    <div ref={containerRef} style={containerStyle} className={`overflow-hidden bg-[#05070a] border border-white/10 ${className} relative text-white select-none`}>
+    <div 
+      ref={containerRef} 
+      style={{ position: 'relative', width: '100%', height: height === '100%' ? 'calc(100vh - 64px)' : height, minHeight: '480px' }} 
+      className={`overflow-hidden bg-[#05070a] border border-white/10 ${className} relative text-white select-none`}
+    >
       <Map
         ref={mapRef}
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
         mapboxAccessToken={mapboxToken}
         mapStyle="mapbox://styles/mapbox/dark-v11"
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%', minHeight: '480px' }}
         attributionControl={false}
       >
         <NavigationControl position="top-right" showCompass={true} />
@@ -118,7 +117,7 @@ export default function IncidentMap({
           </Marker>
         )}
 
-        {/* 2. Sleek Citizen Emoji-Only Map Markers (NO TEXT, NO GIANT BLINKING RED) */}
+        {/* 2. Sleek Citizen Emoji-Only Map Markers */}
         {visibleMarkers.map(({ incident, markerLatitude, markerLongitude }) => {
           const cfg = TYPE_CONFIG[incident.type] || TYPE_CONFIG.other;
 

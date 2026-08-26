@@ -56,28 +56,28 @@ export default function LandingPage() {
 
   const FAQS = [
     {
-      question: "Sentinel sostituisce il 112 o i numeri di emergenza?",
-      answer: "No. Sentinel è uno strumento di informazione preventiva e consapevolezza del territorio. In caso di emergenza immediata o pericolo imminente per la vita, devi sempre contattare tempestivamente il 112 o le forze dell'ordine."
+      question: t('faq_q1'),
+      answer: t('faq_a1')
     },
     {
-      question: "Come viene garantito che non ci sia allarmismo o fake news?",
-      answer: "Ogni segnalazione passa attraverso il nostro algoritmo di moderazione preventiva e viene incrociata con i dati ufficiali prima della pubblicazione sulla mappa globale. Inoltre, il Karma degli utenti limita l'impatto di segnalazioni isolate o non verificate."
+      question: t('faq_q2'),
+      answer: t('faq_a2')
     },
     {
-      question: "La mia posizione viene tracciata o venduta a terzi?",
-      answer: "Assolutamente no. Sentinel opera nel pieno rispetto del GDPR europeo. I dati di geolocalizzazione vengono elaborati in locale sul tuo dispositivo e servono esclusivamente a calcolare le allerte sul tuo raggio d'azione. Zero profilazione a fini pubblicitari."
+      question: t('faq_q3'),
+      answer: t('faq_a3')
     },
     {
-      question: "L'applicazione è gratuita?",
-      answer: "Sì, le funzionalità fondamentali di monitoraggio del territorio, ricezione delle allerte live e consultazione delle fonti ufficiali sono e rimarranno sempre gratuite per tutti i cittadini."
+      question: t('faq_q4'),
+      answer: t('faq_a4')
     },
     {
-      question: "Funziona anche nelle zone più piccole o solo nei grandi centri?",
-      answer: "Le allerte istituzionali (come INGV per i terremoti, allerte meteo della Protezione Civile e viabilità) coprono l'intero territorio nazionale. Nelle zone più frequentate si aggiunge la rete di segnalazione capillare degli utenti."
+      question: t('faq_q5'),
+      answer: t('faq_a5')
     },
     {
-      question: "Le segnalazioni possono discriminare persone o quartieri?",
-      answer: "No. Sentinel integra un filtro rigido anti-discriminazione che blocca all'origine qualsiasi generalizzazione su gruppi etnici, nazionalità o religioni. Pubblichiamo esclusivamente fatti oggettivi e verificabili: cosa, dove e quando."
+      question: t('faq_q6'),
+      answer: t('faq_a6')
     }
   ];
 

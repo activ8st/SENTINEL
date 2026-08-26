@@ -110,7 +110,7 @@ export default function MapView() {
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-64px)] bg-[#05070a] overflow-hidden">
+    <div style={{ position: 'relative', width: '100%', height: 'calc(100vh - 64px)', minHeight: '500px' }} className="bg-[#05070a] overflow-hidden">
       
       {/* 1. Top Floating Controls Bar */}
       <div className="absolute top-4 inset-x-4 z-20 max-w-xl mx-auto flex items-center justify-between gap-2 pointer-events-none">
@@ -171,13 +171,14 @@ export default function MapView() {
 
       </div>
 
-      {/* 2. Full-Screen 3D Map View Container (Default Zoom 12.5) */}
-      <div className="w-full h-full">
+      {/* 2. Full-Screen 3D Map View Container */}
+      <div style={{ width: '100%', height: '100%', minHeight: '500px' }}>
         <IncidentMap
           incidents={filteredIncidents}
           center={mapCenter}
           userLocation={userGpsActive ? location : null}
           zoom={12.5}
+          height="100%"
           onIncidentClick={(inc) => {
             setSelectedIncident(inc);
             setMapCenter([inc.latitude, inc.longitude]);
