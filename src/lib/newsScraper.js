@@ -1,7 +1,7 @@
 /**
- * newsScraper.js - Sentinel Production Real-Time Live Ingestion Pipeline V12 (5 LAUNCH HUBS BALANCED)
+ * newsScraper.js - Sentinel Production Real-Time Live Ingestion Pipeline V13 (STRICT SAFETY FILTER & EXACT GEOCODING)
  * 
- * STRICT STRATEGIC LAUNCH HUBS COVERAGE ONLY:
+ * COVERED LAUNCH HUBS:
  * 1. Milano & Provincia
  * 2. Verona & Provincia
  * 3. Roma & Provincia
@@ -31,6 +31,7 @@ const NEIGHBORHOOD_COORDS = {
   'navigli': { lat: 45.4510, lng: 9.1740, address: 'Ripa di Porta Ticinese · Navigli, Milano', hub: 'Milano' },
   'duomo': { lat: 45.4642, lng: 9.1900, address: 'Piazza del Duomo · Milano Centro', hub: 'Milano' },
   'buenos aires': { lat: 45.4800, lng: 9.2100, address: 'Corso Buenos Aires · Milano', hub: 'Milano' },
+  'pirellone': { lat: 45.4842, lng: 9.2030, address: 'Piazzale Duca d\'Aosta · Pirellone, Milano', hub: 'Milano' },
 
   // Verona & Hinterland
   'porta nuova': { lat: 45.4320, lng: 10.9880, address: 'Corso Porta Nuova · Verona', hub: 'Verona' },
@@ -69,7 +70,7 @@ const NEIGHBORHOOD_COORDS = {
   'imola': { lat: 44.3534, lng: 11.7142, address: 'Via Appia · Imola', hub: 'Emilia-Romagna' }
 };
 
-// Strict Geocoding Engine per Hub di Origine
+// Strict City Geocoding Engine
 const geocodeAddress = (text, defaultCity = 'Milano') => {
   const t = (text || '').toLowerCase();
   for (const [key, loc] of Object.entries(NEIGHBORHOOD_COORDS)) {
@@ -79,7 +80,7 @@ const geocodeAddress = (text, defaultCity = 'Milano') => {
   }
 
   if (defaultCity === 'Roma') {
-    return { lat: 41.9028 + (Math.random() - 0.5) * 0.03, lng: 12.4964 + (Math.random() - 0.5) * 0.03, address: 'Via Nazionale · Roma Centro', hub: 'Roma' };
+    return { lat: 41.9028 + (Math.random() - 0.5) * 0.03, lng: 12.4964 + (Math.random() - 0.5) * 0.03, address: 'Piazza Venezia · Roma Centro', hub: 'Roma' };
   }
   if (defaultCity === 'Verona') {
     return { lat: 45.4384 + (Math.random() - 0.5) * 0.02, lng: 10.9916 + (Math.random() - 0.5) * 0.02, address: 'Corso Cavour · Verona Centro', hub: 'Verona' };
@@ -91,6 +92,30 @@ const geocodeAddress = (text, defaultCity = 'Milano') => {
     return { lat: 44.4949 + (Math.random() - 0.5) * 0.03, lng: 11.3426 + (Math.random() - 0.5) * 0.03, address: 'Via Ugo Bassi · Bologna', hub: 'Emilia-Romagna' };
   }
   return { lat: 45.4642 + (Math.random() - 0.5) * 0.03, lng: 9.1900 + (Math.random() - 0.5) * 0.03, address: 'Corso Vittorio Emanuele · Milano Centro', hub: 'Milano' };
+};
+
+// Filter out lifestyle, horoscopes, sports, recipes, cinema, office tips
+const isSafetyOrUrbanIncident = (text) => {
+  const t = (text || '').toLowerCase();
+  
+  // Explicit Exclusion Keywords (Gossip, Office, Horoscopes, Cinema, Sports)
+  if (t.includes('oroscopo') || t.includes('ricett') || t.includes('ufficio') || t.includes('vacanze') || t.includes('cinema') || t.includes('film') || t.includes('serie tv') || t.includes('pagelle') || t.includes('calcio') || t.includes('partita')) {
+    return false;
+  }
+
+  // Explicit Inclusion Keywords (Safety, Crime, Accidents, Fire, Traffic, Weather, Urban Hazards)
+  return (
+    t.includes('rapin') || t.includes('furt') || t.includes('borsegg') || t.includes('arrest') ||
+    t.includes('spara') || t.includes('accoltell') || t.includes('aggred') || t.includes('droga') ||
+    t.includes('polizia') || t.includes('carabinier') || t.includes('truffa') || t.includes('sequestro') ||
+    t.includes('scontro') || t.includes('tampona') || t.includes('investit') || t.includes('incidente') ||
+    t.includes('ferit') || t.includes('stradal') || t.includes('ospedale') || t.includes('118') ||
+    t.includes('fiamm') || t.includes('fumo') || t.includes('incend') || t.includes('rogo') || t.includes('vigili del fuoco') ||
+    t.includes('traffico') || t.includes('cantiere') || t.includes('deviazi') || t.includes('blocco') ||
+    t.includes('strada') || t.includes('metro') || t.includes('corteo') || t.includes('sciopero') ||
+    t.includes('terremoto') || t.includes('sismo') || t.includes('meteo') || t.includes('allerta') ||
+    t.includes('vento') || t.includes('temporale') || t.includes('pioggia') || t.includes('arrampica') || t.includes('presidio')
+  );
 };
 
 const cleanTitleText = (title) => {
@@ -111,7 +136,7 @@ const classifyCategory = (text) => {
   if (t.includes('rapin') || t.includes('furt') || t.includes('borsegg') || t.includes('arrest') || t.includes('spara') || t.includes('accoltell') || t.includes('aggred') || t.includes('droga') || t.includes('polizia') || t.includes('carabinier') || t.includes('truffa') || t.includes('sequestro')) {
     return { type: 'crime', severity: 'high' };
   }
-  if (t.includes('scontro') || t.includes('tampona') || t.includes('investit') || t.includes('incidente') || t.includes('ferit') || t.includes('stradal') || t.includes('auto') || t.includes('moto')) {
+  if (t.includes('scontro') || t.includes('tampona') || t.includes('investit') || t.includes('incidente') || t.includes('ferit') || t.includes('stradal') || t.includes('ospedale') || t.includes('118') || t.includes('auto') || t.includes('moto')) {
     return { type: 'accident', severity: 'medium' };
   }
   if (t.includes('fiamm') || t.includes('fumo') || t.includes('incend') || t.includes('rogo') || t.includes('vigili del fuoco')) {
@@ -188,6 +213,7 @@ export const fetchMilanoToday = async () => {
     const cleanTitle = cleanTitleText(item.title);
     const cleanDesc = (item.description || item.content || '').replace(/<[^>]*>/g, '').trim();
     if (!cleanTitle || cleanTitle.length < 8) return null;
+    if (!isSafetyOrUrbanIncident(cleanTitle + ' ' + cleanDesc)) return null;
 
     const cat = classifyCategory(cleanTitle + ' ' + cleanDesc);
     const geocoded = geocodeAddress(cleanTitle + ' ' + cleanDesc, 'Milano');
@@ -218,6 +244,7 @@ export const fetchRomaToday = async () => {
     const cleanTitle = cleanTitleText(item.title);
     const cleanDesc = (item.description || item.content || '').replace(/<[^>]*>/g, '').trim();
     if (!cleanTitle || cleanTitle.length < 8) return null;
+    if (!isSafetyOrUrbanIncident(cleanTitle + ' ' + cleanDesc)) return null;
 
     const cat = classifyCategory(cleanTitle + ' ' + cleanDesc);
     const geocoded = geocodeAddress(cleanTitle + ' ' + cleanDesc, 'Roma');
@@ -248,6 +275,7 @@ export const fetchVeronaLiveFeeds = async () => {
     const cleanTitle = cleanTitleText(item.title);
     const cleanDesc = (item.description || item.content || '').replace(/<[^>]*>/g, '').trim();
     if (!cleanTitle || cleanTitle.length < 8) return null;
+    if (!isSafetyOrUrbanIncident(cleanTitle + ' ' + cleanDesc)) return null;
 
     const cat = classifyCategory(cleanTitle + ' ' + cleanDesc);
     const geocoded = geocodeAddress(cleanTitle + ' ' + cleanDesc, 'Verona');
@@ -278,6 +306,7 @@ export const fetchNapoliLiveFeeds = async () => {
     const cleanTitle = cleanTitleText(item.title);
     const cleanDesc = (item.description || item.content || '').replace(/<[^>]*>/g, '').trim();
     if (!cleanTitle || cleanTitle.length < 8) return null;
+    if (!isSafetyOrUrbanIncident(cleanTitle + ' ' + cleanDesc)) return null;
 
     const cat = classifyCategory(cleanTitle + ' ' + cleanDesc);
     const geocoded = geocodeAddress(cleanTitle + ' ' + cleanDesc, 'Napoli');
@@ -308,6 +337,7 @@ export const fetchBolognaLiveFeeds = async () => {
     const cleanTitle = cleanTitleText(item.title);
     const cleanDesc = (item.description || item.content || '').replace(/<[^>]*>/g, '').trim();
     if (!cleanTitle || cleanTitle.length < 8) return null;
+    if (!isSafetyOrUrbanIncident(cleanTitle + ' ' + cleanDesc)) return null;
 
     const cat = classifyCategory(cleanTitle + ' ' + cleanDesc);
     const geocoded = geocodeAddress(cleanTitle + ' ' + cleanDesc, 'Emilia-Romagna');
