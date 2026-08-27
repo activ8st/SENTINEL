@@ -25,7 +25,7 @@ const spreadOverlappingIncidents = (incidents = []) => {
 
     const index = group.findIndex((item) => item.id === incident.id);
     const angle = (Math.PI * 2 * index) / group.length;
-    const radius = Math.min(0.004, 0.00045 + group.length * 0.00012);
+    const radius = Math.min(0.005, 0.0006 + group.length * 0.00015);
 
     return {
       incident,
@@ -38,7 +38,7 @@ const spreadOverlappingIncidents = (incidents = []) => {
 export default function IncidentMap({
   incidents = [],
   center,
-  zoom = 12.5,
+  zoom = 12.8,
   userLocation,
   height = '100%',
   onIncidentClick,
@@ -57,18 +57,19 @@ export default function IncidentMap({
   const [viewState, setViewState] = useState({
     latitude: activeCenter[0],
     longitude: activeCenter[1],
-    zoom: zoom || 12.5,
-    pitch: 45,
+    zoom: zoom || 12.8,
+    pitch: 48,
     bearing: -15
   });
 
-  // Automatically fly map camera to user location or center update with 3D tilt
+  // Automatically fly map camera with fixed 3D tilt
   useEffect(() => {
     if (userLocation && mapRef.current) {
       mapRef.current.flyTo({
         center: [userLocation.lng, userLocation.lat],
-        zoom: 12.5,
-        pitch: 45,
+        zoom: 12.8,
+        pitch: 48,
+        bearing: -15,
         duration: 1800,
         essential: true
       });
@@ -77,16 +78,72 @@ export default function IncidentMap({
 
   useEffect(() => {
     if (center && mapRef.current) {
-      const targetLat = center[0] - 0.004;
+      const targetLat = center[0] - 0.003;
       mapRef.current.flyTo({
         center: [center[1], targetLat],
         zoom: 13.5,
-        pitch: 45,
+        pitch: 48,
+        bearing: -15,
         duration: 1200,
         essential: true
       });
     }
   }, [center]);
+
+  const add3DBuildingsLayer = () => {
+    if (!mapRef.current) return;
+    const map = mapRef.current.getMap();
+    if (!map) return;
+
+    if (map.getLayer('3d-buildings')) return;
+
+    const layers = map.getStyle().layers;
+    let labelLayerId;
+    for (let i = 0; i < layers.length; i++) {
+      if (layers[i].type === 'symbol' && layers[i].layout && layers[i].layout['text-field']) {
+        labelLayerId = layers[i].id;
+        break;
+      }
+    }
+
+    try {
+      map.addLayer(
+        {
+          id: '3d-buildings',
+          source: 'composite',
+          'source-layer': 'building',
+          filter: ['==', 'extrude', 'true'],
+          type: 'fill-extrusion',
+          minzoom: 11,
+          paint: {
+            'fill-extrusion-color': '#111622',
+            'fill-extrusion-height': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              11,
+              0,
+              15.05,
+              ['get', 'height']
+            ],
+            'fill-extrusion-base': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              11,
+              0,
+              15.05,
+              ['get', 'min_height']
+            ],
+            'fill-extrusion-opacity': 0.75
+          }
+        },
+        labelLayerId
+      );
+    } catch (e) {
+      console.warn("3D buildings layer add warning:", e);
+    }
+  };
 
   const visibleMarkers = useMemo(() => spreadOverlappingIncidents(incidents), [incidents]);
 
@@ -100,6 +157,11 @@ export default function IncidentMap({
         ref={mapRef}
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
+        onLoad={add3DBuildingsLayer}
+        minPitch={40}
+        maxPitch={55}
+        minZoom={9}
+        maxZoom={17}
         mapboxAccessToken={mapboxToken}
         mapStyle="mapbox://styles/mapbox/dark-v11"
         style={{ width: '100%', height: '100%', minHeight: '480px' }}
@@ -107,12 +169,12 @@ export default function IncidentMap({
       >
         <NavigationControl position="top-right" showCompass={true} />
 
-        {/* 1. User Physical GPS Location Pulse Marker */}
+        {/* 1. User Physical GPS Location Marker */}
         {userLocation && (
           <Marker latitude={userLocation.lat} longitude={userLocation.lng} anchor="center">
             <div className="relative flex items-center justify-center" title="La tua Posizione">
-              <span className="absolute w-8 h-8 rounded-full bg-blue-500/30 animate-ping" />
-              <span className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg shadow-blue-500/50" />
+              <span className="absolute w-8 h-8 rounded-full bg-emerald-500/30 animate-ping" />
+              <span className="w-4.5 h-4.5 rounded-full bg-[#10b981] border-2 border-white shadow-lg shadow-emerald-500/50" />
             </div>
           </Marker>
         )}
@@ -136,7 +198,7 @@ export default function IncidentMap({
                 title={`${incident.title} - ${incident.address || incident.city}`} 
                 className="cursor-pointer group flex items-center justify-center"
               >
-                <div className="w-9 h-9 rounded-full bg-[#0d1017]/95 border-2 border-white/20 shadow-2xl flex items-center justify-center text-base transition-all duration-300 transform group-hover:scale-125 group-hover:border-[#10b981] group-hover:shadow-emerald-500/30">
+                <div className="w-9.5 h-9.5 rounded-full bg-[#0d1017]/95 border-2 border-white/30 shadow-2xl flex items-center justify-center text-base transition-all duration-300 transform group-hover:scale-130 group-hover:border-[#10b981] group-hover:shadow-emerald-500/50">
                   <span>{cfg.emoji || '⚠️'}</span>
                 </div>
               </div>
