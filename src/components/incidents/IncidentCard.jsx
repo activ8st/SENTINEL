@@ -17,7 +17,9 @@ const safeFormatTimeAgo = (dateStr) => {
   }
 };
 
-// Guaranteed High Definition Hero Images per Category / Emoji (Statue of Justice, Range Rover, Police, Fire)
+// High resolution SVG Radar Fallback Data URI (100% local, zero network dependency)
+const SVG_RADAR_FALLBACK = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect width="800" height="450" fill="%23090d16"/><circle cx="400" cy="225" r="160" fill="none" stroke="%2310b981" stroke-width="2" opacity="0.25"/><circle cx="400" cy="225" r="110" fill="none" stroke="%2310b981" stroke-width="2" opacity="0.4"/><circle cx="400" cy="225" r="60" fill="none" stroke="%2310b981" stroke-width="2" opacity="0.6"/><circle cx="400" cy="225" r="8" fill="%2310b981"/><line x1="240" y1="225" x2="560" y2="225" stroke="%2310b981" stroke-width="1.5" opacity="0.3"/><line x1="400" y1="65" x2="400" y2="385" stroke="%2310b981" stroke-width="1.5" opacity="0.3"/><text x="400" y="390" text-anchor="middle" fill="%2310b981" font-family="sans-serif" font-size="14" font-weight="bold" letter-spacing="3">SENTINEL MONITORING RADAR</text></svg>`;
+
 const HERO_IMAGES_BY_TYPE = {
   crime: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1000&q=80',
   accident: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1000&q=80',
@@ -26,6 +28,17 @@ const HERO_IMAGES_BY_TYPE = {
   weather: 'https://images.unsplash.com/photo-1516912481808-3406841bd33c?auto=format&fit=crop&w=1000&q=80',
   suspicious: 'https://images.unsplash.com/photo-1508873696983-2df515122519?auto=format&fit=crop&w=1000&q=80',
   other: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1000&q=80'
+};
+
+const resolveIncidentType = (incident) => {
+  if (incident.type && TYPE_CONFIG[incident.type]) return incident.type;
+  const text = (incident.title + ' ' + (incident.description || '')).toLowerCase();
+  if (/incendio|fuoco|fiamme|rogo|fumo/i.test(text)) return 'fire';
+  if (/incidente|scontro|investit|ribalt|tamponam|auto|moto|camion/i.test(text)) return 'accident';
+  if (/arrest|furto|rapina|borsegg|aggression|coltell|spacci|omicid|polizia|carabin/i.test(text)) return 'crime';
+  if (/traffico|lavori|deviazion|strada|chiusa|cantiere|code/i.test(text)) return 'traffic';
+  if (/meteo|temporale|pioggia|allerta|vento|neve|terremoto/i.test(text)) return 'weather';
+  return 'suspicious';
 };
 
 const getLikedIncidentsFromStorage = () => {
@@ -49,8 +62,8 @@ const saveLikedIncidentsToStorage = (likedArray) => {
 export default function IncidentCard({ incident, distance, unread = false }) {
   if (!incident) return null;
 
-  const typeKey = incident.type && TYPE_CONFIG[incident.type] ? incident.type : 'other';
-  const type = TYPE_CONFIG[typeKey];
+  const resolvedTypeKey = resolveIncidentType(incident);
+  const type = TYPE_CONFIG[resolvedTypeKey] || TYPE_CONFIG.other;
   const severityKey = incident.severity && SEVERITY_CONFIG[incident.severity] ? incident.severity : 'medium';
   const severity = SEVERITY_CONFIG[severityKey];
 
@@ -82,8 +95,12 @@ export default function IncidentCard({ incident, distance, unread = false }) {
     saveLikedIncidentsToStorage(updatedLikes);
   };
 
-  // Guaranteed high definition hero image matching category
-  const heroImageSrc = HERO_IMAGES_BY_TYPE[typeKey] || HERO_IMAGES_BY_TYPE.other;
+  const initialHeroSrc = HERO_IMAGES_BY_TYPE[resolvedTypeKey] || HERO_IMAGES_BY_TYPE.other;
+  const [imageSrc, setImageSrc] = useState(initialHeroSrc);
+
+  useEffect(() => {
+    setImageSrc(HERO_IMAGES_BY_TYPE[resolvedTypeKey] || HERO_IMAGES_BY_TYPE.other);
+  }, [resolvedTypeKey]);
 
   const handleShare = (e) => {
     e.preventDefault();
@@ -111,11 +128,16 @@ export default function IncidentCard({ incident, distance, unread = false }) {
                     border-white/10 shadow-2xl hover:border-[#10b981]/50
                     border-l-4 ${severity.border} ${unread ? 'ring-2 ring-emerald-500/40' : ''}`}>
       
-      {/* 1. Full-Bleed 16:9 Media Hero Banner (Statua della Giustizia, Range Rover, Polizia HD) */}
-      <div className="relative aspect-video w-full overflow-hidden bg-slate-900 group">
+      {/* 1. Full-Bleed 16:9 Media Hero Banner with Guaranteed Fallback */}
+      <div className="relative aspect-video w-full overflow-hidden bg-[#090d16] group">
         <img
-          src={heroImageSrc}
+          src={imageSrc}
           alt=""
+          onError={() => {
+            if (imageSrc !== SVG_RADAR_FALLBACK) {
+              setImageSrc(SVG_RADAR_FALLBACK);
+            }
+          }}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-90"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1017] via-black/20 to-transparent" />
@@ -181,7 +203,7 @@ export default function IncidentCard({ incident, distance, unread = false }) {
           {incident.description || 'Monitoraggio perimetrale attivo ed in aggiornamento continuo dalle fonti ufficiali.'}
         </p>
 
-        {/* 3. Action Bar (Direct Source Link + Share + Details) */}
+        {/* 3. Action Bar */}
         <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between text-xs text-white/60">
           
           <div className="flex items-center gap-2">
