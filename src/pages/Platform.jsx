@@ -1,11 +1,13 @@
-import React, { useEffect, Component, useState } from 'react';
+import React, { useEffect, Component, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldAlert, Zap, Server, Smartphone, Database, MapPin, Compass, Radio, Search, Navigation, AlertTriangle } from 'lucide-react';
+import { ShieldAlert, Zap, Server, Smartphone, Database, Compass, Radio, Search, Navigation, AlertTriangle, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import WaitlistModal from '@/components/ui/WaitlistModal';
 import IncidentMap from '@/components/incidents/IncidentMap';
-import { MOCK_INCIDENTS } from '@/components/data/mockData';
+import IncidentCard from '@/components/incidents/IncidentCard';
+import { getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
 
 class MapErrorBoundary extends Component {
@@ -63,15 +65,21 @@ class MapErrorBoundary extends Component {
 }
 
 export default function Platform() {
-  const { t } = useLanguageTheme();
+  const { t, lang } = useLanguageTheme();
+  const isEn = lang === 'en';
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const [selectedIncident, setSelectedIncident] = useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  const incidents = useMemo(() => {
+    return getPersistentIncidents();
+  }, []);
+
   return (
-    <div className="bg-slate-50 dark:bg-[#050505] text-slate-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
+    <div className="bg-slate-50 dark:bg-[#050505] text-slate-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300 select-none" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
       <MarketingNavbar onOpenWaitlist={() => setIsWaitlistOpen(true)} />
 
@@ -80,7 +88,7 @@ export default function Platform() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#10b981]/15 border border-[#10b981]/30 text-xs font-bold text-[#10b981] mb-6 backdrop-blur-md">
             <Radio className="w-4 h-4 text-[#10b981] animate-pulse" />
-            <span>Piattaforma di Monitoraggio Live</span>
+            <span>{isEn ? 'Live Monitoring Platform' : 'Piattaforma di Monitoraggio Live'}</span>
           </div>
 
           <h1 className="text-5xl md:text-[80px] font-extrabold tracking-tight leading-[0.95] mb-6 text-slate-900 dark:text-white">
@@ -102,12 +110,14 @@ export default function Platform() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-[#10b981]"></span>
               </span>
-              <span className="text-xs font-bold tracking-wide uppercase">Dashboard 3D Attiva</span>
+              <span className="text-xs font-bold tracking-wide uppercase">
+                {isEn ? 'Active 3D Dashboard' : 'Dashboard 3D Attiva'}
+              </span>
             </div>
           </div>
 
-          {/* 2. LIVE INTERACTIVE MAP DISPLAY WITH SAFETY ERROR BOUNDARY */}
-          <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 rounded-[2.2rem] overflow-hidden p-6 md:p-8 shadow-2xl transition-colors duration-300">
+          {/* 2. LIVE INTERACTIVE MAP DISPLAY WITH CLICKABLE MARKERS */}
+          <div className="bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 rounded-[2.2rem] overflow-hidden p-6 md:p-8 shadow-2xl transition-colors duration-300 relative">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
               <div>
                 <div className="flex items-center gap-2">
@@ -124,11 +134,36 @@ export default function Platform() {
             <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 relative shadow-2xl">
               <MapErrorBoundary>
                 <IncidentMap 
-                  incidents={MOCK_INCIDENTS} 
+                  incidents={incidents} 
                   userLocation={{ lat: 45.4642, lng: 9.1900 }} 
-                  zoom={13} 
+                  zoom={12.8}
+                  onIncidentClick={(inc) => setSelectedIncident(inc)}
                 />
               </MapErrorBoundary>
+
+              {/* Clicked Marker Responsive Card Popup Panel */}
+              <AnimatePresence>
+                {selectedIncident && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                    transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+                    className="absolute z-30 md:bottom-6 md:right-6 md:left-auto md:max-w-md w-full bottom-0 inset-x-0 p-3 md:p-0"
+                  >
+                    <div className="relative shadow-2xl">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedIncident(null)}
+                        className="absolute -top-3 right-3 w-8 h-8 rounded-full bg-black border border-white/20 text-white flex items-center justify-center shadow-2xl z-40 hover:bg-slate-900 transition-transform hover:scale-110"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <IncidentCard incident={selectedIncident} distance={selectedIncident.distance} />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -141,18 +176,36 @@ export default function Platform() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 p-8 rounded-3xl shadow-lg">
               <Smartphone className="w-10 h-10 text-[#10b981] mb-6" />
-              <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">PWA Universale</h3>
-              <p className="text-slate-600 dark:text-white/60 font-normal leading-relaxed">Abbiamo bypassato i tempi morti degli app store. La nostra Progressive Web App si installa all'istante, garantendoti l'accesso al network ovunque tu sia.</p>
+              <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+                {isEn ? 'Universal PWA' : 'PWA Universale'}
+              </h3>
+              <p className="text-slate-600 dark:text-white/60 font-normal leading-relaxed">
+                {isEn 
+                  ? 'Bypassing app store delay times. Our Progressive Web App installs instantly for instant network access everywhere.'
+                  : 'Abbiamo bypassato i tempi morti degli app store. La nostra Progressive Web App si installa all\'istante, garantendoti l\'accesso al network ovunque tu sia.'}
+              </p>
             </div>
             <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 p-8 rounded-3xl shadow-lg">
               <Server className="w-10 h-10 text-[#10b981] mb-6" />
-              <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">Calcolo Perimetrale</h3>
-              <p className="text-slate-600 dark:text-white/60 font-normal leading-relaxed">L'Edge Computing ci permette di elaborare i dati a un millisecondo da te. Ricevi le allerte critiche prima ancora che sfiorino i nostri database centrali.</p>
+              <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+                {isEn ? 'Perimeter Edge Computing' : 'Calcolo Perimetrale'}
+              </h3>
+              <p className="text-slate-600 dark:text-white/60 font-normal leading-relaxed">
+                {isEn
+                  ? 'Edge Computing allows us to process data within milliseconds. Receive critical alerts before they hit central databases.'
+                  : 'L\'Edge Computing ci permette di elaborare i dati a un millisecondo da te. Ricevi le allerte critiche prima ancora che sfiorino i nostri database centrali.'}
+              </p>
             </div>
             <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 p-8 rounded-3xl shadow-lg">
               <Database className="w-10 h-10 text-[#10b981] mb-6" />
-              <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">Zero Profilazione</h3>
-              <p className="text-slate-600 dark:text-white/60 font-normal leading-relaxed">Nessun tracciamento dell'identità personale. I dati di posizione vengono elaborati localmente sul dispositivo per mantenere la tua privacy impenetrabile.</p>
+              <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+                {isEn ? 'Zero Data Profiling' : 'Zero Profilazione'}
+              </h3>
+              <p className="text-slate-600 dark:text-white/60 font-normal leading-relaxed">
+                {isEn
+                  ? 'Zero personal tracking. Location data is processed locally on your device to maintain strict European GDPR privacy.'
+                  : 'Nessun tracciamento dell\'identità personale. I dati di posizione vengono elaborati localmente sul dispositivo per mantenere la tua privacy impenetrabile.'}
+              </p>
             </div>
           </div>
         </div>
