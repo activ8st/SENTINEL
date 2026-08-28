@@ -32,18 +32,46 @@ export const translations = {
     stat_4_val: "30+",
     stat_4_lbl: "Fonti Ufficiali Istituzionali",
 
-    // Persona Section
+    // Persona Section - 6 Stacking Cards
     persona_tag: "Casi d'Uso Reali /",
     persona_title: "Pensato per la tua serenità quando ti sposti",
     persona_sub: "Sentinel risolve il dubbio prima che si trasformi in preoccupazione.",
-    persona_1_badge: "In viaggio in Italia?",
-    persona_1_title: "Non conosci la zona e non sai di chi fidarti?",
-    persona_1_text: "Sentinel ti mostra gli allarmi reali sul tuo percorso nella tua lingua: quali strade evitare, cosa sta succedendo intorno a te — dati verificati dalle autorità e dai cittadini, zero voci di corridoio.",
-    persona_1_cta: "Scopri la protezione per chi viaggia →",
-    persona_2_badge: "Torni a casa tardi?",
+    
+    // Stack 1 - Famiglie
+    persona_famiglie_badge: "1. PER FAMIGLIE E GENITORI",
+    persona_famiglie_title: "Genitori & Famiglie",
+    persona_famiglie_text: "Tranquillità sui percorsi scolastici e sul rientro dei figli. Monitora la sicurezza del quartiere e ricevi allerte sul tragitto quotidiano della tua famiglia prima che si verifichino imprevisti.",
+    persona_famiglie_cta: "Scopri la protezione per famiglie →",
+
+    // Stack 2 - Pendolari
+    persona_pendolari_badge: "2. PER PENDOLARI E STUDENTI",
+    persona_pendolari_title: "Studenti, Pendolari & Lavoratori Urbani",
+    persona_pendolari_text: "Spostamenti quotidiani veloci tra stazioni, fermate della metro e mezzi pubblici. Conosci in anticipo deviazioni, blocchi stradali e nodi critici della città.",
+    persona_pendolari_cta: "Scopri la funzione per pendolari →",
+
+    // Stack 3 - Rientro Notturno
+    persona_2_badge: "3. RIENTRO NOTTURNO E SERA",
     persona_2_title: "Vuoi sapere com'è la situazione sulla tua strada prima di metterti in cammino?",
     persona_2_text: "Guarda cosa è accaduto davvero sulla tua rotta prima di uscire: orari, frequenza ed eventi reali per scegliere il percorso migliore senza ansia e senza basarti su supposizioni.",
     persona_2_cta: "Scopri la funzione Rientro Sicuro →",
+
+    // Stack 4 - Viaggiatori
+    persona_1_badge: "4. PROTEZIONE IN VIAGGIO",
+    persona_1_title: "Non conosci la zona e non sai di chi fidarti?",
+    persona_1_text: "Sentinel ti mostra gli allarmi reali sul tuo percorso nella tua lingua: quali strade evitare, cosa sta succedendo intorno a te — dati verificati dalle autorità e dai cittadini, zero voci di corridoio.",
+    persona_1_cta: "Scopri la protezione per chi viaggia →",
+
+    // Stack 5 - Community
+    persona_community_badge: "5. PER LA COMMUNITY E RIONI",
+    persona_community_title: "Comunità & Controllo del Vicinato",
+    persona_community_text: "Rafforza la protezione locale partecipando attivamente alla rete di vicinato. Segnala anomalie con un tap ed accumula punti Karma per la tua affidabilità.",
+    persona_community_cta: "Unisciti alla rete di vicinato →",
+
+    // Stack 6 - Automobilisti
+    persona_automobilisti_badge: "6. PER AUTOMOBILISTI E VIABILITÀ",
+    persona_automobilisti_title: "Automobilisti & Viabilità Urgente",
+    persona_automobilisti_text: "Riconosci subito strade interrotte, cantieri non segnalati o incidenti prima di rimanere bloccato nel traffico urbano ed extraurbano.",
+    persona_automobilisti_cta: "Scopri la viabilità in tempo reale →",
 
     // Principles
     princ_tag: "I Nostri Principi /",
@@ -129,10 +157,11 @@ export const translations = {
     faq_q6: "Le segnalazioni possono discriminare persone o quartieri?",
     faq_a6: "No. Sentinel integra un filtro rigido anti-discriminazione che blocca all'origine qualsiasi generalizzazione su gruppi etnici, nazionalità o religioni. Pubblichiamo esclusivamente fatti oggettivi e verificabili: cosa, dove e quando.",
 
-    // Final CTA
+    // Final CTA & Mobile Bar
     final_title: "Pronto a uscire di casa sapendo cosa ti aspetta?",
     final_sub: "Unisciti alla prima rete partecipata di sicurezza e informazione verificata in Italia.",
     final_cta: "Scarica Sentinel",
+    sticky_verified_badge: "Sicurezza Verificata",
 
     // Footer
     footer_desc: "La prima rete partecipata di sicurezza urbana in Italia. Dati ufficiali verificati, moderazione preventiva e zero pregiudizi.",
@@ -181,18 +210,46 @@ export const translations = {
     stat_4_val: "30+",
     stat_4_lbl: "Official Institutional Sources",
 
-    // Persona Section
+    // Persona Section - 6 Stacking Cards
     persona_tag: "Real Use Cases /",
     persona_title: "Engineered for your peace of mind on the move",
     persona_sub: "Sentinel resolves uncertainty before it turns into anxiety.",
-    persona_1_badge: "Traveling in Italy?",
-    persona_1_title: "Unfamiliar with the area and don't know who to trust?",
-    persona_1_text: "Sentinel displays verified local alerts along your route in your native language: which streets to avoid, active emergency events nearby — official data verified by authorities and local residents, zero rumors.",
-    persona_1_cta: "Discover Traveler Safety Features →",
-    persona_2_badge: "Heading Home Late?",
+    
+    // Stack 1 - Families
+    persona_famiglie_badge: "1. FOR FAMILIES & PARENTS",
+    persona_famiglie_title: "Parents & Families",
+    persona_famiglie_text: "Peace of mind for school routes and children's return home. Monitor neighborhood safety and receive live route alerts before unexpected events occur.",
+    persona_famiglie_cta: "Discover Protection for Families →",
+
+    // Stack 2 - Commuters
+    persona_pendolari_badge: "2. FOR COMMUTERS & STUDENTS",
+    persona_pendolari_title: "Students, Commuters & Urban Workers",
+    persona_pendolari_text: "Fast daily transit between transit hubs, metro stops, and public transport. Anticipate detours, road closures, and urban bottlenecks.",
+    persona_pendolari_cta: "Discover Features for Commuters →",
+
+    // Stack 3 - Late Return
+    persona_2_badge: "3. HEADING HOME LATE",
     persona_2_title: "Want to check route safety before stepping outside?",
     persona_2_text: "Check real incident history along your travel route before leaving: timestamps, event frequency, and verified alerts to pick the safest route home with total confidence.",
     persona_2_cta: "Discover Safe Return Mode →",
+
+    // Stack 4 - Travelers
+    persona_1_badge: "4. TRAVEL PROTECTION",
+    persona_1_title: "Unfamiliar with the area and don't know who to trust?",
+    persona_1_text: "Sentinel displays verified local alerts along your route in your native language: which streets to avoid, active emergency events nearby — official data verified by authorities and local residents, zero rumors.",
+    persona_1_cta: "Discover Traveler Safety Features →",
+
+    // Stack 5 - Community
+    persona_community_badge: "5. FOR NEIGHBORHOOD COMMUNITIES",
+    persona_community_title: "Community & Neighborhood Watch",
+    persona_community_text: "Strengthen local protection by actively participating in the neighborhood network. Report incidents with one tap and build Karma points for your reliability.",
+    persona_community_cta: "Join Neighborhood Watch →",
+
+    // Stack 6 - Drivers
+    persona_automobilisti_badge: "6. FOR DRIVERS & TRAFFIC",
+    persona_automobilisti_title: "Drivers & Urgent Traffic Detours",
+    persona_automobilisti_text: "Instantly spot blocked roads, unannounced roadworks, or accidents before getting stuck in urban traffic.",
+    persona_automobilisti_cta: "Discover Real-Time Traffic Detours →",
 
     // Principles
     princ_tag: "Our Principles /",
@@ -278,10 +335,11 @@ export const translations = {
     faq_q6: "Can reports discriminate against specific groups or areas?",
     faq_a6: "No. Sentinel enforces a strict anti-discrimination filter that blocks generalizations about ethnicity, nationality, or religion at the source. We publish objective, verifiable facts only: what, where, and when.",
 
-    // Final CTA
+    // Final CTA & Mobile Bar
     final_title: "Ready to leave home knowing what lies ahead?",
     final_sub: "Join Italy's first crowd-verified safety and awareness network.",
     final_cta: "Download Sentinel",
+    sticky_verified_badge: "Verified Safety",
 
     // Footer
     footer_desc: "Italy's premier crowd-verified urban safety platform. Official data, preventive moderation, and zero bias.",
