@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import IncidentCard from '@/components/incidents/IncidentCard';
 import { calcDistance } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
-import { RefreshCw, ChevronDown, Radio, ShieldCheck, Sparkles } from 'lucide-react';
+import { RefreshCw, ChevronDown, Radio, ShieldCheck, Sparkles, Clock3, MapPin } from 'lucide-react';
 import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
 import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { loadAreaFilter, saveAreaFilter } from '@/lib/areaFilter';
@@ -15,10 +15,25 @@ const TIME_WINDOWS = [
   ...Array.from({ length: 29 }, (_, index) => ({ hours: (index + 2) * 24, label: `Ultimi ${index + 2} giorni` })),
 ];
 
+const incidentTimestamp = (incident) => {
+  const rawDate = incident.created_date || incident.published_at || incident.last_seen_at;
+  if (!rawDate) return 0;
+
+  const italianDate = String(rawDate).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (italianDate) {
+    const [, day, month, year, hours = '0', minutes = '0', seconds = '0'] = italianDate;
+    return new Date(Number(year), Number(month) - 1, Number(day), Number(hours), Number(minutes), Number(seconds)).getTime();
+  }
+
+  const parsed = new Date(rawDate).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 export default function Home() {
   const [userLocation, setUserLocation] = useState(DEFAULT_LOC);
   const [hasUserLocation, setHasUserLocation] = useState(false);
   const [selectedHours, setSelectedHours] = useState(720);
+  const [sortMode, setSortMode] = useState(() => localStorage.getItem('sentinelFeedSort') === 'distance' ? 'distance' : 'recent');
   const [radius] = useState(() => loadAreaFilter().radius);
   const [useRadius] = useState(() => loadAreaFilter().enabled);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -46,6 +61,11 @@ export default function Home() {
     saveAreaFilter(useRadius, radius);
   }, [useRadius, radius]);
 
+  useEffect(() => {
+    localStorage.setItem('sentinelFeedSort', sortMode);
+    setDisplayLimit(15);
+  }, [sortMode]);
+
   // 2. Query Live Feeds with TanStack Query (15s auto-refresh)
   const { data: rawLiveIncidents = [], refetch, isFetching } = useQuery({
     queryKey: ['incidents-live'],
@@ -71,13 +91,20 @@ export default function Home() {
 
   const filteredIncidents = useMemo(() => {
     const cutoffTime = Date.now() - selectedHours * 3600 * 1000;
-    return incidentsWithDistance
+    const filtered = incidentsWithDistance
       .filter(i => !useRadius || !hasUserLocation || (i.distance ?? 999999) <= radius)
       .filter(i => {
-        if (!i.created_date) return true;
-        return new Date(i.created_date).getTime() >= cutoffTime;
+        const timestamp = incidentTimestamp(i);
+        return timestamp === 0 || timestamp >= cutoffTime;
       });
-  }, [incidentsWithDistance, selectedHours, useRadius, hasUserLocation, radius]);
+
+    return [...filtered].sort((a, b) => {
+      if (sortMode === 'distance' && hasUserLocation) {
+        return (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY);
+      }
+      return incidentTimestamp(b) - incidentTimestamp(a);
+    });
+  }, [incidentsWithDistance, selectedHours, useRadius, hasUserLocation, radius, sortMode]);
 
   // Visible items limited by displayLimit for infinite scroll
   const visibleIncidents = useMemo(() => {
@@ -185,6 +212,33 @@ export default function Home() {
             <ShieldCheck className="w-3.5 h-3.5" />
             5 Hubs Coperti
           </span>
+        </div>
+
+        <div
+          role="group"
+          aria-label="Ordina eventi"
+          className="grid h-11 grid-cols-2 gap-1 rounded-lg border border-white/10 bg-[#0d1017] p-1"
+        >
+          <button
+            type="button"
+            aria-pressed={sortMode === 'recent'}
+            onClick={() => setSortMode('recent')}
+            className={`flex min-w-0 items-center justify-center gap-2 rounded-md px-3 text-xs font-bold transition-colors ${sortMode === 'recent' ? 'bg-[#10b981] text-black' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
+          >
+            <Clock3 className="h-4 w-4 shrink-0" />
+            <span>Più recenti</span>
+          </button>
+          <button
+            type="button"
+            aria-pressed={sortMode === 'distance'}
+            disabled={!hasUserLocation}
+            title={hasUserLocation ? 'Ordina per distanza dalla tua posizione' : 'Attiva la posizione per ordinare per distanza'}
+            onClick={() => setSortMode('distance')}
+            className={`flex min-w-0 items-center justify-center gap-2 rounded-md px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${sortMode === 'distance' ? 'bg-[#10b981] text-black' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
+          >
+            <MapPin className="h-4 w-4 shrink-0" />
+            <span>Più vicini</span>
+          </button>
         </div>
 
         {/* Incident Cards Stream */}
