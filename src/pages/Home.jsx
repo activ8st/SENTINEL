@@ -48,7 +48,7 @@ export default function Home() {
 
   // 2. Query Live Feeds with TanStack Query (15s auto-refresh)
   const { data: rawLiveIncidents = [], refetch, isFetching } = useQuery({
-    queryKey: ['incidents-home-v12'],
+    queryKey: ['incidents-live'],
     queryFn: async () => {
       return await syncSentinelFeedsPermanently();
     },

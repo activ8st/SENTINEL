@@ -69,7 +69,7 @@ export default function MapView() {
 
   // Live Query from TanStack Query
   const { data: rawLiveIncidents = [], refetch, isFetching } = useQuery({
-    queryKey: ['incidents-map-v12'],
+    queryKey: ['incidents-live'],
     queryFn: async () => {
       return await syncSentinelFeedsPermanently();
     },

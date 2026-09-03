@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { calcDistance } from '@/components/data/mockData';
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeDB } from '@/lib/db';
-import { getPersistentIncidents } from '@/lib/liveSyncEngine';
+import { getPersistentIncidents, syncSentinelFeedsPermanently } from '@/lib/liveSyncEngine';
 import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
@@ -46,10 +46,11 @@ const AuthenticatedApp = () => {
 
   // Poll incidents for radar alerts
   const { data: dbIncidents = [] } = useQuery({
-    queryKey: ['incidents-alerts'],
+    queryKey: ['incidents-live'],
     queryFn: async () => {
-      return getPersistentIncidents();
+      return syncSentinelFeedsPermanently();
     },
+    initialData: () => getPersistentIncidents(),
     refetchInterval: 30000,
   });
 

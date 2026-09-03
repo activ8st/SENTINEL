@@ -11,7 +11,7 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { MOCK_INCIDENTS, calcDistance, TYPE_CONFIG, SEVERITY_CONFIG } from '@/components/data/mockData';
-import { getPersistentIncidents } from '@/lib/liveSyncEngine';
+import { getPersistentIncidents, syncSentinelFeedsPermanently } from '@/lib/liveSyncEngine';
 import { loadAreaFilter, saveAreaFilter } from '@/lib/areaFilter';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
@@ -69,9 +69,9 @@ export default function Notifications() {
 
   // Safe Query for incidents with persistent storage fallback
   const { data: fetchedAlerts = getPersistentIncidents() } = useQuery({
-    queryKey: ['incidents-notifications'],
+    queryKey: ['incidents-live'],
     queryFn: async () => {
-      return getPersistentIncidents();
+      return syncSentinelFeedsPermanently();
     },
     initialData: () => getPersistentIncidents(),
   });

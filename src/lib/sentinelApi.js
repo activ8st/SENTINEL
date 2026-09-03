@@ -33,7 +33,8 @@ export const apiFetch = async (path, options = {}) => {
 export const fetchApiIncidents = async () => {
   if (!isSentinelApiConfigured) return [];
 
-  const response = await apiFetch('/api/incidents?limit=5000');
+  // Render free instances can need extra time after a cold start.
+  const response = await apiFetch('/api/incidents?limit=5000', { timeoutMs: 90000 });
   if (!response.ok) {
     throw new Error(`API eventi non disponibile (${response.status})`);
   }
@@ -43,11 +44,18 @@ export const fetchApiIncidents = async () => {
     throw new Error('Risposta eventi non valida');
   }
 
-  return incidents.filter((incident) => (
-    incident
-    && incident.id
-    && incident.title
-    && Number.isFinite(Number(incident.latitude))
-    && Number.isFinite(Number(incident.longitude))
-  ));
+  return incidents
+    .filter((incident) => (
+      incident
+      && incident.id
+      && incident.title
+      && Number.isFinite(Number(incident.latitude))
+      && Number.isFinite(Number(incident.longitude))
+    ))
+    .map((incident) => ({
+      ...incident,
+      source_url: incident.source_url || incident.media_urls?.[0] || '',
+      official_verified: incident.official_verified
+        ?? String(incident.source_trust || '').startsWith('institutional'),
+    }));
 };
