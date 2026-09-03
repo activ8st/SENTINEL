@@ -6,13 +6,18 @@ import { Slider } from '@/components/ui/slider';
 import IncidentCard from '@/components/incidents/IncidentCard';
 import { calcDistance, TYPE_CONFIG, normalizeIncidentType } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
-import { SlidersHorizontal, Navigation, RefreshCw, X, CheckSquare, Square } from 'lucide-react';
+import { SlidersHorizontal, Navigation, RefreshCw, X, Check } from 'lucide-react';
 import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
 import IncidentMap from '@/components/incidents/IncidentMap';
 import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { AREA_RADIUS_PRESETS, loadAreaFilter, saveAreaFilter } from '@/lib/areaFilter';
 
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
+
+const zoomForRadius = (radiusKm) => {
+  const safeRadius = Math.max(1, Number(radiusKm) || 1);
+  return Math.max(7.5, Math.min(14.5, 14.5 - Math.log2(safeRadius)));
+};
 
 const TIME_WINDOWS = [
   ...Array.from({ length: 8 }, (_, index) => ({
@@ -121,8 +126,8 @@ export default function MapView() {
   };
 
   const categoryFiltersCount = Object.keys(TYPE_CONFIG).length - activeTypes.length;
-  const mapZoom = userGpsActive && useRadius
-    ? (radius <= 1 ? 14.5 : radius <= 3 ? 13.5 : radius <= 5 ? 12.5 : radius <= 10 ? 11.5 : 10.5)
+  const mapZoom = userGpsActive
+    ? (useRadius ? zoomForRadius(radius) : zoomForRadius(1))
     : 6;
 
   return (
@@ -157,7 +162,7 @@ export default function MapView() {
         </div>
 
         {/* Right: Action Buttons */}
-        <div className="pointer-events-auto flex items-center gap-2">
+        <div className="pointer-events-auto flex shrink-0 items-center gap-2">
           <Button
             size="icon"
             onClick={() => setShowFilters(true)}
@@ -227,17 +232,18 @@ export default function MapView() {
 
       {/* 4. Filters Sheet */}
       <Sheet open={showFilters} onOpenChange={setShowFilters}>
-        <SheetContent side="bottom" className="rounded-t-3xl bg-[#0b0e14] border-white/10 text-white max-h-[80vh] overflow-y-auto">
-          <SheetHeader className="pb-4 border-b border-white/10">
-            <SheetTitle className="text-white text-base font-bold flex items-center justify-between">
+        <SheetContent side="bottom" className="rounded-t-3xl bg-[#0b0e14] border-white/10 text-white max-h-[80vh] overflow-y-auto [&>button]:right-5 [&>button]:top-5 [&>button]:z-20 [&>button]:flex [&>button]:h-9 [&>button]:w-9 [&>button]:items-center [&>button]:justify-center [&>button]:rounded-full [&>button]:border [&>button]:border-white/20 [&>button]:bg-[#151923]">
+          <SheetHeader className="border-b border-white/10 pb-4 pr-24">
+            <SheetTitle className="flex items-center justify-between text-base font-bold text-white">
               <span>Filtri Mappa 3D</span>
               <button
+                type="button"
                 onClick={() => {
                   setActiveTypes(Object.keys(TYPE_CONFIG));
-                  setUseRadius(true);
+                  setUseRadius(false);
                   setRadius(1);
                 }}
-                className="text-xs text-[#10b981] font-normal hover:underline"
+                className="min-h-9 rounded-md px-3 text-xs font-bold text-[#10b981] hover:bg-[#10b981]/10"
               >
                 Resetta
               </button>
@@ -249,12 +255,16 @@ export default function MapView() {
               <button
                 type="button"
                 onClick={() => setUseRadius(prev => !prev)}
-                className="flex min-h-11 w-full items-center justify-between gap-3 text-left"
+                role="switch"
+                aria-checked={useRadius}
+                className={`relative z-10 flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 text-left transition-colors ${useRadius ? 'border-[#10b981]/50 bg-[#10b981]/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]'}`}
               >
                 <span className="text-xs font-semibold text-white/70">Filtro area GPS</span>
-                <span className={`flex items-center gap-2 text-xs font-bold ${useRadius ? 'text-[#10b981]' : 'text-white/40'}`}>
+                <span className={`flex items-center gap-3 text-xs font-bold ${useRadius ? 'text-[#10b981]' : 'text-white/50'}`}>
                   {useRadius ? `Entro ${radius} km` : 'Disattivato'}
-                  {useRadius ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5" />}
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${useRadius ? 'border-[#10b981] bg-[#10b981] text-black' : 'border-white/35 bg-black/20 text-transparent'}`}>
+                    <Check className="h-5 w-5" />
+                  </span>
                 </span>
               </button>
               {useRadius && !userGpsActive && (

@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -10,13 +8,11 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { MOCK_INCIDENTS, calcDistance, TYPE_CONFIG, SEVERITY_CONFIG } from '@/components/data/mockData';
+import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
 import { getPersistentIncidents, syncSentinelFeedsPermanently } from '@/lib/liveSyncEngine';
 import { loadAreaFilter, saveAreaFilter } from '@/lib/areaFilter';
 import { useQuery } from '@tanstack/react-query';
-import { formatDistanceToNow } from 'date-fns';
-import { it } from 'date-fns/locale';
-import { Bell, BellOff, Trash2, MapPin, ChevronRight, Settings, CheckSquare, Square, ShieldCheck } from 'lucide-react';
+import { Trash2, MapPin, ChevronRight, Settings, Check, ShieldCheck } from 'lucide-react';
 
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 }; // Milan center default
 
@@ -176,17 +172,19 @@ export default function Notifications() {
         {/* Geofence Filter Control Box */}
         <div className="mb-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c0c0c] p-4 shadow-lg transition-colors">
           <button
-            onClick={() => setUseRadius(!useRadius)}
-            className="flex w-full items-center justify-between gap-3 text-left"
+            type="button"
+            onClick={() => setUseRadius(prev => !prev)}
+            role="switch"
+            aria-checked={useRadius}
+            className={`relative z-10 flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 text-left transition-colors ${useRadius ? 'border-[#10b981]/40 bg-[#10b981]/10' : 'border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]'}`}
           >
             <span className="flex items-center gap-2.5 text-sm font-bold text-slate-900 dark:text-white">
               <MapPin className="h-4.5 w-4.5 text-[#10b981]" />
               Filtro Geofencing Intelligente
             </span>
-            {useRadius
-              ? <CheckSquare className="h-5 w-5 text-[#10b981]" />
-              : <Square className="h-5 w-5 text-slate-400" />
-            }
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${useRadius ? 'border-[#10b981] bg-[#10b981] text-black' : 'border-slate-400 bg-white text-transparent dark:border-white/35 dark:bg-black/20'}`}>
+              <Check className="h-5 w-5" />
+            </span>
           </button>
 
           {useRadius && (

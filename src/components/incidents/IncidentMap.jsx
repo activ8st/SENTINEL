@@ -204,7 +204,7 @@ export default function IncidentMap({
         onLoad={add3DBuildingsLayer}
         minPitch={40}
         maxPitch={55}
-        minZoom={9}
+        minZoom={3}
         maxZoom={17}
         mapboxAccessToken={mapboxToken}
         mapStyle="mapbox://styles/mapbox/dark-v11"

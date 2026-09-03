@@ -1,4 +1,4 @@
-const AREA_FILTER_VERSION = 'local-1km-v2';
+const AREA_FILTER_VERSION = 'local-1km-v3';
 const VERSION_KEY = 'sentinelAreaFilterVersion';
 const ENABLED_KEY = 'sentinelUseRadius';
 const RADIUS_KEY = 'sentinelRadiusKm';
@@ -15,10 +15,10 @@ const clampRadius = (value) => {
 };
 
 export const loadAreaFilter = () => {
-  if (typeof window === 'undefined') return { enabled: true, radius: DEFAULT_AREA_RADIUS_KM };
+  if (typeof window === 'undefined') return { enabled: false, radius: DEFAULT_AREA_RADIUS_KM };
 
   if (localStorage.getItem(VERSION_KEY) !== AREA_FILTER_VERSION) {
-    return { enabled: true, radius: DEFAULT_AREA_RADIUS_KM };
+    return { enabled: false, radius: DEFAULT_AREA_RADIUS_KM };
   }
 
   return {
