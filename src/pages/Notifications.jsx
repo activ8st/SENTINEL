@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { MOCK_INCIDENTS, calcDistance, TYPE_CONFIG, SEVERITY_CONFIG } from '@/components/data/mockData';
 import { getPersistentIncidents } from '@/lib/liveSyncEngine';
+import { loadAreaFilter, saveAreaFilter } from '@/lib/areaFilter';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -22,8 +23,9 @@ const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 }; // Milan center default
 export default function Notifications() {
   const navigate = useNavigate();
   const [location, setLocation] = useState(DEFAULT_LOC);
-  const [useRadius, setUseRadius] = useState(() => localStorage.getItem('sentinelUseRadius') === 'true');
-  const [radius, setRadius] = useState(() => Number(localStorage.getItem('sentinelRadiusKm') || 50));
+  const [hasUserLocation, setHasUserLocation] = useState(false);
+  const [useRadius, setUseRadius] = useState(() => loadAreaFilter().enabled);
+  const [radius, setRadius] = useState(() => loadAreaFilter().radius);
   const [readIds, setReadIdsState] = useState(() => {
     try {
       const saved = localStorage.getItem('sentinel_read_ids');
@@ -33,19 +35,18 @@ export default function Notifications() {
 
   useEffect(() => {
     navigator.geolocation?.getCurrentPosition(
-      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => {
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setHasUserLocation(true);
+      },
       () => {},
       { timeout: 5000, maximumAge: 60000 }
     );
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('sentinelUseRadius', String(useRadius));
-  }, [useRadius]);
-
-  useEffect(() => {
-    localStorage.setItem('sentinelRadiusKm', String(radius));
-  }, [radius]);
+    saveAreaFilter(useRadius, radius);
+  }, [useRadius, radius]);
   
   const [dismissed, setDismissedState] = useState(() => {
     try {
@@ -82,9 +83,9 @@ export default function Notifications() {
         ...i,
         distance: calcDistance(location.lat, location.lng, i.latitude, i.longitude),
       }))
-      .filter(i => !useRadius || i.distance <= radius)
+      .filter(i => !useRadius || !hasUserLocation || i.distance <= radius)
       .sort((a, b) => new Date(b.created_date || Date.now()) - new Date(a.created_date || Date.now())),
-    [fetchedAlerts, dismissed, location, useRadius, radius]
+    [fetchedAlerts, dismissed, location, useRadius, hasUserLocation, radius]
   );
 
   const unreadCount = alerts.filter(i => !readIds.has(i.id)).length;
@@ -196,7 +197,10 @@ export default function Notifications() {
                   {radius} km da te
                 </span>
               </div>
-              <Slider value={[radius]} onValueChange={([v]) => setRadius(v)} min={5} max={100} step={5} className="my-2" />
+              {!hasUserLocation && (
+                <p className="mb-3 text-xs text-amber-600 dark:text-amber-300">Il filtro si applica appena il browser rileva la tua posizione.</p>
+              )}
+              <Slider value={[radius]} onValueChange={([v]) => setRadius(v)} min={1} max={100} step={1} className="my-2" />
             </div>
           )}
         </div>
@@ -223,7 +227,7 @@ export default function Notifications() {
               <div className="space-y-3">
                 <AnimatePresence>
                   {items.map((inc) => {
-                    const typeConf = TYPE_CONFIG[inc.type] || TYPE_CONFIG.altro;
+                    const typeConf = TYPE_CONFIG[inc.type] || TYPE_CONFIG.other;
                     const isRead = readIds.has(inc.id);
 
                     return (

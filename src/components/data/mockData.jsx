@@ -210,8 +210,9 @@ export const TYPE_CONFIG = {
   traffic:    { label: 'Traffico & Blocchi',   icon: '🚦', emoji: '🚦', bg: 'bg-emerald-500/10',border: 'border-emerald-500',text: 'text-emerald-500' },
   weather:    { label: 'Allerta Meteo',        icon: '⛈️', emoji: '⛈️', bg: 'bg-blue-500/10',   border: 'border-blue-500',   text: 'text-blue-500' },
   other:      { label: 'Altro',                icon: '⚠️', emoji: '⚠️', bg: 'bg-slate-500/10',  border: 'border-slate-500',  text: 'text-slate-500' },
-  altro:      { label: 'Altro',                icon: '⚠️', emoji: '⚠️', bg: 'bg-slate-500/10',  border: 'border-slate-500',  text: 'text-slate-500' },
 };
+
+export const normalizeIncidentType = (type) => type === 'altro' ? 'other' : type;
 
 export const SEVERITY_CONFIG = {
   critical: { label: 'Critico', bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500' },

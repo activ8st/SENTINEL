@@ -1,25 +1,26 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import IncidentCard from '@/components/incidents/IncidentCard';
-import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
+import { calcDistance } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
-import { SlidersHorizontal, RefreshCw, ChevronDown, Radio, ShieldCheck, Sparkles } from 'lucide-react';
+import { RefreshCw, ChevronDown, Radio, ShieldCheck, Sparkles } from 'lucide-react';
 import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
 import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
+import { loadAreaFilter, saveAreaFilter } from '@/lib/areaFilter';
 
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
 const TIME_WINDOWS = [
-  { hours: 6, label: 'Ultime 6h' },
-  { hours: 12, label: 'Ultime 12h' },
-  { hours: 24, label: 'Ultime 24h' },
-  { hours: 48, label: 'Ultime 48h' },
-  { hours: 72, label: 'Ultime 72h' },
+  ...Array.from({ length: 8 }, (_, index) => ({ hours: (index + 1) * 3, label: `Ultime ${(index + 1) * 3} ore` })),
+  ...Array.from({ length: 29 }, (_, index) => ({ hours: (index + 2) * 24, label: `Ultimi ${index + 2} giorni` })),
 ];
 
 export default function Home() {
   const [userLocation, setUserLocation] = useState(DEFAULT_LOC);
-  const [selectedHours, setSelectedHours] = useState(72);
+  const [hasUserLocation, setHasUserLocation] = useState(false);
+  const [selectedHours, setSelectedHours] = useState(720);
+  const [radius] = useState(() => loadAreaFilter().radius);
+  const [useRadius] = useState(() => loadAreaFilter().enabled);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [refreshingNews, setRefreshingNews] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
@@ -34,11 +35,16 @@ export default function Home() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setHasUserLocation(true);
       },
       () => {},
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
   }, []);
+
+  useEffect(() => {
+    saveAreaFilter(useRadius, radius);
+  }, [useRadius, radius]);
 
   // 2. Query Live Feeds with TanStack Query (15s auto-refresh)
   const { data: rawLiveIncidents = [], refetch, isFetching } = useQuery({
@@ -63,20 +69,15 @@ export default function Home() {
     }));
   }, [baseIncidents, userLocation]);
 
-  // Smart Feed Buffer: Guaranteed 30+ Items & Infinite Feed
   const filteredIncidents = useMemo(() => {
     const cutoffTime = Date.now() - selectedHours * 3600 * 1000;
-    const timeFiltered = incidentsWithDistance.filter(i => {
-      if (!i.created_date) return true;
-      return new Date(i.created_date).getTime() >= cutoffTime;
-    });
-
-    // If time window produces < 15 items, buffer with full list so feed is NEVER empty
-    if (timeFiltered.length < 15) {
-      return incidentsWithDistance;
-    }
-    return timeFiltered;
-  }, [incidentsWithDistance, selectedHours]);
+    return incidentsWithDistance
+      .filter(i => !useRadius || !hasUserLocation || (i.distance ?? 999999) <= radius)
+      .filter(i => {
+        if (!i.created_date) return true;
+        return new Date(i.created_date).getTime() >= cutoffTime;
+      });
+  }, [incidentsWithDistance, selectedHours, useRadius, hasUserLocation, radius]);
 
   // Visible items limited by displayLimit for infinite scroll
   const visibleIncidents = useMemo(() => {
@@ -135,7 +136,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black px-3 py-1.5 rounded-full">
               <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-400" />
-              Tutta Italia
+              {useRadius && hasUserLocation ? `Entro ${radius} km` : 'Tutta Italia'}
             </span>
 
             <span className="text-white/20 text-xs">•</span>

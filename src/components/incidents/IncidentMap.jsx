@@ -1,9 +1,37 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import Map, { Marker, NavigationControl } from 'react-map-gl';
+import Map, { Marker, Source, Layer, NavigationControl } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { TYPE_CONFIG } from '@/components/data/mockData';
 
 const coordinateKey = (incident) => `${Number(incident.latitude).toFixed(4)},${Number(incident.longitude).toFixed(4)}`;
+
+const createRadiusCircle = (center, radiusKm, points = 96) => {
+  if (!center || !radiusKm) return null;
+  const coords = [];
+  const earthRadiusKm = 6371;
+  const lat = center.lat * Math.PI / 180;
+  const lng = center.lng * Math.PI / 180;
+  const distance = radiusKm / earthRadiusKm;
+
+  for (let index = 0; index <= points; index += 1) {
+    const bearing = (index / points) * Math.PI * 2;
+    const pointLat = Math.asin(
+      Math.sin(lat) * Math.cos(distance)
+      + Math.cos(lat) * Math.sin(distance) * Math.cos(bearing)
+    );
+    const pointLng = lng + Math.atan2(
+      Math.sin(bearing) * Math.sin(distance) * Math.cos(lat),
+      Math.cos(distance) - Math.sin(lat) * Math.sin(pointLat)
+    );
+    coords.push([pointLng * 180 / Math.PI, pointLat * 180 / Math.PI]);
+  }
+
+  return {
+    type: 'Feature',
+    properties: {},
+    geometry: { type: 'Polygon', coordinates: [coords] },
+  };
+};
 
 const spreadOverlappingIncidents = (incidents = []) => {
   const groups = incidents.reduce((acc, incident) => {
@@ -24,13 +52,16 @@ const spreadOverlappingIncidents = (incidents = []) => {
     }
 
     const index = group.findIndex((item) => item.id === incident.id);
-    const angle = (Math.PI * 2 * index) / group.length;
-    const radius = Math.min(0.005, 0.0006 + group.length * 0.00015);
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    const angle = index * goldenAngle;
+    const ring = Math.floor(Math.sqrt(index));
+    const radius = Math.min(0.018, 0.0011 + ring * 0.00125 + group.length * 0.00008);
+    const latScale = Math.cos(Number(incident.latitude) * Math.PI / 180) || 1;
 
     return {
       incident,
-      markerLatitude: incident.latitude + Math.sin(angle) * radius,
-      markerLongitude: incident.longitude + Math.cos(angle) * radius,
+      markerLatitude: Number(incident.latitude) + Math.sin(angle) * radius,
+      markerLongitude: Number(incident.longitude) + (Math.cos(angle) * radius) / latScale,
     };
   });
 };
@@ -40,6 +71,8 @@ export default function IncidentMap({
   center,
   zoom = 12.8,
   userLocation,
+  showRadius = false,
+  radiusKm = 1,
   height = '100%',
   onIncidentClick,
   className = 'rounded-xl',
@@ -67,28 +100,28 @@ export default function IncidentMap({
     if (userLocation && mapRef.current) {
       mapRef.current.flyTo({
         center: [userLocation.lng, userLocation.lat],
-        zoom: 12.8,
+        zoom,
         pitch: 48,
         bearing: -15,
         duration: 1800,
         essential: true
       });
     }
-  }, [userLocation]);
+  }, [userLocation, zoom]);
 
   useEffect(() => {
     if (center && mapRef.current) {
       const targetLat = center[0] - 0.003;
       mapRef.current.flyTo({
         center: [center[1], targetLat],
-        zoom: 13.5,
+        zoom,
         pitch: 48,
         bearing: -15,
         duration: 1200,
         essential: true
       });
     }
-  }, [center]);
+  }, [center, zoom]);
 
   const add3DBuildingsLayer = () => {
     if (!mapRef.current) return;
@@ -146,6 +179,10 @@ export default function IncidentMap({
   };
 
   const visibleMarkers = useMemo(() => spreadOverlappingIncidents(incidents), [incidents]);
+  const radiusCircleGeoJSON = useMemo(
+    () => showRadius ? createRadiusCircle(userLocation, radiusKm) : null,
+    [showRadius, userLocation, radiusKm]
+  );
 
   return (
     <div 
@@ -153,6 +190,13 @@ export default function IncidentMap({
       style={{ position: 'relative', width: '100%', height: height === '100%' ? 'calc(100vh - 64px)' : height, minHeight: '480px' }} 
       className={`overflow-hidden bg-[#05070a] border border-white/10 ${className} relative text-white select-none`}
     >
+      <style>{`
+        @keyframes user-ring-grow {
+          0% { transform: translate(-50%, -50%) scale(0.75); opacity: 0.45; }
+          70% { opacity: 0.14; }
+          100% { transform: translate(-50%, -50%) scale(2.35); opacity: 0; }
+        }
+      `}</style>
       <Map
         ref={mapRef}
         {...viewState}
@@ -169,12 +213,30 @@ export default function IncidentMap({
       >
         <NavigationControl position="top-right" showCompass={true} />
 
+        {radiusCircleGeoJSON && (
+          <Source id="user-radius-area" type="geojson" data={radiusCircleGeoJSON}>
+            <Layer id="user-radius-fill" type="fill" paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.08 }} />
+            <Layer id="user-radius-line" type="line" paint={{ 'line-color': '#2563eb', 'line-width': 2, 'line-opacity': 0.7 }} />
+          </Source>
+        )}
+
         {/* 1. User Physical GPS Location Marker */}
         {userLocation && (
           <Marker latitude={userLocation.lat} longitude={userLocation.lng} anchor="center">
-            <div className="relative flex items-center justify-center" title="La tua Posizione">
-              <span className="absolute w-8 h-8 rounded-full bg-emerald-500/30 animate-ping" />
-              <span className="w-4.5 h-4.5 rounded-full bg-[#10b981] border-2 border-white shadow-lg shadow-emerald-500/50" />
+            <div className="relative h-[42px] w-[42px]" title="La tua posizione">
+              {[0, 1, 2].map(ring => (
+                <span
+                  key={ring}
+                  className="absolute left-1/2 top-1/2 rounded-full border-2 border-blue-500/70 bg-blue-500/10"
+                  style={{
+                    width: `${26 + ring * 9}px`,
+                    height: `${26 + ring * 9}px`,
+                    animation: `user-ring-grow ${2.2 + ring * 0.45}s ease-out infinite`,
+                    animationDelay: `${ring * 0.35}s`,
+                  }}
+                />
+              ))}
+              <span className="absolute left-1/2 top-1/2 h-[22px] w-[22px] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white bg-blue-600 shadow-[0_0_0_4px_rgba(37,99,235,0.22),0_0_22px_rgba(59,130,246,0.6)]" />
             </div>
           </Marker>
         )}
