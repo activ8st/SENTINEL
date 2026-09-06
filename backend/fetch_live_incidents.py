@@ -51,6 +51,7 @@ from backend.event_time import extract_event_time
 USER_AGENT = "SentinelLocalBot/1.0 (+local development; contact: localhost)"
 MAX_ITEMS_PER_SOURCE = 25
 MAX_ARTICLE_ENRICHMENTS_PER_SOURCE = 3
+DIRECT_ARTICLE_ENRICHMENTS_PER_SOURCE = 8
 FEED_DOWNLOAD_WORKERS = 8
 GEOCODE_DELAY_SECONDS = 1.1
 MAX_NEWS_AGE = dt.timedelta(days=30)
@@ -3073,42 +3074,75 @@ def main(*, perform_maintenance: bool = False) -> dict:
             broad_publisher_cleanup_result = cleanup_broad_publisher_locations(db)
             evidence_cleanup_result = cleanup_location_evidence(db)
             db.commit()
+        downloaded_sources: list[tuple[Source, list[dict[str, str]]]] = []
         with ThreadPoolExecutor(max_workers=FEED_DOWNLOAD_WORKERS) as executor:
             pending = {
                 executor.submit(fetch_source_items, source): source
                 for source in SOURCES
             }
-            for completed_count, future in enumerate(as_completed(pending), start=1):
+            for future in as_completed(pending):
                 source = pending[future]
                 try:
                     items = future.result()
                 except Exception as exc:
                     failed_sources.append(f"{source.name}: {exc}")
                     continue
+                downloaded_sources.append((source, items))
 
-                enriched_items = 0
-                for item in items:
-                    seen += 1
-                    enrichment_limit = MAX_ITEMS_PER_SOURCE if source.name in FULL_ARTICLE_SOURCE_NAMES else MAX_ARTICLE_ENRICHMENTS_PER_SOURCE
-                    if (
-                        enriched_items < enrichment_limit
-                        and is_relevant_incident(item.get("title", ""), item.get("description", ""))
-                    ):
-                        enrich_item_description(source, item)
-                        enriched_items += 1
-                    try:
-                        with db.begin_nested():
-                            item_added = save_item(db, source, item)
-                        if item_added:
-                            added += 1
-                    except SQLAlchemyError as exc:
-                        failed_items += 1
-                        print(f"Notizia saltata da {source.name}: {exc.__class__.__name__}")
+        # Publish what can already be placed from RSS titles/summaries before
+        # opening full articles. This keeps the live map fresh even while the
+        # slower enrichment pass is still running.
+        source_order = {source.name: index for index, source in enumerate(SOURCES)}
+        downloaded_sources.sort(
+            key=lambda pair: (
+                pair[0].name not in FULL_ARTICLE_SOURCE_NAMES,
+                source_order.get(pair[0].name, len(SOURCES)),
+            )
+        )
+        for completed_count, (source, items) in enumerate(downloaded_sources, start=1):
+            for item in items:
+                seen += 1
+                try:
+                    with db.begin_nested():
+                        item_added = save_item(db, source, item)
+                    if item_added:
+                        added += 1
+                except SQLAlchemyError as exc:
+                    failed_items += 1
+                    print(f"Notizia saltata da {source.name}: {exc.__class__.__name__}")
+            db.commit()
 
-                db.commit()
+            if completed_count % 20 == 0 or completed_count == len(downloaded_sources):
+                print(f"Feed pubblicati: {completed_count}/{len(downloaded_sources)}")
 
-                if completed_count % 20 == 0 or completed_count == len(SOURCES):
-                    print(f"Fonti elaborate: {completed_count}/{len(SOURCES)}")
+        # Enrich only the newest relevant articles. A later save updates the
+        # same source event, adding precise text/time without creating a copy.
+        for completed_count, (source, items) in enumerate(downloaded_sources, start=1):
+            enrichment_limit = (
+                DIRECT_ARTICLE_ENRICHMENTS_PER_SOURCE
+                if source.name in FULL_ARTICLE_SOURCE_NAMES
+                else MAX_ARTICLE_ENRICHMENTS_PER_SOURCE
+            )
+            enriched_items = 0
+            for item in items:
+                if enriched_items >= enrichment_limit:
+                    break
+                if not is_relevant_incident(item.get("title", ""), item.get("description", "")):
+                    continue
+                enrich_item_description(source, item)
+                enriched_items += 1
+                try:
+                    with db.begin_nested():
+                        item_added = save_item(db, source, item)
+                    if item_added:
+                        added += 1
+                except SQLAlchemyError as exc:
+                    failed_items += 1
+                    print(f"Approfondimento saltato da {source.name}: {exc.__class__.__name__}")
+            db.commit()
+
+            if completed_count % 20 == 0 or completed_count == len(downloaded_sources):
+                print(f"Fonti approfondite: {completed_count}/{len(downloaded_sources)}")
 
         removed_duplicates = cleanup_duplicate_incidents(db)
         db.commit()
