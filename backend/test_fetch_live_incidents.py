@@ -7,11 +7,12 @@ from unittest.mock import patch
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.models import Base, Incident, User
+from backend.models import Base, Incident, Media, User
 from backend.schemas import Incident as IncidentSchema
 
 from backend.fetch_live_incidents import (
     _MetaDescriptionParser,
+    ACTIVE_DIRECT_NEWS_SOURCES,
     BOLOGNA_DIRECT_SOURCES,
     FOCUS_MUNICIPALITIES_PER_QUERY,
     FOCUS_METROPOLITAN_AREAS,
@@ -23,6 +24,7 @@ from backend.fetch_live_incidents import (
     classify_type,
     clean_feed_description,
     cleanup_location_evidence,
+    cleanup_duplicate_incidents,
     concise_event_description,
     coordinates_for,
     detect_city,
@@ -33,6 +35,7 @@ from backend.fetch_live_incidents import (
     explicit_recognized_city,
     fetch_article_context,
     is_relevant_incident,
+    likely_same_report,
     load_active_region_municipalities,
     municipality_source,
     parse_published_at,
@@ -185,14 +188,13 @@ class IncidentImportQualityTests(unittest.TestCase):
             "Marina di Ravenna",
         )
 
-    def test_publisher_is_only_a_last_resort(self):
-        self.assertEqual(
+    def test_publisher_city_is_never_used_as_location_evidence(self):
+        self.assertIsNone(
             detect_city_evidence(
                 "Paura al Parco Cesarea: incendio vicino alle case",
                 "",
                 "ravenna24ore-cronaca",
-            ),
-            ("Ravenna", "publisher"),
+            )
         )
         self.assertIsNone(
             coordinates_for(
@@ -353,10 +355,100 @@ class IncidentImportQualityTests(unittest.TestCase):
         self.assertTrue(all(source.publisher_city is None for source in direct_feeds))
         self.assertTrue(all(source.url.endswith("/feed/") for source in direct_feeds))
 
+    def test_active_territories_have_direct_local_feeds(self):
+        source_names = {source.name for source in ACTIVE_DIRECT_NEWS_SOURCES}
+        self.assertEqual(
+            {
+                "milanotoday-direct", "romatoday-direct", "napolitoday-direct",
+                "bolognatoday-direct", "modenatoday-direct", "parmatoday-direct",
+                "ilpiacenza-direct", "ferraratoday-direct", "forlitoday-direct",
+                "cesenatoday-direct",
+            },
+            source_names,
+        )
+        self.assertTrue(all(source.enrich_article for source in ACTIVE_DIRECT_NEWS_SOURCES))
+        self.assertTrue(all(source.publisher_city is None for source in ACTIVE_DIRECT_NEWS_SOURCES))
+
+    def test_similar_reports_in_same_city_and_time_are_duplicates(self):
+        when = dt.datetime(2026, 9, 6, 8, 0)
+        first = Incident(
+            type="accident",
+            title="Scontro frontale a Romagnano, due giovani feriti",
+            description="Incidente sulla provinciale 146 a Romagnano. Due ragazzi sono stati soccorsi.",
+            city="Sant'Agata Feltria",
+            address="Romagnano, Sant'Agata Feltria",
+            created_date=when,
+            source="riminitoday-diretto",
+        )
+        second = Incident(
+            type="accident",
+            title="Frontale sulla provinciale a Romagnano: feriti due ragazzi",
+            description="Lo schianto e avvenuto lungo la SP146 nella localita Romagnano.",
+            city="Sant'Agata Feltria",
+            address="SP146, Romagnano, Sant'Agata Feltria",
+            created_date=when + dt.timedelta(hours=1),
+            source="cesenatoday-direct",
+        )
+        self.assertTrue(likely_same_report(first, second))
+
+    def test_different_events_in_same_city_are_not_duplicates(self):
+        when = dt.datetime(2026, 9, 6, 8, 0)
+        first = Incident(
+            type="crime",
+            title="Rapina in farmacia, arrestato un uomo",
+            description="Il colpo e avvenuto in via Garibaldi.",
+            city="Milano",
+            address="Via Garibaldi, Milano",
+            created_date=when,
+            source="milanotoday-direct",
+        )
+        second = Incident(
+            type="crime",
+            title="Furto di biciclette in stazione, due denunce",
+            description="La polizia ha recuperato tre biciclette in Centrale.",
+            city="Milano",
+            address="Stazione Centrale, Milano",
+            created_date=when + dt.timedelta(hours=1),
+            source="milanotoday-direct",
+        )
+        self.assertFalse(likely_same_report(first, second))
+
+    def test_duplicate_cleanup_preserves_links_from_both_publishers(self):
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        session = sessionmaker(bind=engine)()
+        when = dt.datetime(2026, 9, 6, 8, 0)
+        try:
+            first = Incident(
+                id="event-a", type="accident", title="Scontro frontale a Romagnano, due giovani feriti",
+                description="Incidente sulla provinciale 146 a Romagnano. Due ragazzi sono stati soccorsi.",
+                severity="medium", latitude=43.9, longitude=12.2,
+                city="Sant'Agata Feltria", address="Romagnano, Sant'Agata Feltria",
+                created_date=when, last_seen_at=when, source="riminitoday-diretto",
+                source_event_id="a", media=[Media(url="https://example.test/a", type="live")],
+            )
+            second = Incident(
+                id="event-b", type="accident", title="Frontale a Romagnano: feriti due ragazzi",
+                description="Schianto sulla SP146 a Romagnano con due giovani trasportati in ospedale.",
+                severity="medium", latitude=43.9, longitude=12.2,
+                city="Sant'Agata Feltria", address="SP146, Romagnano, Sant'Agata Feltria",
+                created_date=when + dt.timedelta(hours=1), last_seen_at=when + dt.timedelta(hours=1),
+                source="cesenatoday-direct", source_event_id="b",
+                media=[Media(url="https://example.test/b", type="live")],
+            )
+            session.add_all([first, second])
+            session.flush()
+            self.assertEqual(cleanup_duplicate_incidents(session), 1)
+            session.flush()
+            remaining = session.query(Incident).one()
+            self.assertEqual({media.url for media in remaining.media}, {"https://example.test/a", "https://example.test/b"})
+        finally:
+            session.close()
+
     def test_focus_areas_are_the_four_metropolitan_territories(self):
         self.assertEqual(
             FOCUS_METROPOLITAN_AREAS,
-            {"Milano": "milano", "Roma": "roma", "Napoli": "napoli", "Bologna": "bologna"},
+            {"Milano": "milano", "Roma": "roma", "Napoli": "napoli", "Bologna": "bologna", "Verona": "verona"},
         )
         self.assertEqual(FOCUS_MUNICIPALITIES_PER_QUERY["Bologna"], 6)
         source = municipality_source(
@@ -388,8 +480,8 @@ class IncidentImportQualityTests(unittest.TestCase):
             second = load_active_region_municipalities()
 
         focus_sources = [source for source in SOURCES if source.name.startswith("focus-bologna-")]
-        self.assertEqual(first["municipality_sources"], 2)
-        self.assertEqual(second["municipality_sources"], 2)
+        self.assertEqual(first["municipality_sources"], 27)
+        self.assertEqual(second["municipality_sources"], 27)
         self.assertEqual(len(focus_sources), 2)
         self.assertEqual(len({source.name for source in focus_sources}), 2)
 

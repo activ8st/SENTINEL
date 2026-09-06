@@ -11,6 +11,7 @@ Or from backend:
 from __future__ import annotations
 
 import datetime as dt
+import difflib
 import email.utils
 import hashlib
 import html
@@ -44,6 +45,7 @@ os.chdir(PROJECT_ROOT)
 from backend.database import SessionLocal, engine  # noqa: E402
 from backend.models import Base, Incident, Media, User  # noqa: E402
 from sqlalchemy.exc import SQLAlchemyError  # noqa: E402
+from backend.event_time import extract_event_time
 
 
 USER_AGENT = "SentinelLocalBot/1.0 (+local development; contact: localhost)"
@@ -71,11 +73,13 @@ FOCUS_METROPOLITAN_AREAS = {
     "Roma": "roma",
     "Napoli": "napoli",
     "Bologna": "bologna",
+    "Verona": "verona",
 }
 MUNICIPALITIES_PER_QUERY = 18
 FOCUS_MUNICIPALITIES_PER_QUERY = {
     # Smaller groups prevent Bologna city from crowding out the 54 surrounding towns.
     "Bologna": 6,
+    "Verona": 4,
 }
 
 EMILIA_ROMAGNA_CITIES = {
@@ -843,8 +847,7 @@ RAVENNA_DIRECT_SOURCES = [
         "news",
         "crime",
         "Ravenna Notizie",
-        "Ravenna",
-        True,
+        enrich_article=True,
     ),
     Source(
         "ravenna24ore-cronaca",
@@ -852,8 +855,7 @@ RAVENNA_DIRECT_SOURCES = [
         "news",
         "crime",
         "Ravenna24ore",
-        "Ravenna",
-        False,
+        enrich_article=True,
     ),
     Source(
         "ravennatoday-rss",
@@ -861,8 +863,7 @@ RAVENNA_DIRECT_SOURCES = [
         "news",
         "other",
         "RavennaToday",
-        "Ravenna",
-        False,
+        enrich_article=True,
     ),
 ]
 SOURCES.extend(RAVENNA_DIRECT_SOURCES)
@@ -877,6 +878,7 @@ BOLOGNA_DIRECT_SOURCES = [
         "news",
         "crime",
         display_name="Sabato Sera",
+        enrich_article=True,
     ),
     Source(
         "bologna-renonews-direct",
@@ -884,6 +886,7 @@ BOLOGNA_DIRECT_SOURCES = [
         "news",
         "crime",
         display_name="RenoNews",
+        enrich_article=True,
     ),
     Source(
         "bologna-cartabianca-direct",
@@ -891,6 +894,7 @@ BOLOGNA_DIRECT_SOURCES = [
         "news",
         "crime",
         display_name="Carta Bianca News",
+        enrich_article=True,
     ),
     Source(
         "bologna24ore-direct",
@@ -898,6 +902,7 @@ BOLOGNA_DIRECT_SOURCES = [
         "news",
         "crime",
         display_name="Bologna24ore",
+        enrich_article=True,
     ),
     Source(
         "bologna-istituzioni-verificate",
@@ -911,7 +916,42 @@ BOLOGNA_DIRECT_SOURCES = [
     ),
 ]
 SOURCES.extend(BOLOGNA_DIRECT_SOURCES)
+
+# Original local feeds for the currently curated territories. They are parsed
+# from the publisher rather than through an aggregator, so the full article can
+# supply municipality and event-time evidence. No publisher-city fallback is
+# allowed: a location must occur in the headline or article itself.
+ACTIVE_DIRECT_NEWS_SOURCES = [
+    Source("milanotoday-direct", "https://www.milanotoday.it/rss", "news", "other", "MilanoToday", enrich_article=True),
+    Source("romatoday-direct", "https://www.romatoday.it/rss", "news", "other", "RomaToday", enrich_article=True),
+    Source("napolitoday-direct", "https://www.napolitoday.it/rss", "news", "other", "NapoliToday", enrich_article=True),
+    Source("bolognatoday-direct", "https://www.bolognatoday.it/rss", "news", "other", "BolognaToday", enrich_article=True),
+    Source("modenatoday-direct", "https://www.modenatoday.it/rss", "news", "other", "ModenaToday", enrich_article=True),
+    Source("parmatoday-direct", "https://www.parmatoday.it/rss", "news", "other", "ParmaToday", enrich_article=True),
+    Source("ilpiacenza-direct", "https://www.ilpiacenza.it/rss", "news", "other", "IlPiacenza", enrich_article=True),
+    Source("ferraratoday-direct", "https://www.ferraratoday.it/rss", "news", "other", "FerraraToday", enrich_article=True),
+    Source("forlitoday-direct", "https://www.forlitoday.it/rss", "news", "other", "ForliToday", enrich_article=True),
+    Source("cesenatoday-direct", "https://www.cesenatoday.it/rss", "news", "other", "CesenaToday", enrich_article=True),
+]
+SOURCES.extend(ACTIVE_DIRECT_NEWS_SOURCES)
+SOURCES.extend([
+    Source("riminitoday-diretto", "https://www.riminitoday.it/rss", "news", "other", "RiminiToday", enrich_article=True),
+    Source("veronasera-diretto", "https://www.veronasera.it/rss", "news", "other", "VeronaSera", enrich_article=True),
+    local_media_source("verona-quotidiani", ("L'Arena", "VeronaSera", "Corriere di Verona", "Verona Oggi")),
+    local_media_source("verona-locali", ("PrimoWeb", "L'Adige di Verona", "La Cronaca di Verona", "Daily Verona", "Il Veronese Magazine")),
+    Source("verona-istituzioni", google_news_url(f'(site:carabinieri.it OR site:poliziadistato.it OR site:vigilfuoco.it OR site:comune.verona.it OR site:prefettura.interno.gov.it OR site:arpa.veneto.it) Verona ({INCIDENT_NEWS_TERMS})'), "aggregated", "other", enrich_article=True),
+    Source("rimini-sapigno-romagnano", google_news_url(f'("Sapigno" OR "Romagnano" OR "Sant Agata Feltria") ({INCIDENT_NEWS_TERMS})'), "city-keyword", "other", enrich_article=True),
+])
 SOURCE_BY_NAME = {source.name: source for source in SOURCES}
+FULL_ARTICLE_SOURCE_NAMES = {
+    source.name
+    for source in (
+        RAVENNA_DIRECT_SOURCES
+        + BOLOGNA_DIRECT_SOURCES
+        + ACTIVE_DIRECT_NEWS_SOURCES
+    )
+    if source.enrich_article and "news.google.com" not in source.url
+} | {"riminitoday-diretto", "veronasera-diretto"}
 
 
 CITY_COORDS = {
@@ -1258,12 +1298,21 @@ CITY_COORDS.update({
     "monte livata": (41.9388580, 13.1486640),
 })
 
+VERONA_ROWS = json.loads((BACKEND_DIR / "verona_municipalities.json").read_text(encoding="utf-8"))
+VERONA_CITIES = {unicodedata.normalize("NFKD", row["nome"].lower()).encode("ascii", "ignore").decode() for row in VERONA_ROWS}
+for row in VERONA_ROWS:
+    key = unicodedata.normalize("NFKD", row["nome"].lower()).encode("ascii", "ignore").decode()
+    CITY_COORDS[key] = (float(row["coordinate"]["lat"]), float(row["coordinate"]["lng"]))
+EMILIA_ROMAGNA_CITIES.add("sant'agata feltria")
+CITY_COORDS["sant'agata feltria"] = (43.8639857, 12.2083964)
+
 RECOGNIZED_CITIES = (
     set(CITY_COORDS)
     | EMILIA_ROMAGNA_CITIES
     | LOMBARDIA_CITIES
     | LAZIO_CITIES
     | CAMPANIA_CITIES
+    | VERONA_CITIES
 )
 LOCATION_ALIASES = {
     "catanese": "catania",
@@ -1808,7 +1857,7 @@ def fetch_article_description(url: str) -> str:
 
 def enrich_item_description(source: Source, item: dict[str, str]) -> bool:
     article_title, _publisher = split_title_and_publisher(item.get("title", ""), source.name)
-    if not source.enrich_article or not is_low_quality_description(item.get("description", ""), article_title):
+    if not source.enrich_article:
         return False
     description, published_at = fetch_article_context(item.get("link", ""))
     if not description:
@@ -1908,7 +1957,7 @@ def _municipality_rows_from_payload(payload: bytes) -> list[dict]:
     return [
         row for row in rows
         if isinstance(row, dict)
-        and (row.get("regione") or {}).get("nome") in ACTIVE_REGIONS
+        and ((row.get("regione") or {}).get("nome") in ACTIVE_REGIONS or (row.get("provincia") or {}).get("nome") == "Verona")
         and row.get("nome")
         and row.get("coordinate")
     ]
@@ -1933,7 +1982,9 @@ def load_active_region_municipalities() -> dict[str, int | str]:
         except Exception:
             rows = []
 
+    rows = [row for row in rows if (row.get("provincia") or {}).get("nome") != "Verona"] + VERONA_ROWS
     region_sets = {
+        "Veneto": VERONA_CITIES,
         "Lombardia": LOMBARDIA_CITIES,
         "Lazio": LAZIO_CITIES,
         "Campania": CAMPANIA_CITIES,
@@ -2171,9 +2222,21 @@ def detect_city_evidence(
     title_text = normalize(article_title)
     description_text = normalize(article_description)
 
+    # Explicit incident municipality outranks hospitals and responding units.
+    for text in (title_text, description_text):
+        match = re.search(r"\b(?:nel territorio del comune di|nel comune di)\s+", text)
+        if match:
+            mentions = find_city_mentions(text[match.end():match.end() + 80])
+            if mentions and mentions[0][0] == 0:
+                return format_city_name(mentions[0][2]), "event-municipality"
+
     city_from_context = detect_event_city_from_context(title_text)
     if city_from_context:
         return city_from_context, "title-context"
+
+    city_from_context = detect_event_city_from_context(description_text)
+    if city_from_context:
+        return city_from_context, "description-context"
 
     title_mentions = unique_city_mentions(title_text)
     if len(title_mentions) == 1:
@@ -2345,7 +2408,7 @@ def detect_detailed_place(title: str, description: str, city: str) -> str | None
         r"via|viale|corso|piazza|piazzale|lungomare|strada|statale|provinciale|"
         r"tangenziale|autostrada|zona|quartiere|porto|stazione|aeroporto|"
         r"ospedale|hotel|spiaggia|parco|giardini|localita|frazione|lido|marina|"
-        r"centro commerciale|casello|svincolo|canale|darsena"
+        r"centro commerciale|casello|svincolo|canale|darsena|sp\s*\d+|ss\s*\d+"
     )
     patterns = [
         rf"\b(?:in|a|ad|al|alla|su|presso|vicino a|nei pressi di|sulla|sul|nella|nel)\s+(({place_types})\s+[\w' .-]{{2,80}}?)(?=\s[-\u2013\u2014]\s|[,;:!?]|\.|$)",
@@ -2420,6 +2483,8 @@ def distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 def allowed_area_for(city: str, lat: float, lon: float) -> str | None:
     key = normalize(city)
+    if key in VERONA_CITIES:
+        return "Verona"
     if key in EMILIA_ROMAGNA_CITIES:
         return "Emilia-Romagna"
     if key in LOMBARDIA_CITIES:
@@ -2496,7 +2561,10 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
     raw_title = clean_text(item["title"], 220)
     title, title_publisher = split_title_and_publisher(raw_title, source.name)
     title = clean_text(title, 160)
-    description = clean_text(item["description"], 420)
+    description = clean_text(item["description"], 2200)
+    event_at = extract_event_time(f"{title}. {description}", published_at, ITALY_TIMEZONE)
+    if event_at is not None and not is_recent_enough(event_at):
+        return False
     if not is_relevant_incident(title, description):
         return False
 
@@ -2511,6 +2579,13 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
     if not is_allowed_area(city, lat, lon):
         return False
     description_with_reference = make_description(title, description, publisher, city, address)
+    if event_at is not None:
+        local_event = event_at.replace(tzinfo=dt.UTC).astimezone(ITALY_TIMEZONE)
+        description_with_reference += f" Ora evento indicata dalla fonte: {local_event:%d/%m/%Y %H:%M} (Europe/Rome)."
+    elif published_at is not None:
+        description_with_reference += " Data e ora mostrate: pubblicazione; orario evento non determinato."
+    else:
+        description_with_reference += " Data e ora mostrate: acquisizione; data fonte non disponibile."
 
     if existing:
         existing.title = title
@@ -2523,7 +2598,7 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
         existing.city = city
         existing.source_trust = source_trust_value(trust, position_from_text)
         if published_at is not None:
-            existing.created_date = published_at
+            existing.created_date = event_at or published_at
         existing.last_seen_at = now
         if item["link"] and not any(media.url == item["link"] for media in existing.media):
             db.add(Media(incident_id=existing.id, url=item["link"], type="document"))
@@ -2535,7 +2610,7 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
     ).first()
     if duplicate:
         duplicate_date = duplicate.created_date or now
-        item_date = published_at or now
+        item_date = event_at or published_at or now
         if abs((duplicate_date - item_date).total_seconds()) <= 48 * 60 * 60:
             duplicate.last_seen_at = now
             if item["link"] and not any(media.url == item["link"] for media in duplicate.media):
@@ -2553,7 +2628,7 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
         address=address,
         city=city,
         status="active",
-        created_date=published_at or now,
+        created_date=event_at or published_at or now,
         source=source.name,
         source_event_id=source_event_id,
         source_trust=source_trust_value(trust, position_from_text),
@@ -2827,6 +2902,51 @@ def cleanup_location_evidence(db) -> dict[str, int]:
     }
 
 
+DUPLICATE_STOP_WORDS = {
+    "a", "ad", "al", "alla", "alle", "con", "da", "dal", "dalla", "del",
+    "della", "delle", "di", "e", "gli", "i", "il", "in", "la", "le", "lo",
+    "nel", "nella", "nelle", "per", "su", "tra", "un", "una", "uno",
+    "cronaca", "diretta", "foto", "news", "notizia", "oggi", "video",
+}
+
+
+def duplicate_tokens(text: str) -> set[str]:
+    return {
+        token
+        for token in re.findall(r"[a-z0-9]+", normalize(text))
+        if len(token) >= 3 and token not in DUPLICATE_STOP_WORDS
+    }
+
+
+def likely_same_report(primary: Incident, incident: Incident) -> bool:
+    if normalize(primary.city) != normalize(incident.city) or primary.type != incident.type:
+        return False
+    if not primary.created_date or not incident.created_date:
+        return False
+    if abs((primary.created_date - incident.created_date).total_seconds()) > 18 * 60 * 60:
+        return False
+
+    primary_title, _ = split_title_and_publisher(primary.title, primary.source)
+    incident_title, _ = split_title_and_publisher(incident.title, incident.source)
+    left_title = re.sub(r"[^a-z0-9]+", " ", normalize(primary_title)).strip()
+    right_title = re.sub(r"[^a-z0-9]+", " ", normalize(incident_title)).strip()
+    title_ratio = difflib.SequenceMatcher(None, left_title, right_title).ratio()
+    left_tokens = duplicate_tokens(primary_title)
+    right_tokens = duplicate_tokens(incident_title)
+    shared_title = left_tokens & right_tokens
+    title_union = left_tokens | right_tokens
+    title_jaccard = len(shared_title) / len(title_union) if title_union else 0.0
+    if title_ratio >= 0.72 or (len(shared_title) >= 4 and title_jaccard >= 0.42):
+        return True
+
+    left_context = duplicate_tokens(f"{primary_title} {strip_sentinel_note(primary.description)}")
+    right_context = duplicate_tokens(f"{incident_title} {strip_sentinel_note(incident.description)}")
+    shared_context = left_context & right_context
+    context_union = left_context | right_context
+    context_jaccard = len(shared_context) / len(context_union) if context_union else 0.0
+    return len(shared_context) >= 6 and context_jaccard >= 0.6
+
+
 def cleanup_duplicate_incidents(db) -> int:
     candidates = (
         db.query(Incident)
@@ -2836,7 +2956,8 @@ def cleanup_duplicate_incidents(db) -> int:
     )
     seen_by_link: dict[str, Incident] = {}
     seen_by_title: dict[tuple[str, str], Incident] = {}
-    seen_by_precise_event: dict[tuple[str, str], Incident] = {}
+    seen_by_precise_event: dict[tuple[str, str, str], Incident] = {}
+    seen_by_city_type: dict[tuple[str, str], list[Incident]] = {}
     removed = 0
     for incident in candidates:
         links = [media.url for media in incident.media if media.url]
@@ -2847,7 +2968,7 @@ def cleanup_duplicate_incidents(db) -> int:
             incident.address
             and normalize(incident.address) != normalize(incident.city)
         )
-        event_key = (incident.type, normalize(incident.address))
+        event_key = (incident.type, normalize(incident.city), normalize(incident.address))
         primary = next((seen_by_link[url] for url in links if url in seen_by_link), None)
         if primary is None:
             possible = seen_by_title.get(key)
@@ -2860,17 +2981,28 @@ def cleanup_duplicate_incidents(db) -> int:
                 if abs((possible.created_date - incident.created_date).total_seconds()) <= 2 * 60 * 60:
                     primary = possible
         if primary is None:
+            comparison_key = (normalize(incident.city), incident.type)
+            primary = next(
+                (
+                    possible
+                    for possible in reversed(seen_by_city_type.get(comparison_key, []))
+                    if likely_same_report(possible, incident)
+                ),
+                None,
+            )
+        if primary is None:
             for url in links:
                 seen_by_link[url] = incident
             seen_by_title[key] = incident
             if precise_address:
                 seen_by_precise_event[event_key] = incident
+            seen_by_city_type.setdefault((normalize(incident.city), incident.type), []).append(incident)
             continue
 
         existing_urls = {media.url for media in primary.media}
         for media in incident.media:
             if media.url and media.url not in existing_urls:
-                db.add(Media(incident_id=primary.id, url=media.url, type=media.type))
+                primary.media.append(Media(url=media.url, type=media.type))
                 existing_urls.add(media.url)
         primary.last_seen_at = max(
             primary.last_seen_at or primary.created_date,
@@ -2957,8 +3089,9 @@ def main(*, perform_maintenance: bool = False) -> dict:
                 enriched_items = 0
                 for item in items:
                     seen += 1
+                    enrichment_limit = MAX_ITEMS_PER_SOURCE if source.name in FULL_ARTICLE_SOURCE_NAMES else MAX_ARTICLE_ENRICHMENTS_PER_SOURCE
                     if (
-                        enriched_items < MAX_ARTICLE_ENRICHMENTS_PER_SOURCE
+                        enriched_items < enrichment_limit
                         and is_relevant_incident(item.get("title", ""), item.get("description", ""))
                     ):
                         enrich_item_description(source, item)

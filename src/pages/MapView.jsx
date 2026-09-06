@@ -40,7 +40,7 @@ export default function MapView() {
     return TIME_WINDOWS.some(window => window.hours === saved) ? saved : 720;
   });
   const [radius, setRadius] = useState(() => loadAreaFilter().radius);
-  const [useRadius, setUseRadius] = useState(() => loadAreaFilter().enabled);
+  const [useRadius, setUseRadius] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [refreshingNews, setRefreshingNews] = useState(false);
@@ -198,6 +198,7 @@ export default function MapView() {
           zoom={mapZoom}
           showRadius={useRadius && userGpsActive}
           radiusKm={radius}
+          frameUserRadius
           height="100%"
           onIncidentClick={(inc) => {
             setSelectedIncident(inc);

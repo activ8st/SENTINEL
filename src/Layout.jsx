@@ -21,7 +21,7 @@ export default function Layout({ children, currentPageName }) {
         [data-state=active].bg-orange-500 { background-color: rgb(249 115 22) !important; }
 
         /* Active/pressed: feedback visivo al tap */
-        button:active, [role="button"]:active { transform: scale(0.94); transition: transform 0.08s ease; }
+        button:active, [role="button"]:active { filter: brightness(0.94); }
         /* Toggle attivo: alone arancione */
         button[aria-pressed="true"] { box-shadow: 0 0 0 2px rgba(249,115,22,0.55); }
         /* Focus tastiera visibile */

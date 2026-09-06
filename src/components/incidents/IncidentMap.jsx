@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Map, { Marker, Source, Layer, NavigationControl } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { TYPE_CONFIG } from '@/components/data/mockData';
+import { UserRound } from 'lucide-react';
 
 const coordinateKey = (incident) => `${Number(incident.latitude).toFixed(4)},${Number(incident.longitude).toFixed(4)}`;
 
@@ -73,6 +74,7 @@ export default function IncidentMap({
   userLocation,
   showRadius = false,
   radiusKm = 1,
+  frameUserRadius = false,
   height = '100%',
   onIncidentClick,
   className = 'rounded-xl',
@@ -80,6 +82,7 @@ export default function IncidentMap({
   const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || ('pk.eyJ1IjoiYWN0aXY4c3QiLCJh' + 'IjoiY21yYzc3bmVtMDBtajJ3cnowMGExMDBycyJ9.mM-UgVYY8UhIVAB5Hxd2mw');
   const mapRef = useRef(null);
   const containerRef = useRef(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   const defaultCenter = userLocation 
     ? [userLocation.lat, userLocation.lng] 
@@ -111,7 +114,7 @@ export default function IncidentMap({
 
   useEffect(() => {
     if (center && mapRef.current) {
-      const targetLat = center[0] - 0.003;
+      const targetLat = center[0];
       mapRef.current.flyTo({
         center: [center[1], targetLat],
         zoom,
@@ -122,6 +125,18 @@ export default function IncidentMap({
       });
     }
   }, [center, zoom]);
+
+  useEffect(() => {
+    if (!mapLoaded || !frameUserRadius || !userLocation || !mapRef.current) return;
+    const circle = createRadiusCircle(userLocation, showRadius ? radiusKm : 1);
+    const points = circle.geometry.coordinates[0];
+    const lngs = points.map(point => point[0]);
+    const lats = points.map(point => point[1]);
+    mapRef.current.fitBounds(
+      [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+      { padding: 48, pitch: 0, bearing: 0, duration: 1000 }
+    );
+  }, [mapLoaded, frameUserRadius, userLocation, showRadius, radiusKm]);
 
   const add3DBuildingsLayer = () => {
     if (!mapRef.current) return;
@@ -201,8 +216,8 @@ export default function IncidentMap({
         ref={mapRef}
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
-        onLoad={add3DBuildingsLayer}
-        minPitch={40}
+        onLoad={() => { add3DBuildingsLayer(); setMapLoaded(true); }}
+        minPitch={0}
         maxPitch={55}
         minZoom={3}
         maxZoom={17}
@@ -236,7 +251,7 @@ export default function IncidentMap({
                   }}
                 />
               ))}
-              <span className="absolute left-1/2 top-1/2 h-[22px] w-[22px] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white bg-blue-600 shadow-[0_0_0_4px_rgba(37,99,235,0.22),0_0_22px_rgba(59,130,246,0.6)]" />
+              <span aria-label="La tua posizione" className="absolute left-1/2 top-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-blue-600 text-white shadow-lg"><UserRound size={20} /></span>
             </div>
           </Marker>
         )}

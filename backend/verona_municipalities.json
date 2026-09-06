@@ -1,0 +1,3059 @@
+[
+  {
+    "nome": "Affi",
+    "nomeAltraLingua": null,
+    "codice": "023001",
+    "codiceCatastale": "A061",
+    "sigla": "VR",
+    "cap": [
+      "37010"
+    ],
+    "capoluogo": false,
+    "popolazione": 2504,
+    "superficie": 9.9295,
+    "coordinate": {
+      "lat": 45.5519099,
+      "lng": 10.7733561
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Albaredo d'Adige",
+    "nomeAltraLingua": null,
+    "codice": "023002",
+    "codiceCatastale": "A137",
+    "sigla": "VR",
+    "cap": [
+      "37041"
+    ],
+    "capoluogo": false,
+    "popolazione": 5298,
+    "superficie": 28.2044,
+    "coordinate": {
+      "lat": 45.3173538,
+      "lng": 11.2668649
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Angiari",
+    "nomeAltraLingua": null,
+    "codice": "023003",
+    "codiceCatastale": "A292",
+    "sigla": "VR",
+    "cap": [
+      "37050"
+    ],
+    "capoluogo": false,
+    "popolazione": 2544,
+    "superficie": 13.5676,
+    "coordinate": {
+      "lat": 45.2178721,
+      "lng": 11.2839776
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Arcole",
+    "nomeAltraLingua": null,
+    "codice": "023004",
+    "codiceCatastale": "A374",
+    "sigla": "VR",
+    "cap": [
+      "37040"
+    ],
+    "capoluogo": false,
+    "popolazione": 6419,
+    "superficie": 18.6677,
+    "coordinate": {
+      "lat": 45.3575871,
+      "lng": 11.2865322
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Badia Calavena",
+    "nomeAltraLingua": null,
+    "codice": "023005",
+    "codiceCatastale": "A540",
+    "sigla": "VR",
+    "cap": [
+      "37030"
+    ],
+    "capoluogo": false,
+    "popolazione": 2707,
+    "superficie": 26.7298,
+    "coordinate": {
+      "lat": 45.5641095,
+      "lng": 11.1566127
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Bardolino",
+    "nomeAltraLingua": null,
+    "codice": "023006",
+    "codiceCatastale": "A650",
+    "sigla": "VR",
+    "cap": [
+      "37011"
+    ],
+    "capoluogo": false,
+    "popolazione": 6816,
+    "superficie": 57.4762,
+    "coordinate": {
+      "lat": 45.5472076,
+      "lng": 10.7196587
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Belfiore",
+    "nomeAltraLingua": null,
+    "codice": "023007",
+    "codiceCatastale": "A737",
+    "sigla": "VR",
+    "cap": [
+      "37050"
+    ],
+    "capoluogo": false,
+    "popolazione": 3408,
+    "superficie": 26.3015,
+    "coordinate": {
+      "lat": 45.3803532,
+      "lng": 11.2089989
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Bevilacqua",
+    "nomeAltraLingua": null,
+    "codice": "023008",
+    "codiceCatastale": "A837",
+    "sigla": "VR",
+    "cap": [
+      "37040"
+    ],
+    "capoluogo": false,
+    "popolazione": 1817,
+    "superficie": 12.2393,
+    "coordinate": {
+      "lat": 45.2335638,
+      "lng": 11.3984142
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Bonavigo",
+    "nomeAltraLingua": null,
+    "codice": "023009",
+    "codiceCatastale": "A964",
+    "sigla": "VR",
+    "cap": [
+      "37040"
+    ],
+    "capoluogo": false,
+    "popolazione": 1990,
+    "superficie": 18.0296,
+    "coordinate": {
+      "lat": 45.2577438,
+      "lng": 11.2797734
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Boschi Sant'Anna",
+    "nomeAltraLingua": null,
+    "codice": "023010",
+    "codiceCatastale": "B070",
+    "sigla": "VR",
+    "cap": [
+      "37040"
+    ],
+    "capoluogo": false,
+    "popolazione": 1385,
+    "superficie": 9.3994,
+    "coordinate": {
+      "lat": 45.219792,
+      "lng": 11.3583521
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Bosco Chiesanuova",
+    "nomeAltraLingua": null,
+    "codice": "023011",
+    "codiceCatastale": "B073",
+    "sigla": "VR",
+    "cap": [
+      "37021"
+    ],
+    "capoluogo": false,
+    "popolazione": 3593,
+    "superficie": 64.9873,
+    "coordinate": {
+      "lat": 45.6223297,
+      "lng": 11.0292177
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Bovolone",
+    "nomeAltraLingua": null,
+    "codice": "023012",
+    "codiceCatastale": "B107",
+    "sigla": "VR",
+    "cap": [
+      "37051"
+    ],
+    "capoluogo": false,
+    "popolazione": 16392,
+    "superficie": 41.5199,
+    "coordinate": {
+      "lat": 45.2580864,
+      "lng": 11.1169939
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Brentino Belluno",
+    "nomeAltraLingua": null,
+    "codice": "023013",
+    "codiceCatastale": "B152",
+    "sigla": "VR",
+    "cap": [
+      "37020"
+    ],
+    "capoluogo": false,
+    "popolazione": 1368,
+    "superficie": 25.8241,
+    "coordinate": {
+      "lat": 45.656325,
+      "lng": 10.8932508
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Brenzone sul Garda",
+    "nomeAltraLingua": null,
+    "codice": "023014",
+    "codiceCatastale": "B154",
+    "sigla": "VR",
+    "cap": [
+      "37010"
+    ],
+    "capoluogo": false,
+    "popolazione": 2436,
+    "superficie": 51.6777,
+    "coordinate": {
+      "lat": 45.7085317,
+      "lng": 10.7669327
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Bussolengo",
+    "nomeAltraLingua": null,
+    "codice": "023015",
+    "codiceCatastale": "B296",
+    "sigla": "VR",
+    "cap": [
+      "37012"
+    ],
+    "capoluogo": false,
+    "popolazione": 21037,
+    "superficie": 24.1526,
+    "coordinate": {
+      "lat": 45.4746833,
+      "lng": 10.8460716
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Buttapietra",
+    "nomeAltraLingua": null,
+    "codice": "023016",
+    "codiceCatastale": "B304",
+    "sigla": "VR",
+    "cap": [
+      "37060"
+    ],
+    "capoluogo": false,
+    "popolazione": 7031,
+    "superficie": 17.4573,
+    "coordinate": {
+      "lat": 45.3434923,
+      "lng": 10.9983363
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Caldiero",
+    "nomeAltraLingua": null,
+    "codice": "023017",
+    "codiceCatastale": "B402",
+    "sigla": "VR",
+    "cap": [
+      "37042"
+    ],
+    "capoluogo": false,
+    "popolazione": 8160,
+    "superficie": 10.4838,
+    "coordinate": {
+      "lat": 45.4121607,
+      "lng": 11.1840619
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Caprino Veronese",
+    "nomeAltraLingua": null,
+    "codice": "023018",
+    "codiceCatastale": "B709",
+    "sigla": "VR",
+    "cap": [
+      "37013"
+    ],
+    "capoluogo": false,
+    "popolazione": 8775,
+    "superficie": 47.8566,
+    "coordinate": {
+      "lat": 45.6066044,
+      "lng": 10.7937996
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Casaleone",
+    "nomeAltraLingua": null,
+    "codice": "023019",
+    "codiceCatastale": "B886",
+    "sigla": "VR",
+    "cap": [
+      "37052"
+    ],
+    "capoluogo": false,
+    "popolazione": 5672,
+    "superficie": 38.1407,
+    "coordinate": {
+      "lat": 45.1699003,
+      "lng": 11.2007702
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Castagnaro",
+    "nomeAltraLingua": null,
+    "codice": "023020",
+    "codiceCatastale": "C041",
+    "sigla": "VR",
+    "cap": [
+      "37043"
+    ],
+    "capoluogo": false,
+    "popolazione": 3497,
+    "superficie": 35.0489,
+    "coordinate": {
+      "lat": 45.1209104,
+      "lng": 11.4095821
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Castel d'Azzano",
+    "nomeAltraLingua": null,
+    "codice": "023021",
+    "codiceCatastale": "C078",
+    "sigla": "VR",
+    "cap": [
+      "37060"
+    ],
+    "capoluogo": false,
+    "popolazione": 12333,
+    "superficie": 9.758,
+    "coordinate": {
+      "lat": 45.3537764,
+      "lng": 10.9436668
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Castelnuovo del Garda",
+    "nomeAltraLingua": null,
+    "codice": "023022",
+    "codiceCatastale": "C225",
+    "sigla": "VR",
+    "cap": [
+      "37014"
+    ],
+    "capoluogo": false,
+    "popolazione": 13306,
+    "superficie": 34.4878,
+    "coordinate": {
+      "lat": 45.4405876,
+      "lng": 10.7637341
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Cavaion Veronese",
+    "nomeAltraLingua": null,
+    "codice": "023023",
+    "codiceCatastale": "C370",
+    "sigla": "VR",
+    "cap": [
+      "37010"
+    ],
+    "capoluogo": false,
+    "popolazione": 5995,
+    "superficie": 12.7734,
+    "coordinate": {
+      "lat": 45.5378429,
+      "lng": 10.7691187
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Cazzano di Tramigna",
+    "nomeAltraLingua": null,
+    "codice": "023024",
+    "codiceCatastale": "C412",
+    "sigla": "VR",
+    "cap": [
+      "37030"
+    ],
+    "capoluogo": false,
+    "popolazione": 1466,
+    "superficie": 12.3804,
+    "coordinate": {
+      "lat": 45.472013,
+      "lng": 11.2033871
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Cerea",
+    "nomeAltraLingua": null,
+    "codice": "023025",
+    "codiceCatastale": "C498",
+    "sigla": "VR",
+    "cap": [
+      "37053"
+    ],
+    "capoluogo": false,
+    "popolazione": 17304,
+    "superficie": 70.224,
+    "coordinate": {
+      "lat": 45.1920103,
+      "lng": 11.2128455
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Cerro Veronese",
+    "nomeAltraLingua": null,
+    "codice": "023026",
+    "codiceCatastale": "C538",
+    "sigla": "VR",
+    "cap": [
+      "37020"
+    ],
+    "capoluogo": false,
+    "popolazione": 2698,
+    "superficie": 10.2319,
+    "coordinate": {
+      "lat": 45.574028,
+      "lng": 11.041418
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Cologna Veneta",
+    "nomeAltraLingua": null,
+    "codice": "023027",
+    "codiceCatastale": "C890",
+    "sigla": "VR",
+    "cap": [
+      "37044"
+    ],
+    "capoluogo": false,
+    "popolazione": 8543,
+    "superficie": 43.0324,
+    "coordinate": {
+      "lat": 45.3107239,
+      "lng": 11.3845338
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Colognola ai Colli",
+    "nomeAltraLingua": null,
+    "codice": "023028",
+    "codiceCatastale": "C897",
+    "sigla": "VR",
+    "cap": [
+      "37030"
+    ],
+    "capoluogo": false,
+    "popolazione": 8801,
+    "superficie": 20.6662,
+    "coordinate": {
+      "lat": 45.4345243,
+      "lng": 11.1868625
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Concamarise",
+    "nomeAltraLingua": null,
+    "codice": "023029",
+    "codiceCatastale": "C943",
+    "sigla": "VR",
+    "cap": [
+      "37050"
+    ],
+    "capoluogo": false,
+    "popolazione": 1060,
+    "superficie": 7.8891,
+    "coordinate": {
+      "lat": 45.2072746,
+      "lng": 11.1387413
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Costermano sul Garda",
+    "nomeAltraLingua": null,
+    "codice": "023030",
+    "codiceCatastale": "D118",
+    "sigla": "VR",
+    "cap": [
+      "37010"
+    ],
+    "capoluogo": false,
+    "popolazione": 3996,
+    "superficie": 16.5881,
+    "coordinate": {
+      "lat": 45.5865166,
+      "lng": 10.7384415
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Dolcè",
+    "nomeAltraLingua": null,
+    "codice": "023031",
+    "codiceCatastale": "D317",
+    "sigla": "VR",
+    "cap": [
+      "37020"
+    ],
+    "capoluogo": false,
+    "popolazione": 2536,
+    "superficie": 31.0348,
+    "coordinate": {
+      "lat": 45.5999467,
+      "lng": 10.8528852
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Erbè",
+    "nomeAltraLingua": null,
+    "codice": "023032",
+    "codiceCatastale": "D419",
+    "sigla": "VR",
+    "cap": [
+      "37060"
+    ],
+    "capoluogo": false,
+    "popolazione": 1922,
+    "superficie": 16.3667,
+    "coordinate": {
+      "lat": 45.2422529,
+      "lng": 10.9671541
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Erbezzo",
+    "nomeAltraLingua": null,
+    "codice": "023033",
+    "codiceCatastale": "D420",
+    "sigla": "VR",
+    "cap": [
+      "37020"
+    ],
+    "capoluogo": false,
+    "popolazione": 850,
+    "superficie": 31.486,
+    "coordinate": {
+      "lat": 45.6397007,
+      "lng": 11.001149
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Ferrara di Monte Baldo",
+    "nomeAltraLingua": null,
+    "codice": "023034",
+    "codiceCatastale": "D549",
+    "sigla": "VR",
+    "cap": [
+      "37020"
+    ],
+    "capoluogo": false,
+    "popolazione": 302,
+    "superficie": 26.555,
+    "coordinate": {
+      "lat": 45.6764379,
+      "lng": 10.8529728
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Fumane",
+    "nomeAltraLingua": null,
+    "codice": "023035",
+    "codiceCatastale": "D818",
+    "sigla": "VR",
+    "cap": [
+      "37022"
+    ],
+    "capoluogo": false,
+    "popolazione": 4193,
+    "superficie": 34.2874,
+    "coordinate": {
+      "lat": 45.5432218,
+      "lng": 10.8817052
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Garda",
+    "nomeAltraLingua": null,
+    "codice": "023036",
+    "codiceCatastale": "D915",
+    "sigla": "VR",
+    "cap": [
+      "37016"
+    ],
+    "capoluogo": false,
+    "popolazione": 4044,
+    "superficie": 14.3263,
+    "coordinate": {
+      "lat": 45.5742356,
+      "lng": 10.707749
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Gazzo Veronese",
+    "nomeAltraLingua": null,
+    "codice": "023037",
+    "codiceCatastale": "D957",
+    "sigla": "VR",
+    "cap": [
+      "37060"
+    ],
+    "capoluogo": false,
+    "popolazione": 5226,
+    "superficie": 57.1019,
+    "coordinate": {
+      "lat": 45.1425964,
+      "lng": 11.1039206
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Grezzana",
+    "nomeAltraLingua": null,
+    "codice": "023038",
+    "codiceCatastale": "E171",
+    "sigla": "VR",
+    "cap": [
+      "37023"
+    ],
+    "capoluogo": false,
+    "popolazione": 10775,
+    "superficie": 49.7,
+    "coordinate": {
+      "lat": 45.5185461,
+      "lng": 11.0160717
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Illasi",
+    "nomeAltraLingua": null,
+    "codice": "023039",
+    "codiceCatastale": "E284",
+    "sigla": "VR",
+    "cap": [
+      "37031"
+    ],
+    "capoluogo": false,
+    "popolazione": 5149,
+    "superficie": 25.1324,
+    "coordinate": {
+      "lat": 45.4662749,
+      "lng": 11.1841327
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Isola della Scala",
+    "nomeAltraLingua": null,
+    "codice": "023040",
+    "codiceCatastale": "E349",
+    "sigla": "VR",
+    "cap": [
+      "37063"
+    ],
+    "capoluogo": false,
+    "popolazione": 11825,
+    "superficie": 69.5747,
+    "coordinate": {
+      "lat": 45.2735107,
+      "lng": 11.0079035
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Isola Rizza",
+    "nomeAltraLingua": null,
+    "codice": "023041",
+    "codiceCatastale": "E358",
+    "sigla": "VR",
+    "cap": [
+      "37050"
+    ],
+    "capoluogo": false,
+    "popolazione": 3317,
+    "superficie": 17.004,
+    "coordinate": {
+      "lat": 45.2912675,
+      "lng": 11.1980509
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Lavagno",
+    "nomeAltraLingua": null,
+    "codice": "023042",
+    "codiceCatastale": "E489",
+    "sigla": "VR",
+    "cap": [
+      "37030"
+    ],
+    "capoluogo": false,
+    "popolazione": 8730,
+    "superficie": 14.4617,
+    "coordinate": {
+      "lat": 45.4408227,
+      "lng": 11.1317891
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Lazise",
+    "nomeAltraLingua": null,
+    "codice": "023043",
+    "codiceCatastale": "E502",
+    "sigla": "VR",
+    "cap": [
+      "37017"
+    ],
+    "capoluogo": false,
+    "popolazione": 6771,
+    "superficie": 63.1603,
+    "coordinate": {
+      "lat": 45.5051321,
+      "lng": 10.7324961
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Legnago",
+    "nomeAltraLingua": null,
+    "codice": "023044",
+    "codiceCatastale": "E512",
+    "sigla": "VR",
+    "cap": [
+      "37045"
+    ],
+    "capoluogo": false,
+    "popolazione": 26084,
+    "superficie": 78.6882,
+    "coordinate": {
+      "lat": 45.1904026,
+      "lng": 11.3085626
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Malcesine",
+    "nomeAltraLingua": null,
+    "codice": "023045",
+    "codiceCatastale": "E848",
+    "sigla": "VR",
+    "cap": [
+      "37018"
+    ],
+    "capoluogo": false,
+    "popolazione": 3472,
+    "superficie": 68.9646,
+    "coordinate": {
+      "lat": 45.7640798,
+      "lng": 10.8088719
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Marano di Valpolicella",
+    "nomeAltraLingua": null,
+    "codice": "023046",
+    "codiceCatastale": "E911",
+    "sigla": "VR",
+    "cap": [
+      "37020"
+    ],
+    "capoluogo": false,
+    "popolazione": 3085,
+    "superficie": 18.7456,
+    "coordinate": {
+      "lat": 45.553913,
+      "lng": 10.9153732
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Mezzane di Sotto",
+    "nomeAltraLingua": null,
+    "codice": "023047",
+    "codiceCatastale": "F172",
+    "sigla": "VR",
+    "cap": [
+      "37030"
+    ],
+    "capoluogo": false,
+    "popolazione": 2502,
+    "superficie": 19.8144,
+    "coordinate": {
+      "lat": 45.4807248,
+      "lng": 11.1271034
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Minerbe",
+    "nomeAltraLingua": null,
+    "codice": "023048",
+    "codiceCatastale": "F218",
+    "sigla": "VR",
+    "cap": [
+      "37046"
+    ],
+    "capoluogo": false,
+    "popolazione": 4644,
+    "superficie": 29.7606,
+    "coordinate": {
+      "lat": 45.2424767,
+      "lng": 11.3411093
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Montecchia di Crosara",
+    "nomeAltraLingua": null,
+    "codice": "023049",
+    "codiceCatastale": "F461",
+    "sigla": "VR",
+    "cap": [
+      "37030"
+    ],
+    "capoluogo": false,
+    "popolazione": 4323,
+    "superficie": 20.8372,
+    "coordinate": {
+      "lat": 45.4853462,
+      "lng": 11.2531791
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Monteforte d'Alpone",
+    "nomeAltraLingua": null,
+    "codice": "023050",
+    "codiceCatastale": "F508",
+    "sigla": "VR",
+    "cap": [
+      "37032"
+    ],
+    "capoluogo": false,
+    "popolazione": 8953,
+    "superficie": 20.3439,
+    "coordinate": {
+      "lat": 45.4223914,
+      "lng": 11.2849456
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Mozzecane",
+    "nomeAltraLingua": null,
+    "codice": "023051",
+    "codiceCatastale": "F789",
+    "sigla": "VR",
+    "cap": [
+      "37060"
+    ],
+    "capoluogo": false,
+    "popolazione": 8200,
+    "superficie": 24.8598,
+    "coordinate": {
+      "lat": 45.3095639,
+      "lng": 10.8179169
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Negrar di Valpolicella",
+    "nomeAltraLingua": null,
+    "codice": "023052",
+    "codiceCatastale": "F861",
+    "sigla": "VR",
+    "cap": [
+      "37024"
+    ],
+    "capoluogo": false,
+    "popolazione": 16378,
+    "superficie": 40.3598,
+    "coordinate": {
+      "lat": 45.5303636,
+      "lng": 10.9382332
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Nogara",
+    "nomeAltraLingua": null,
+    "codice": "023053",
+    "codiceCatastale": "F918",
+    "sigla": "VR",
+    "cap": [
+      "37054"
+    ],
+    "capoluogo": false,
+    "popolazione": 8488,
+    "superficie": 38.5504,
+    "coordinate": {
+      "lat": 45.1778593,
+      "lng": 11.0609083
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Nogarole Rocca",
+    "nomeAltraLingua": null,
+    "codice": "023054",
+    "codiceCatastale": "F921",
+    "sigla": "VR",
+    "cap": [
+      "37060"
+    ],
+    "capoluogo": false,
+    "popolazione": 3888,
+    "superficie": 29.6593,
+    "coordinate": {
+      "lat": 45.2915088,
+      "lng": 10.8835887
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Oppeano",
+    "nomeAltraLingua": null,
+    "codice": "023055",
+    "codiceCatastale": "G080",
+    "sigla": "VR",
+    "cap": [
+      "37050"
+    ],
+    "capoluogo": false,
+    "popolazione": 10383,
+    "superficie": 46.382,
+    "coordinate": {
+      "lat": 45.3072778,
+      "lng": 11.1784606
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Palù",
+    "nomeAltraLingua": null,
+    "codice": "023056",
+    "codiceCatastale": "G297",
+    "sigla": "VR",
+    "cap": [
+      "37050"
+    ],
+    "capoluogo": false,
+    "popolazione": 1196,
+    "superficie": 13.8189,
+    "coordinate": {
+      "lat": 45.3245958,
+      "lng": 11.1548079
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Pastrengo",
+    "nomeAltraLingua": null,
+    "codice": "023057",
+    "codiceCatastale": "G365",
+    "sigla": "VR",
+    "cap": [
+      "37010"
+    ],
+    "capoluogo": false,
+    "popolazione": 3089,
+    "superficie": 8.9056,
+    "coordinate": {
+      "lat": 45.4927196,
+      "lng": 10.7996733
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Pescantina",
+    "nomeAltraLingua": null,
+    "codice": "023058",
+    "codiceCatastale": "G481",
+    "sigla": "VR",
+    "cap": [
+      "37026"
+    ],
+    "capoluogo": false,
+    "popolazione": 17630,
+    "superficie": 19.7253,
+    "coordinate": {
+      "lat": 45.4825653,
+      "lng": 10.8672579
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Peschiera del Garda",
+    "nomeAltraLingua": null,
+    "codice": "023059",
+    "codiceCatastale": "G489",
+    "sigla": "VR",
+    "cap": [
+      "37019"
+    ],
+    "capoluogo": false,
+    "popolazione": 10905,
+    "superficie": 18.0677,
+    "coordinate": {
+      "lat": 45.4389318,
+      "lng": 10.6921608
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Povegliano Veronese",
+    "nomeAltraLingua": null,
+    "codice": "023060",
+    "codiceCatastale": "G945",
+    "sigla": "VR",
+    "cap": [
+      "37064"
+    ],
+    "capoluogo": false,
+    "popolazione": 7401,
+    "superficie": 18.1326,
+    "coordinate": {
+      "lat": 45.3471272,
+      "lng": 10.8806605
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Pressana",
+    "nomeAltraLingua": null,
+    "codice": "023061",
+    "codiceCatastale": "H048",
+    "sigla": "VR",
+    "cap": [
+      "37040"
+    ],
+    "capoluogo": false,
+    "popolazione": 2511,
+    "superficie": 17.2894,
+    "coordinate": {
+      "lat": 45.2847668,
+      "lng": 11.4024443
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Rivoli Veronese",
+    "nomeAltraLingua": null,
+    "codice": "023062",
+    "codiceCatastale": "H356",
+    "sigla": "VR",
+    "cap": [
+      "37010"
+    ],
+    "capoluogo": false,
+    "popolazione": 2368,
+    "superficie": 18.2743,
+    "coordinate": {
+      "lat": 45.5712834,
+      "lng": 10.8125835
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Roncà",
+    "nomeAltraLingua": null,
+    "codice": "023063",
+    "codiceCatastale": "H522",
+    "sigla": "VR",
+    "cap": [
+      "37030"
+    ],
+    "capoluogo": false,
+    "popolazione": 3755,
+    "superficie": 18.1774,
+    "coordinate": {
+      "lat": 45.4793873,
+      "lng": 11.2896507
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Ronco all'Adige",
+    "nomeAltraLingua": null,
+    "codice": "023064",
+    "codiceCatastale": "H540",
+    "sigla": "VR",
+    "cap": [
+      "37055"
+    ],
+    "capoluogo": false,
+    "popolazione": 6195,
+    "superficie": 42.8503,
+    "coordinate": {
+      "lat": 45.3366803,
+      "lng": 11.2464761
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Roverchiara",
+    "nomeAltraLingua": null,
+    "codice": "023065",
+    "codiceCatastale": "H606",
+    "sigla": "VR",
+    "cap": [
+      "37050"
+    ],
+    "capoluogo": false,
+    "popolazione": 2596,
+    "superficie": 19.6073,
+    "coordinate": {
+      "lat": 45.2729034,
+      "lng": 11.2468901
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Roveredo di Guà",
+    "nomeAltraLingua": null,
+    "codice": "023066",
+    "codiceCatastale": "H610",
+    "sigla": "VR",
+    "cap": [
+      "37040"
+    ],
+    "capoluogo": false,
+    "popolazione": 1657,
+    "superficie": 10.1317,
+    "coordinate": {
+      "lat": 45.2734384,
+      "lng": 11.4438382
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Roverè Veronese",
+    "nomeAltraLingua": null,
+    "codice": "023067",
+    "codiceCatastale": "H608",
+    "sigla": "VR",
+    "cap": [
+      "37028"
+    ],
+    "capoluogo": false,
+    "popolazione": 2169,
+    "superficie": 36.366,
+    "coordinate": {
+      "lat": 45.593205,
+      "lng": 11.065483
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Salizzole",
+    "nomeAltraLingua": null,
+    "codice": "023068",
+    "codiceCatastale": "H714",
+    "sigla": "VR",
+    "cap": [
+      "37056"
+    ],
+    "capoluogo": false,
+    "popolazione": 3758,
+    "superficie": 30.6704,
+    "coordinate": {
+      "lat": 45.2428157,
+      "lng": 11.0846585
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "San Bonifacio",
+    "nomeAltraLingua": null,
+    "codice": "023069",
+    "codiceCatastale": "H783",
+    "sigla": "VR",
+    "cap": [
+      "37047"
+    ],
+    "capoluogo": false,
+    "popolazione": 21399,
+    "superficie": 33.9842,
+    "coordinate": {
+      "lat": 45.3958934,
+      "lng": 11.2705049
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "San Giovanni Ilarione",
+    "nomeAltraLingua": null,
+    "codice": "023070",
+    "codiceCatastale": "H916",
+    "sigla": "VR",
+    "cap": [
+      "37035"
+    ],
+    "capoluogo": false,
+    "popolazione": 4848,
+    "superficie": 25.4006,
+    "coordinate": {
+      "lat": 45.5212617,
+      "lng": 11.2361401
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "San Giovanni Lupatoto",
+    "nomeAltraLingua": null,
+    "codice": "023071",
+    "codiceCatastale": "H924",
+    "sigla": "VR",
+    "cap": [
+      "37057"
+    ],
+    "capoluogo": false,
+    "popolazione": 25427,
+    "superficie": 19.169,
+    "coordinate": {
+      "lat": 45.3796632,
+      "lng": 11.0499716
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Sanguinetto",
+    "nomeAltraLingua": null,
+    "codice": "023072",
+    "codiceCatastale": "H944",
+    "sigla": "VR",
+    "cap": [
+      "37058"
+    ],
+    "capoluogo": false,
+    "popolazione": 4318,
+    "superficie": 13.6047,
+    "coordinate": {
+      "lat": 45.1829497,
+      "lng": 11.1515942
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "San Martino Buon Albergo",
+    "nomeAltraLingua": null,
+    "codice": "023073",
+    "codiceCatastale": "I003",
+    "sigla": "VR",
+    "cap": [
+      "37036"
+    ],
+    "capoluogo": false,
+    "popolazione": 16797,
+    "superficie": 34.8548,
+    "coordinate": {
+      "lat": 45.4221859,
+      "lng": 11.0931194
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "San Mauro di Saline",
+    "nomeAltraLingua": null,
+    "codice": "023074",
+    "codiceCatastale": "H712",
+    "sigla": "VR",
+    "cap": [
+      "37030"
+    ],
+    "capoluogo": false,
+    "popolazione": 606,
+    "superficie": 11.3704,
+    "coordinate": {
+      "lat": 45.5650297,
+      "lng": 11.1125139
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "San Pietro di Morubio",
+    "nomeAltraLingua": null,
+    "codice": "023075",
+    "codiceCatastale": "I105",
+    "sigla": "VR",
+    "cap": [
+      "37050"
+    ],
+    "capoluogo": false,
+    "popolazione": 3145,
+    "superficie": 16.0104,
+    "coordinate": {
+      "lat": 45.2482909,
+      "lng": 11.2317448
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "San Pietro in Cariano",
+    "nomeAltraLingua": null,
+    "codice": "023076",
+    "codiceCatastale": "I109",
+    "sigla": "VR",
+    "cap": [
+      "37029"
+    ],
+    "capoluogo": false,
+    "popolazione": 12996,
+    "superficie": 20.3531,
+    "coordinate": {
+      "lat": 45.5175977,
+      "lng": 10.8862668
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Sant'Ambrogio di Valpolicella",
+    "nomeAltraLingua": null,
+    "codice": "023077",
+    "codiceCatastale": "I259",
+    "sigla": "VR",
+    "cap": [
+      "37015"
+    ],
+    "capoluogo": false,
+    "popolazione": 11870,
+    "superficie": 23.4139,
+    "coordinate": {
+      "lat": 45.524926,
+      "lng": 10.8341696
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Sant'Anna d'Alfaedo",
+    "nomeAltraLingua": null,
+    "codice": "023078",
+    "codiceCatastale": "I292",
+    "sigla": "VR",
+    "cap": [
+      "37020"
+    ],
+    "capoluogo": false,
+    "popolazione": 2660,
+    "superficie": 43.4925,
+    "coordinate": {
+      "lat": 45.6267918,
+      "lng": 10.950681
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "San Zeno di Montagna",
+    "nomeAltraLingua": null,
+    "codice": "023079",
+    "codiceCatastale": "I414",
+    "sigla": "VR",
+    "cap": [
+      "37010"
+    ],
+    "capoluogo": false,
+    "popolazione": 1544,
+    "superficie": 28.556,
+    "coordinate": {
+      "lat": 45.6379333,
+      "lng": 10.7321641
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Selva di Progno",
+    "nomeAltraLingua": null,
+    "codice": "023080",
+    "codiceCatastale": "I594",
+    "sigla": "VR",
+    "cap": [
+      "37030"
+    ],
+    "capoluogo": false,
+    "popolazione": 921,
+    "superficie": 41.2039,
+    "coordinate": {
+      "lat": 45.6129959,
+      "lng": 11.1383667
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Soave",
+    "nomeAltraLingua": null,
+    "codice": "023081",
+    "codiceCatastale": "I775",
+    "sigla": "VR",
+    "cap": [
+      "37038"
+    ],
+    "capoluogo": false,
+    "popolazione": 7126,
+    "superficie": 23.1336,
+    "coordinate": {
+      "lat": 45.4236004,
+      "lng": 11.2490087
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Sommacampagna",
+    "nomeAltraLingua": null,
+    "codice": "023082",
+    "codiceCatastale": "I821",
+    "sigla": "VR",
+    "cap": [
+      "37066"
+    ],
+    "capoluogo": false,
+    "popolazione": 14480,
+    "superficie": 41.0411,
+    "coordinate": {
+      "lat": 45.407413,
+      "lng": 10.840731
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Sona",
+    "nomeAltraLingua": null,
+    "codice": "023083",
+    "codiceCatastale": "I826",
+    "sigla": "VR",
+    "cap": [
+      "37060"
+    ],
+    "capoluogo": false,
+    "popolazione": 17761,
+    "superficie": 41.1396,
+    "coordinate": {
+      "lat": 45.4339925,
+      "lng": 10.8326675
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Sorgà",
+    "nomeAltraLingua": null,
+    "codice": "023084",
+    "codiceCatastale": "I850",
+    "sigla": "VR",
+    "cap": [
+      "37060"
+    ],
+    "capoluogo": false,
+    "popolazione": 2979,
+    "superficie": 31.3121,
+    "coordinate": {
+      "lat": 45.2119461,
+      "lng": 10.9799551
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Terrazzo",
+    "nomeAltraLingua": null,
+    "codice": "023085",
+    "codiceCatastale": "L136",
+    "sigla": "VR",
+    "cap": [
+      "37040"
+    ],
+    "capoluogo": false,
+    "popolazione": 2143,
+    "superficie": 20.5588,
+    "coordinate": {
+      "lat": 45.1739777,
+      "lng": 11.3992151
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Torri del Benaco",
+    "nomeAltraLingua": null,
+    "codice": "023086",
+    "codiceCatastale": "L287",
+    "sigla": "VR",
+    "cap": [
+      "37010"
+    ],
+    "capoluogo": false,
+    "popolazione": 2856,
+    "superficie": 45.9122,
+    "coordinate": {
+      "lat": 45.6080223,
+      "lng": 10.685661
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Tregnago",
+    "nomeAltraLingua": null,
+    "codice": "023087",
+    "codiceCatastale": "L364",
+    "sigla": "VR",
+    "cap": [
+      "37039"
+    ],
+    "capoluogo": false,
+    "popolazione": 5065,
+    "superficie": 37.1287,
+    "coordinate": {
+      "lat": 45.5169363,
+      "lng": 11.1650842
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Trevenzuolo",
+    "nomeAltraLingua": null,
+    "codice": "023088",
+    "codiceCatastale": "L396",
+    "sigla": "VR",
+    "cap": [
+      "37060"
+    ],
+    "capoluogo": false,
+    "popolazione": 2801,
+    "superficie": 26.7536,
+    "coordinate": {
+      "lat": 45.2714012,
+      "lng": 10.9333178
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Valeggio sul Mincio",
+    "nomeAltraLingua": null,
+    "codice": "023089",
+    "codiceCatastale": "L567",
+    "sigla": "VR",
+    "cap": [
+      "37067"
+    ],
+    "capoluogo": false,
+    "popolazione": 16040,
+    "superficie": 63.7839,
+    "coordinate": {
+      "lat": 45.3536172,
+      "lng": 10.7344034
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Velo Veronese",
+    "nomeAltraLingua": null,
+    "codice": "023090",
+    "codiceCatastale": "L722",
+    "sigla": "VR",
+    "cap": [
+      "37030"
+    ],
+    "capoluogo": false,
+    "popolazione": 772,
+    "superficie": 19.0418,
+    "coordinate": {
+      "lat": 45.6053682,
+      "lng": 11.096015
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Verona",
+    "nomeAltraLingua": null,
+    "codice": "023091",
+    "codiceCatastale": "L781",
+    "sigla": "VR",
+    "cap": [
+      "37121",
+      "37122",
+      "37123",
+      "37124",
+      "37125",
+      "37126",
+      "37127",
+      "37128",
+      "37129",
+      "37131",
+      "37132",
+      "37133",
+      "37134",
+      "37135",
+      "37136",
+      "37137",
+      "37138",
+      "37139",
+      "37141",
+      "37142"
+    ],
+    "capoluogo": true,
+    "popolazione": 255139,
+    "superficie": 198.7759,
+    "coordinate": {
+      "lat": 45.4379175,
+      "lng": 10.9938661
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Veronella",
+    "nomeAltraLingua": null,
+    "codice": "023092",
+    "codiceCatastale": "D193",
+    "sigla": "VR",
+    "cap": [
+      "37040"
+    ],
+    "capoluogo": false,
+    "popolazione": 5189,
+    "superficie": 20.6807,
+    "coordinate": {
+      "lat": 45.3208235,
+      "lng": 11.3249673
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Vestenanova",
+    "nomeAltraLingua": null,
+    "codice": "023093",
+    "codiceCatastale": "L810",
+    "sigla": "VR",
+    "cap": [
+      "37030"
+    ],
+    "capoluogo": false,
+    "popolazione": 2499,
+    "superficie": 24.3274,
+    "coordinate": {
+      "lat": 45.5732048,
+      "lng": 11.227315
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Vigasio",
+    "nomeAltraLingua": null,
+    "codice": "023094",
+    "codiceCatastale": "L869",
+    "sigla": "VR",
+    "cap": [
+      "37068"
+    ],
+    "capoluogo": false,
+    "popolazione": 10342,
+    "superficie": 30.7872,
+    "coordinate": {
+      "lat": 45.3176476,
+      "lng": 10.9430248
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Villa Bartolomea",
+    "nomeAltraLingua": null,
+    "codice": "023095",
+    "codiceCatastale": "L912",
+    "sigla": "VR",
+    "cap": [
+      "37049"
+    ],
+    "capoluogo": false,
+    "popolazione": 5895,
+    "superficie": 52.721,
+    "coordinate": {
+      "lat": 45.159344,
+      "lng": 11.3533973
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Villafranca di Verona",
+    "nomeAltraLingua": null,
+    "codice": "023096",
+    "codiceCatastale": "L949",
+    "sigla": "VR",
+    "cap": [
+      "37069"
+    ],
+    "capoluogo": false,
+    "popolazione": 32785,
+    "superficie": 57.3458,
+    "coordinate": {
+      "lat": 45.3506503,
+      "lng": 10.8458927
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Zevio",
+    "nomeAltraLingua": null,
+    "codice": "023097",
+    "codiceCatastale": "M172",
+    "sigla": "VR",
+    "cap": [
+      "37059"
+    ],
+    "capoluogo": false,
+    "popolazione": 15937,
+    "superficie": 54.9223,
+    "coordinate": {
+      "lat": 45.3762798,
+      "lng": 11.1362173
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  },
+  {
+    "nome": "Zimella",
+    "nomeAltraLingua": null,
+    "codice": "023098",
+    "codiceCatastale": "M178",
+    "sigla": "VR",
+    "cap": [
+      "37040"
+    ],
+    "capoluogo": false,
+    "popolazione": 4881,
+    "superficie": 20.3436,
+    "coordinate": {
+      "lat": 45.3639208,
+      "lng": 11.3392259
+    },
+    "zona": {
+      "nome": "Nord-est",
+      "codice": "2"
+    },
+    "regione": {
+      "nome": "Veneto",
+      "codice": "05"
+    },
+    "provincia": {
+      "nome": "Verona",
+      "codice": "023",
+      "sigla": "VR",
+      "tipo": "provincia"
+    }
+  }
+]
