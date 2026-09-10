@@ -46,6 +46,7 @@ from backend.database import SessionLocal, engine  # noqa: E402
 from backend.models import Base, Incident, Media, User  # noqa: E402
 from sqlalchemy.exc import SQLAlchemyError  # noqa: E402
 from backend.event_time import extract_event_time
+from backend.location_resolver import resolve_text_location
 
 
 USER_AGENT = "SentinelLocalBot/1.0 (+local development; contact: localhost)"
@@ -2489,17 +2490,21 @@ def coordinates_for(
     city, location_method = city_evidence
     key = city.lower()
     if allow_geocode:
-        detailed_place = detect_detailed_place(title, description, city)
-        if detailed_place:
-            coords = geocode_place(detailed_place)
+        def geocode_candidate(place: str) -> tuple[float, float] | None:
+            coords = geocode_place(place)
             time.sleep(GEOCODE_DELAY_SECONDS)
-            city_center = CITY_COORDS.get(key)
-            is_near_city = bool(coords) and (
-                not city_center
-                or distance_km(city_center[0], city_center[1], coords[0], coords[1]) <= 45
-            )
-            if coords and is_near_city:
-                return coords[0], coords[1], city, detailed_place, True
+            return coords
+
+        precise_location = resolve_text_location(
+            title,
+            description,
+            city,
+            CITY_COORDS.get(key),
+            geocode_candidate,
+        )
+        if precise_location:
+            lat, lon, address, _candidate = precise_location
+            return lat, lon, city, address, True
     if location_method == "publisher":
         return None
     if key in CITY_COORDS:
@@ -2647,7 +2652,10 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
         existing.address = address
         existing.city = city
         existing.status = "active"
+        existing_trust = existing.source_trust or ""
         existing.source_trust = source_trust_value(trust, position_from_text)
+        if "location-checked" in existing_trust:
+            existing.source_trust += "-location-checked"
         if published_at is not None:
             existing.created_date = event_at or published_at
         existing.last_seen_at = now
@@ -3288,6 +3296,10 @@ def main(*, perform_maintenance: bool = False) -> dict:
             if removed_in_pass == 0:
                 break
         db.commit()
+        from backend.repair_incident_locations import repair_recent_locations
+
+        location_repair_result = repair_recent_locations(db, limit=40)
+        db.commit()
     finally:
         db.close()
 
@@ -3319,6 +3331,8 @@ def main(*, perform_maintenance: bool = False) -> dict:
     print(f"Duplicati uniti: {removed_duplicates}")
     print(f"Posizioni ambigue corrette: {ambiguous_location_result['corrected_ambiguous_locations']}")
     print(f"Eventi conservati in attesa di posizione: {ambiguous_location_result['pending_locations']}")
+    print(f"Articoli controllati per posizione precisa: {location_repair_result['location_articles_checked']}")
+    print(f"Posizioni rese precise: {location_repair_result['precise_locations_repaired']}")
     if failed_sources:
         print("Fonti saltate:")
         for failed in failed_sources:
@@ -3342,6 +3356,7 @@ def main(*, perform_maintenance: bool = False) -> dict:
         **evidence_cleanup_result,
         "removed_duplicates": removed_duplicates,
         **ambiguous_location_result,
+        **location_repair_result,
         "failed_sources": failed_sources,
     }
 
