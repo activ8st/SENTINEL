@@ -41,6 +41,7 @@ from backend.fetch_live_incidents import (
     parse_published_at,
     parse_rss,
     save_item,
+    select_enrichment_jobs,
 )
 
 
@@ -442,6 +443,58 @@ class IncidentImportQualityTests(unittest.TestCase):
             session.flush()
             remaining = session.query(Incident).one()
             self.assertEqual({media.url for media in remaining.media}, {"https://example.test/a", "https://example.test/b"})
+        finally:
+            session.close()
+
+    def test_enrichment_jobs_skip_existing_articles_without_using_the_limit(self):
+        source = SOURCE_BY_NAME["milanotoday-direct"]
+        items = [
+            {
+                "guid": f"event-{index}",
+                "title": f"Incendio a Milano in via Test {index}",
+                "description": "Intervento dei vigili del fuoco per un incendio.",
+                "published": "",
+                "link": f"https://example.test/{index}",
+            }
+            for index in range(10)
+        ]
+        jobs, skipped = select_enrichment_jobs(
+            [(source, items)],
+            {(source.name, "event-0"), (source.name, "event-1")},
+        )
+        self.assertEqual(skipped, 2)
+        self.assertEqual(len(jobs), 8)
+        self.assertEqual(jobs[0][1]["guid"], "event-2")
+
+    def test_short_feed_summary_does_not_replace_richer_saved_description(self):
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        session = sessionmaker(bind=engine)()
+        source = SOURCE_BY_NAME["milanotoday-direct"]
+        published = email.utils.format_datetime(dt.datetime.now(dt.timezone.utc))
+        base_item = {
+            "guid": "rich-description-event",
+            "title": "Incendio a Milano in via Torino",
+            "published": published,
+            "link": "https://example.test/rich-description-event",
+        }
+        try:
+            ensure_sentinel_bot(session)
+            rich_item = {
+                **base_item,
+                "description": (
+                    "Un incendio ha coinvolto un appartamento in via Torino a Milano. "
+                    "I vigili del fuoco hanno evacuato il palazzo e messo in sicurezza la zona."
+                ),
+            }
+            self.assertTrue(save_item(session, source, rich_item))
+            session.commit()
+            rich_description = session.query(Incident).one().description
+
+            short_item = {**base_item, "description": "Incendio a Milano."}
+            self.assertFalse(save_item(session, source, short_item))
+            session.commit()
+            self.assertEqual(session.query(Incident).one().description, rich_description)
         finally:
             session.close()
 

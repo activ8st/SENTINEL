@@ -53,6 +53,7 @@ MAX_ITEMS_PER_SOURCE = 25
 MAX_ARTICLE_ENRICHMENTS_PER_SOURCE = 3
 DIRECT_ARTICLE_ENRICHMENTS_PER_SOURCE = 8
 FEED_DOWNLOAD_WORKERS = 8
+ARTICLE_ENRICHMENT_WORKERS = 6
 GEOCODE_DELAY_SECONDS = 1.1
 MAX_NEWS_AGE = dt.timedelta(days=30)
 try:
@@ -63,6 +64,7 @@ MUNICIPALITY_DATA_URL = (
     "https://cdn.jsdelivr.net/gh/RP92/comuni-italiani/data/comuni.json"
 )
 MUNICIPALITY_CACHE = PROJECT_ROOT / ".sentinel-cache" / "comuni-regionali.json"
+_MUNICIPALITY_CATALOG_STATE: dict[str, int | str] | None = None
 ACTIVE_REGIONS = {
     "Lombardia": "lombardia",
     "Lazio": "lazio",
@@ -1966,6 +1968,10 @@ def _municipality_rows_from_payload(payload: bytes) -> list[dict]:
 
 def load_active_region_municipalities() -> dict[str, int | str]:
     """Recognize all active-region towns and deeply scan the four metro areas."""
+    global _MUNICIPALITY_CATALOG_STATE
+    if _MUNICIPALITY_CATALOG_STATE is not None:
+        return {**_MUNICIPALITY_CATALOG_STATE, "origin": "memory"}
+
     rows = []
     origin = "fallback"
     try:
@@ -2032,12 +2038,14 @@ def load_active_region_municipalities() -> dict[str, int | str]:
 
     SOURCES.extend(dynamic_sources)
     SOURCE_BY_NAME.update({source.name: source for source in dynamic_sources})
-    return {
+    result = {
         "municipalities": recognized_municipalities,
         "focus_municipalities": sum(len(items) for items in municipalities_by_focus.values()),
         "municipality_sources": len(dynamic_sources),
         "origin": origin,
     }
+    _MUNICIPALITY_CATALOG_STATE = result
+    return result
 
 
 def xml_local_name(tag: str) -> str:
@@ -2590,7 +2598,8 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
 
     if existing:
         existing.title = title
-        existing.description = description_with_reference
+        if len(description_with_reference) >= len(existing.description or ""):
+            existing.description = description_with_reference
         existing.type = classify_type(title, description, source.default_type)
         existing.severity = classify_severity(title, description)
         existing.latitude = lat
@@ -3040,6 +3049,33 @@ def ensure_sentinel_bot(db) -> None:
         db.flush()
 
 
+def select_enrichment_jobs(
+    downloaded_sources: list[tuple[Source, list[dict[str, str]]]],
+    known_source_events: set[tuple[str, str]],
+) -> tuple[list[tuple[Source, dict[str, str]]], int]:
+    jobs: list[tuple[Source, dict[str, str]]] = []
+    skipped_existing = 0
+    for source, items in downloaded_sources:
+        enrichment_limit = (
+            DIRECT_ARTICLE_ENRICHMENTS_PER_SOURCE
+            if source.name in FULL_ARTICLE_SOURCE_NAMES
+            else MAX_ARTICLE_ENRICHMENTS_PER_SOURCE
+        )
+        selected_items = 0
+        for item in items:
+            if selected_items >= enrichment_limit:
+                break
+            if not is_relevant_incident(item.get("title", ""), item.get("description", "")):
+                continue
+            event_key = (source.name, item.get("guid", "")[:500])
+            if event_key in known_source_events:
+                skipped_existing += 1
+                continue
+            jobs.append((source, item))
+            selected_items += 1
+    return jobs, skipped_existing
+
+
 def main(*, perform_maintenance: bool = False) -> dict:
     municipality_catalog = load_active_region_municipalities()
     Base.metadata.create_all(bind=engine)
@@ -3048,6 +3084,8 @@ def main(*, perform_maintenance: bool = False) -> dict:
     seen = 0
     failed_items = 0
     failed_sources = []
+    articles_enriched = 0
+    articles_skipped_existing = 0
 
     try:
         ensure_sentinel_bot(db)
@@ -3074,6 +3112,16 @@ def main(*, perform_maintenance: bool = False) -> dict:
             broad_publisher_cleanup_result = cleanup_broad_publisher_locations(db)
             evidence_cleanup_result = cleanup_location_evidence(db)
             db.commit()
+        known_source_events = {
+            (source, source_event_id)
+            for source, source_event_id in db.query(
+                Incident.source,
+                Incident.source_event_id,
+            ).filter(
+                Incident.source.isnot(None),
+                Incident.source_event_id.isnot(None),
+            )
+        }
         downloaded_sources: list[tuple[Source, list[dict[str, str]]]] = []
         with ThreadPoolExecutor(max_workers=FEED_DOWNLOAD_WORKERS) as executor:
             pending = {
@@ -3115,22 +3163,29 @@ def main(*, perform_maintenance: bool = False) -> dict:
             if completed_count % 20 == 0 or completed_count == len(downloaded_sources):
                 print(f"Feed pubblicati: {completed_count}/{len(downloaded_sources)}")
 
-        # Enrich only the newest relevant articles. A later save updates the
-        # same source event, adding precise text/time without creating a copy.
-        for completed_count, (source, items) in enumerate(downloaded_sources, start=1):
-            enrichment_limit = (
-                DIRECT_ARTICLE_ENRICHMENTS_PER_SOURCE
-                if source.name in FULL_ARTICLE_SOURCE_NAMES
-                else MAX_ARTICLE_ENRICHMENTS_PER_SOURCE
-            )
-            enriched_items = 0
-            for item in items:
-                if enriched_items >= enrichment_limit:
-                    break
-                if not is_relevant_incident(item.get("title", ""), item.get("description", "")):
+        # Enrich only never-seen relevant articles. Existing events retain the
+        # richer text already stored instead of downloading the same page every
+        # 15 minutes.
+        enrichment_jobs, articles_skipped_existing = select_enrichment_jobs(
+            downloaded_sources,
+            known_source_events,
+        )
+
+        with ThreadPoolExecutor(max_workers=ARTICLE_ENRICHMENT_WORKERS) as executor:
+            pending_enrichments = {
+                executor.submit(enrich_item_description, source, item): (source, item)
+                for source, item in enrichment_jobs
+            }
+            for completed_count, future in enumerate(as_completed(pending_enrichments), start=1):
+                source, item = pending_enrichments[future]
+                try:
+                    enriched = future.result()
+                except Exception as exc:
+                    failed_sources.append(f"{source.name} articolo: {exc}")
                     continue
-                enrich_item_description(source, item)
-                enriched_items += 1
+                if not enriched:
+                    continue
+                articles_enriched += 1
                 try:
                     with db.begin_nested():
                         item_added = save_item(db, source, item)
@@ -3139,10 +3194,10 @@ def main(*, perform_maintenance: bool = False) -> dict:
                 except SQLAlchemyError as exc:
                     failed_items += 1
                     print(f"Approfondimento saltato da {source.name}: {exc.__class__.__name__}")
-            db.commit()
-
-            if completed_count % 20 == 0 or completed_count == len(downloaded_sources):
-                print(f"Fonti approfondite: {completed_count}/{len(downloaded_sources)}")
+                if completed_count % 20 == 0:
+                    db.commit()
+                    print(f"Articoli approfonditi: {completed_count}/{len(enrichment_jobs)}")
+        db.commit()
 
         removed_duplicates = cleanup_duplicate_incidents(db)
         db.commit()
@@ -3159,6 +3214,8 @@ def main(*, perform_maintenance: bool = False) -> dict:
     print(f"Fonti lette: {len(SOURCES) - len(failed_sources)}/{len(SOURCES)}")
     print(f"Notizie analizzate: {seen}")
     print(f"Nuovi eventi aggiunti: {added}")
+    print(f"Articoli nuovi approfonditi: {articles_enriched}")
+    print(f"Approfondimenti gia presenti evitati: {articles_skipped_existing}")
     print(f"Notizie non salvate per errore database: {failed_items}")
     print(f"Notizie oltre 30 giorni rimosse: {removed_old}")
     print(f"Posizioni generiche corrette: {cleanup_result['updated_generic_locations']}")
@@ -3184,6 +3241,8 @@ def main(*, perform_maintenance: bool = False) -> dict:
         "sources_total": len(SOURCES),
         "items_seen": seen,
         "added": added,
+        "articles_enriched": articles_enriched,
+        "articles_skipped_existing": articles_skipped_existing,
         "failed_items": failed_items,
         "removed_old": removed_old,
         **cleanup_result,
