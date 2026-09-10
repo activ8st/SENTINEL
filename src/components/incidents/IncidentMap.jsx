@@ -4,7 +4,124 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { TYPE_CONFIG } from '@/components/data/mockData';
 import { UserRound } from 'lucide-react';
 
-const coordinateKey = (incident) => `${Number(incident.latitude).toFixed(4)},${Number(incident.longitude).toFixed(4)}`;
+const INCIDENT_SOURCE_ID = 'incident-points';
+const CLUSTER_LAYER_ID = 'incident-clusters';
+const CLUSTER_COUNT_LAYER_ID = 'incident-cluster-count';
+const POINT_LAYER_ID = 'incident-point';
+const POINT_ICON_LAYER_ID = 'incident-point-icon';
+
+const clusterLayer = {
+  id: CLUSTER_LAYER_ID,
+  type: 'circle',
+  source: INCIDENT_SOURCE_ID,
+  filter: ['has', 'point_count'],
+  paint: {
+    'circle-color': '#0d1017',
+    'circle-stroke-color': '#10b981',
+    'circle-stroke-width': 3,
+    'circle-opacity': 0.96,
+    'circle-radius': [
+      'step', ['get', 'point_count'],
+      20,
+      10, 24,
+      50, 30,
+      200, 38,
+      500, 46,
+    ],
+  },
+};
+
+const clusterCountLayer = {
+  id: CLUSTER_COUNT_LAYER_ID,
+  type: 'symbol',
+  source: INCIDENT_SOURCE_ID,
+  filter: ['has', 'point_count'],
+  layout: {
+    'text-field': ['get', 'point_count_abbreviated'],
+    'text-size': 13,
+    'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+  },
+  paint: {
+    'text-color': '#ffffff',
+  },
+};
+
+const pointLayer = {
+  id: POINT_LAYER_ID,
+  type: 'circle',
+  source: INCIDENT_SOURCE_ID,
+  filter: ['!', ['has', 'point_count']],
+  paint: {
+    'circle-color': '#0d1017',
+    'circle-radius': 18,
+    'circle-stroke-color': [
+      'match', ['get', 'type'],
+      'crime', '#ef4444',
+      'fire', '#f97316',
+      'accident', '#f59e0b',
+      'medical', '#f43f5e',
+      'suspicious', '#a855f7',
+      'traffic', '#10b981',
+      'weather', '#3b82f6',
+      '#94a3b8',
+    ],
+    'circle-stroke-width': 2,
+    'circle-opacity': 0.96,
+  },
+};
+
+const pointIconLayer = {
+  id: POINT_ICON_LAYER_ID,
+  type: 'symbol',
+  source: INCIDENT_SOURCE_ID,
+  filter: ['!', ['has', 'point_count']],
+  layout: {
+    'icon-image': ['get', 'iconId'],
+    'icon-size': 1,
+    'icon-allow-overlap': true,
+    'icon-ignore-placement': true,
+  },
+};
+
+const visualCoordinatesFor = (incidents = []) => {
+  const groups = new globalThis.Map();
+  const coordinates = new globalThis.Map();
+
+  incidents.forEach(incident => {
+    const latitude = Number(incident.latitude);
+    const longitude = Number(incident.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+    const key = `${latitude.toFixed(5)},${longitude.toFixed(5)}`;
+    const group = groups.get(key) || [];
+    group.push(incident);
+    groups.set(key, group);
+  });
+
+  groups.forEach(group => {
+    group
+      .sort((left, right) => String(left.id).localeCompare(String(right.id)))
+      .forEach((incident, index) => {
+        const latitude = Number(incident.latitude);
+        const longitude = Number(incident.longitude);
+        if (index === 0) {
+          coordinates.set(String(incident.id), [longitude, latitude]);
+          return;
+        }
+
+        const angle = index * Math.PI * (3 - Math.sqrt(5));
+        const radiusMeters = Math.min(190, 32 * Math.sqrt(index));
+        const latitudeOffset = (radiusMeters / 111320) * Math.sin(angle);
+        const longitudeScale = Math.max(0.2, Math.cos(latitude * Math.PI / 180));
+        const longitudeOffset = (radiusMeters / (111320 * longitudeScale)) * Math.cos(angle);
+        coordinates.set(
+          String(incident.id),
+          [longitude + longitudeOffset, latitude + latitudeOffset]
+        );
+      });
+  });
+
+  return coordinates;
+};
 
 const createRadiusCircle = (center, radiusKm, points = 96) => {
   if (!center || !radiusKm) return null;
@@ -34,39 +151,6 @@ const createRadiusCircle = (center, radiusKm, points = 96) => {
   };
 };
 
-const spreadOverlappingIncidents = (incidents = []) => {
-  const groups = incidents.reduce((acc, incident) => {
-    const key = coordinateKey(incident);
-    acc[key] = acc[key] || [];
-    acc[key].push(incident);
-    return acc;
-  }, {});
-
-  return incidents.map((incident) => {
-    const group = groups[coordinateKey(incident)] || [];
-    if (group.length <= 1) {
-      return {
-        incident,
-        markerLatitude: incident.latitude,
-        markerLongitude: incident.longitude,
-      };
-    }
-
-    const index = group.findIndex((item) => item.id === incident.id);
-    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-    const angle = index * goldenAngle;
-    const ring = Math.floor(Math.sqrt(index));
-    const radius = Math.min(0.018, 0.0011 + ring * 0.00125 + group.length * 0.00008);
-    const latScale = Math.cos(Number(incident.latitude) * Math.PI / 180) || 1;
-
-    return {
-      incident,
-      markerLatitude: Number(incident.latitude) + Math.sin(angle) * radius,
-      markerLongitude: Number(incident.longitude) + (Math.cos(angle) * radius) / latScale,
-    };
-  });
-};
-
 export default function IncidentMap({
   incidents = [],
   center,
@@ -83,6 +167,7 @@ export default function IncidentMap({
   const mapRef = useRef(null);
   const containerRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapCursor, setMapCursor] = useState('grab');
 
   const defaultCenter = userLocation 
     ? [userLocation.lat, userLocation.lng] 
@@ -193,11 +278,75 @@ export default function IncidentMap({
     }
   };
 
-  const visibleMarkers = useMemo(() => spreadOverlappingIncidents(incidents), [incidents]);
+  const addIncidentIcons = () => {
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+
+    Object.entries(TYPE_CONFIG).forEach(([type, config]) => {
+      const iconId = `incident-${type}`;
+      if (map.hasImage(iconId)) return;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const context = canvas.getContext('2d');
+      context.clearRect(0, 0, 64, 64);
+      context.font = '38px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(config.emoji || '!', 32, 34);
+      map.addImage(iconId, context.getImageData(0, 0, 64, 64), { pixelRatio: 2 });
+    });
+  };
+
+  const incidentsById = useMemo(
+    () => new globalThis.Map(incidents.map(incident => [String(incident.id), incident])),
+    [incidents]
+  );
+  const visualCoordinates = useMemo(() => visualCoordinatesFor(incidents), [incidents]);
+  const incidentGeoJSON = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: incidents
+      .filter(incident => Number.isFinite(Number(incident.latitude)) && Number.isFinite(Number(incident.longitude)))
+      .map(incident => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: visualCoordinates.get(String(incident.id)),
+        },
+        properties: {
+          incidentId: String(incident.id),
+          type: incident.type || 'other',
+          iconId: `incident-${TYPE_CONFIG[incident.type] ? incident.type : 'other'}`,
+        },
+      })),
+  }), [incidents, visualCoordinates]);
   const radiusCircleGeoJSON = useMemo(
     () => showRadius ? createRadiusCircle(userLocation, radiusKm) : null,
     [showRadius, userLocation, radiusKm]
   );
+
+  const handleMapClick = event => {
+    const feature = event.features?.[0];
+    if (!feature) return;
+
+    if (feature.layer.id === CLUSTER_LAYER_ID) {
+      const source = mapRef.current?.getMap().getSource(INCIDENT_SOURCE_ID);
+      if (!source) return;
+      source.getClusterExpansionZoom(feature.properties.cluster_id, (error, expansionZoom) => {
+        if (error || !mapRef.current) return;
+        mapRef.current.easeTo({
+          center: feature.geometry.coordinates,
+          zoom: Math.min(expansionZoom, 17),
+          duration: 700,
+        });
+      });
+      return;
+    }
+
+    const incident = incidentsById.get(String(feature.properties.incidentId));
+    if (incident && onIncidentClick) onIncidentClick(incident);
+  };
 
   return (
     <div 
@@ -216,7 +365,12 @@ export default function IncidentMap({
         ref={mapRef}
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
-        onLoad={() => { add3DBuildingsLayer(); setMapLoaded(true); }}
+        onClick={handleMapClick}
+        onMouseEnter={() => setMapCursor('pointer')}
+        onMouseLeave={() => setMapCursor('grab')}
+        interactiveLayerIds={[CLUSTER_LAYER_ID, POINT_LAYER_ID, POINT_ICON_LAYER_ID]}
+        cursor={mapCursor}
+        onLoad={() => { addIncidentIcons(); add3DBuildingsLayer(); setMapLoaded(true); }}
         minPitch={0}
         maxPitch={55}
         minZoom={3}
@@ -234,6 +388,20 @@ export default function IncidentMap({
             <Layer id="user-radius-line" type="line" paint={{ 'line-color': '#2563eb', 'line-width': 2, 'line-opacity': 0.7 }} />
           </Source>
         )}
+
+        <Source
+          id={INCIDENT_SOURCE_ID}
+          type="geojson"
+          data={incidentGeoJSON}
+          cluster
+          clusterMaxZoom={16}
+          clusterRadius={50}
+        >
+          <Layer {...clusterLayer} />
+          <Layer {...clusterCountLayer} />
+          <Layer {...pointLayer} />
+          <Layer {...pointIconLayer} />
+        </Source>
 
         {/* 1. User Physical GPS Location Marker */}
         {userLocation && (
@@ -256,32 +424,6 @@ export default function IncidentMap({
           </Marker>
         )}
 
-        {/* 2. Sleek Citizen Emoji-Only Map Markers */}
-        {visibleMarkers.map(({ incident, markerLatitude, markerLongitude }) => {
-          const cfg = TYPE_CONFIG[incident.type] || TYPE_CONFIG.other;
-
-          return (
-            <Marker
-              key={incident.id}
-              latitude={markerLatitude}
-              longitude={markerLongitude}
-              anchor="center"
-              onClick={e => {
-                e.originalEvent.stopPropagation();
-                if (onIncidentClick) onIncidentClick(incident);
-              }}
-            >
-              <div 
-                title={`${incident.title} - ${incident.address || incident.city}`} 
-                className="cursor-pointer group flex items-center justify-center"
-              >
-                <div className="w-9.5 h-9.5 rounded-full bg-[#0d1017]/95 border-2 border-white/30 shadow-2xl flex items-center justify-center text-base transition-all duration-300 transform group-hover:scale-130 group-hover:border-[#10b981] group-hover:shadow-emerald-500/50">
-                  <span>{cfg.emoji || '⚠️'}</span>
-                </div>
-              </div>
-            </Marker>
-          );
-        })}
       </Map>
     </div>
   );

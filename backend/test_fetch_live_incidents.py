@@ -502,6 +502,35 @@ class IncidentImportQualityTests(unittest.TestCase):
         finally:
             session.close()
 
+    def test_duplicate_cleanup_includes_dynamic_news_sources(self):
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        session = sessionmaker(bind=engine)()
+        when = dt.datetime(2026, 9, 10, 8, 0)
+        try:
+            shared_url = "https://example.test/shared-article"
+            events = [
+                Incident(
+                    id=f"dynamic-{index}", type="fire", title=title,
+                    description=title, severity="medium", latitude=45.46,
+                    longitude=9.19, city="Milano", address="Milano",
+                    status="active", created_date=when, last_seen_at=when,
+                    source=f"dynamic-source-{index}", source_event_id=f"dynamic-{index}",
+                    media=[Media(url=shared_url, type="document")],
+                )
+                for index, title in enumerate((
+                    "Incendio in un deposito a Milano",
+                    "Fiamme in un magazzino nel capoluogo lombardo",
+                ))
+            ]
+            session.add_all(events)
+            session.flush()
+
+            self.assertEqual(cleanup_duplicate_incidents(session), 1)
+            self.assertEqual(session.query(Incident).count(), 1)
+        finally:
+            session.close()
+
     def test_ambiguous_location_is_retained_but_hidden_until_verified(self):
         engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(engine)

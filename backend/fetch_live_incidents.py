@@ -3009,7 +3009,10 @@ def likely_same_report(primary: Incident, incident: Incident) -> bool:
 def cleanup_duplicate_incidents(db) -> int:
     candidates = (
         db.query(Incident)
-        .filter(Incident.source.in_(list(SOURCE_BY_NAME)))
+        .filter(
+            Incident.source.isnot(None),
+            Incident.source != "user",
+        )
         .order_by(Incident.created_date.asc())
         .all()
     )
