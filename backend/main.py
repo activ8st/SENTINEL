@@ -166,6 +166,7 @@ def get_incidents(skip: int = 0, limit: int = 2000, db: Session = Depends(get_db
     all_incidents = (
         db.query(models.Incident)
         .options(selectinload(models.Incident.media))
+        .filter(models.Incident.status.in_(["active", "monitoring"]))
         .order_by(models.Incident.created_date.desc())
         .all()
     )

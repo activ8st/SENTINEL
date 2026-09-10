@@ -40,6 +40,7 @@ from backend.fetch_live_incidents import (
     municipality_source,
     parse_published_at,
     parse_rss,
+    revalidate_ambiguous_locations,
     save_item,
     select_enrichment_jobs,
 )
@@ -302,6 +303,61 @@ class IncidentImportQualityTests(unittest.TestCase):
             "Roma",
         )
 
+    def test_article_body_location_outranks_a_different_city_in_title(self):
+        self.assertEqual(
+            detect_city_evidence(
+                "Feriti trasportati all'ospedale di Cesena",
+                "L'incidente e avvenuto nel comune di Sant'Agata Feltria.",
+                "riminitoday-diretto",
+            ),
+            ("Sant'Agata Feltria", "event-municipality"),
+        )
+
+    def test_common_words_are_not_mistaken_for_municipalities(self):
+        examples = (
+            ("Allerta per piene e corsi minori", "Miglioramento nel pomeriggio"),
+            ("Raccolta fondi dopo l'incendio", "Donazioni aperte per la ricostruzione"),
+            ("Cento uomini impegnati contro le fiamme", "Incendio sul monte Morrone"),
+            ("Incidente, due minori feriti", "Lo scontro e avvenuto ad Aci Sant'Antonio"),
+            ("Vandalizzato il Ponte dei Martiri", "Il monumento e stato danneggiato"),
+            ("Emergenza sangue: senza donazioni non si opera", "Appello nazionale"),
+        )
+        for title, description in examples:
+            with self.subTest(title=title):
+                detected = detect_city(title, description, "google-news-incidenti")
+                self.assertNotIn(detected, {"Minori", "Fondi", "Cento", "Ponte", "Opera"})
+
+        self.assertIsNone(
+            detect_city(
+                "Intervento sullo storico canale",
+                "Potenziata la funzionalita dello storico manufatto",
+                "google-news-incidenti",
+            )
+        )
+
+    def test_ambiguous_municipality_is_accepted_with_explicit_context(self):
+        examples = (
+            ("Incidente a Medicina, due feriti", "Medicina"),
+            ("Russi, arrestato un uomo", "Russi"),
+            ("Incendio a Marino: evacuata una palazzina", "Marino"),
+            ("Nel comune di Minori scatta l'allerta", "Minori"),
+            ("Canale di Medicina: lavori di sicurezza", "Medicina"),
+            ("Tentato omicidio di Medicina: arrestato un uomo", "Medicina"),
+            ("Svolta nel caso di Medicina: fermato l'aggressore", "Medicina"),
+        )
+        for title, expected in examples:
+            with self.subTest(title=title):
+                self.assertEqual(detect_city(title, "", "google-news-incidenti"), expected)
+
+    def test_san_marino_is_not_confused_with_marino(self):
+        self.assertIsNone(
+            detect_city(
+                "San Marino, incidente in aeroporto",
+                "Aereo danneggiato ma piloti illesi",
+                "google-news-incidenti",
+            )
+        )
+
     def test_monte_livata_is_not_placed_in_roma_center(self):
         self.assertEqual(
             detect_city(
@@ -443,6 +499,76 @@ class IncidentImportQualityTests(unittest.TestCase):
             session.flush()
             remaining = session.query(Incident).one()
             self.assertEqual({media.url for media in remaining.media}, {"https://example.test/a", "https://example.test/b"})
+        finally:
+            session.close()
+
+    def test_ambiguous_location_is_retained_but_hidden_until_verified(self):
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        session = sessionmaker(bind=engine)()
+        try:
+            false_location = Incident(
+                id="ambiguous-minori", type="weather",
+                title="Allerta per piene e corsi minori",
+                description="Previsto un miglioramento nel pomeriggio. Fonte: BolognaToday. Localizzazione: Minori.",
+                severity="low", latitude=40.65, longitude=14.62,
+                city="Minori", address="Minori", status="active",
+                created_date=dt.datetime.now(), source="bolognatoday-direct",
+                source_event_id="ambiguous-minori",
+            )
+            correctable = Incident(
+                id="ambiguous-ponte", type="crime",
+                title="Vandalizzato il monumento del Ponte dei Martiri",
+                description="Il monumento nel centro di Ravenna e stato danneggiato. Fonte: RavennaToday. Localizzazione: Ponte.",
+                severity="low", latitude=41.21, longitude=14.69,
+                city="Ponte", address="Ponte", status="active",
+                created_date=dt.datetime.now(), source="ravennatoday-rss",
+                source_event_id="ambiguous-ponte",
+            )
+            session.add_all([false_location, correctable])
+            session.flush()
+
+            result = revalidate_ambiguous_locations(session)
+            self.assertEqual(result, {"corrected_ambiguous_locations": 1, "pending_locations": 1})
+            self.assertEqual(false_location.status, "location_pending")
+            self.assertEqual(correctable.city, "Ravenna")
+            self.assertEqual(correctable.status, "active")
+        finally:
+            session.close()
+
+    def test_duplicate_cleanup_resolves_connected_link_chains(self):
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        session = sessionmaker(bind=engine)()
+        when = dt.datetime(2026, 9, 6, 8, 0)
+        try:
+            events = [
+                Incident(
+                    id=f"chain-{index}", type="fire", title=title,
+                    description=title, severity="medium", latitude=45.46,
+                    longitude=9.19, city="Milano", address="Milano",
+                    status="active", created_date=when + dt.timedelta(minutes=index),
+                    last_seen_at=when, source="milanotoday-direct",
+                    source_event_id=f"chain-{index}",
+                    media=[Media(url=url, type="document") for url in urls],
+                )
+                for index, (title, urls) in enumerate((
+                    ("Incendio in un deposito a Milano", ("https://example.test/one",)),
+                    ("Fiamme in un magazzino milanese", ("https://example.test/two",)),
+                    ("Rogo nel deposito, vigili al lavoro", ("https://example.test/one", "https://example.test/two")),
+                ))
+            ]
+            session.add_all(events)
+            session.flush()
+            removed = 0
+            while True:
+                current = cleanup_duplicate_incidents(session)
+                removed += current
+                session.flush()
+                if current == 0:
+                    break
+            self.assertEqual(removed, 2)
+            self.assertEqual(session.query(Incident).count(), 1)
         finally:
             session.close()
 

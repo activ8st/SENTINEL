@@ -102,7 +102,7 @@ EMILIA_ROMAGNA_CITIES = {
     "fosso ghiaia", "milano marittima", "fornace zarattini", "lavezzola",
     "voltana", "san bernardino",
     "castel san pietro", "castel san pietro terme",
-    "pinarella", "lido di savio", "porto fuori",
+    "medicina", "pinarella", "lido di savio", "porto fuori",
 }
 
 # The active product areas are whole regions. Municipality names are also used
@@ -2174,7 +2174,42 @@ def format_city_name(city: str) -> str:
     return " ".join(word.lower() if index and word in lowered else word for index, word in enumerate(words))
 
 
-def find_city_mentions(text: str) -> list[tuple[int, int, str]]:
+AMBIGUOUS_CITY_NAMES = {
+    "cento", "classe", "dello", "fondi", "marino", "medicina", "meta", "minori",
+    "opera", "pace", "ponte", "rocca", "russi", "sala",
+}
+
+
+def is_explicit_ambiguous_city(text: str, start: int, city: str) -> bool:
+    before = text[max(0, start - 45):start]
+    after = text[start + len(city):start + len(city) + 30]
+    if city == "marino" and re.search(r"\bsan\s+$", before):
+        return False
+    if city == "ponte" and re.match(
+        r"\s+(?:dei|del|della|sul|sulla|milvio|vecchio|nuovo|ronco|rigossa)\b",
+        after,
+    ):
+        return False
+    if (start == 0 or re.search(r"[.!?;:]\s*$", before)) and re.match(r"\s*[,;:().-]", after):
+        return True
+    explicit_prefix = re.search(
+        r"(?:\bcomune\s+di|\bterritorio\s+di|\bfrazione\s+di|\blocalita\s+|"
+        r"\ba|\bad|\bpresso|\bverso|\bvicino\s+a|\bnei\s+pressi\s+di|"
+        r"\bnelle\s+campagne\s+di)\s*$",
+        before,
+    )
+    event_name_prefix = re.search(
+        r"\b(?:allerta|aggressione|caso|canale|furto|incendio|incidente|omicidio|"
+        r"rapina|rissa|scontro)\s+(?:a|di)\s*$",
+        before,
+    )
+    return bool(
+        (explicit_prefix or event_name_prefix)
+        and re.match(r"\s*(?:[,;:().-]|$)", after)
+    )
+
+
+def find_city_mentions(text: str, *, allow_ambiguous: bool = False) -> list[tuple[int, int, str]]:
     mentions = []
     for city in RECOGNIZED_CITIES:
         for match in re.finditer(rf"\b{re.escape(city)}\b", text):
@@ -2184,6 +2219,11 @@ def find_city_mentions(text: str) -> list[tuple[int, int, str]]:
                 prefix,
             ):
                 continue
+            if city == "marino" and re.search(r"\bsan\s+$", prefix):
+                continue
+            if city in AMBIGUOUS_CITY_NAMES and not allow_ambiguous:
+                if not is_explicit_ambiguous_city(text, match.start(), city):
+                    continue
             mentions.append((match.start(), -len(city), city))
     return sorted(mentions)
 
@@ -2231,36 +2271,34 @@ def detect_city_evidence(
     title_text = normalize(article_title)
     description_text = normalize(article_description)
 
-    # Explicit incident municipality outranks hospitals and responding units.
-    for text in (title_text, description_text):
+    # Explicit municipality in the article body outranks the headline,
+    # hospitals and responding units.
+    for text in (description_text, title_text):
         match = re.search(r"\b(?:nel territorio del comune di|nel comune di)\s+", text)
         if match:
-            mentions = find_city_mentions(text[match.end():match.end() + 80])
+            mentions = find_city_mentions(
+                text[match.end():match.end() + 80],
+                allow_ambiguous=True,
+            )
             if mentions and mentions[0][0] == 0:
                 return format_city_name(mentions[0][2]), "event-municipality"
+
+    city_from_context = detect_event_city_from_context(description_text)
+    if city_from_context:
+        return city_from_context, "description-context"
 
     city_from_context = detect_event_city_from_context(title_text)
     if city_from_context:
         return city_from_context, "title-context"
 
-    city_from_context = detect_event_city_from_context(description_text)
-    if city_from_context:
-        return city_from_context, "description-context"
+    description_mentions = unique_city_mentions(description_text)
+    if len(description_mentions) == 1:
+        return format_city_name(description_mentions[0]), "description"
 
     title_mentions = unique_city_mentions(title_text)
     if len(title_mentions) == 1:
         return format_city_name(title_mentions[0]), "title"
     if len(title_mentions) > 1:
-        return None
-
-    city_from_context = detect_event_city_from_context(description_text)
-    if city_from_context:
-        return city_from_context, "description-context"
-
-    description_mentions = unique_city_mentions(description_text)
-    if len(description_mentions) == 1:
-        return format_city_name(description_mentions[0]), "description"
-    if len(description_mentions) > 1:
         return None
 
     combined_text = f"{title_text} {description_text}".strip()
@@ -2411,7 +2449,7 @@ def detect_named_place(title: str, description: str) -> str | None:
 
 
 def detect_detailed_place(title: str, description: str, city: str) -> str | None:
-    text = strip_sentinel_note(f"{title}. {description}")
+    text = strip_sentinel_note(f"{description}. {title}")
     city_norm = normalize(city)
     place_types = (
         r"via|viale|corso|piazza|piazzale|lungomare|strada|statale|provinciale|"
@@ -2583,6 +2621,8 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
     if coords is None:
         if existing:
             existing.last_seen_at = now
+            if normalize(existing.city) in AMBIGUOUS_CITY_NAMES:
+                existing.status = "location_pending"
         return False
     lat, lon, city, address, position_from_text = coords
     if not is_allowed_area(city, lat, lon):
@@ -2606,6 +2646,7 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
         existing.longitude = lon
         existing.address = address
         existing.city = city
+        existing.status = "active"
         existing.source_trust = source_trust_value(trust, position_from_text)
         if published_at is not None:
             existing.created_date = event_at or published_at
@@ -3014,6 +3055,11 @@ def cleanup_duplicate_incidents(db) -> int:
             if media.url and media.url not in existing_urls:
                 primary.media.append(Media(url=media.url, type=media.type))
                 existing_urls.add(media.url)
+        for url in existing_urls:
+            seen_by_link[url] = primary
+        seen_by_title[key] = primary
+        if precise_address:
+            seen_by_precise_event[event_key] = primary
         primary.last_seen_at = max(
             primary.last_seen_at or primary.created_date,
             incident.last_seen_at or incident.created_date,
@@ -3025,6 +3071,38 @@ def cleanup_duplicate_incidents(db) -> int:
         db.delete(incident)
         removed += 1
     return removed
+
+
+def revalidate_ambiguous_locations(db) -> dict[str, int]:
+    candidates = (
+        db.query(Incident)
+        .filter(Incident.source.in_(list(SOURCE_BY_NAME)))
+        .all()
+    )
+    corrected = 0
+    pending = 0
+    for incident in candidates:
+        if normalize(incident.city) not in AMBIGUOUS_CITY_NAMES:
+            continue
+        raw_description = strip_sentinel_note(incident.description)
+        coords = coordinates_for(
+            incident.title,
+            raw_description,
+            incident.source,
+            allow_geocode=False,
+        )
+        if coords is None:
+            incident.status = "location_pending"
+            pending += 1
+            continue
+        lat, lon, city, address, _position_from_text = coords
+        incident.latitude = lat
+        incident.longitude = lon
+        incident.city = city
+        incident.address = address
+        incident.status = "active"
+        corrected += 1
+    return {"corrected_ambiguous_locations": corrected, "pending_locations": pending}
 
 
 def cleanup_old_incidents(db) -> int:
@@ -3112,6 +3190,8 @@ def main(*, perform_maintenance: bool = False) -> dict:
             broad_publisher_cleanup_result = cleanup_broad_publisher_locations(db)
             evidence_cleanup_result = cleanup_location_evidence(db)
             db.commit()
+        ambiguous_location_result = revalidate_ambiguous_locations(db)
+        db.commit()
         known_source_events = {
             (source, source_event_id)
             for source, source_event_id in db.query(
@@ -3120,6 +3200,7 @@ def main(*, perform_maintenance: bool = False) -> dict:
             ).filter(
                 Incident.source.isnot(None),
                 Incident.source_event_id.isnot(None),
+                Incident.status != "location_pending",
             )
         }
         downloaded_sources: list[tuple[Source, list[dict[str, str]]]] = []
@@ -3199,7 +3280,13 @@ def main(*, perform_maintenance: bool = False) -> dict:
                     print(f"Articoli approfonditi: {completed_count}/{len(enrichment_jobs)}")
         db.commit()
 
-        removed_duplicates = cleanup_duplicate_incidents(db)
+        removed_duplicates = 0
+        while True:
+            removed_in_pass = cleanup_duplicate_incidents(db)
+            removed_duplicates += removed_in_pass
+            db.flush()
+            if removed_in_pass == 0:
+                break
         db.commit()
     finally:
         db.close()
@@ -3230,6 +3317,8 @@ def main(*, perform_maintenance: bool = False) -> dict:
     print(f"Posizioni corrette con nuova verifica: {evidence_cleanup_result['updated_location_evidence']}")
     print(f"Eventi senza luogo verificabile rimossi: {evidence_cleanup_result['removed_without_location_evidence']}")
     print(f"Duplicati uniti: {removed_duplicates}")
+    print(f"Posizioni ambigue corrette: {ambiguous_location_result['corrected_ambiguous_locations']}")
+    print(f"Eventi conservati in attesa di posizione: {ambiguous_location_result['pending_locations']}")
     if failed_sources:
         print("Fonti saltate:")
         for failed in failed_sources:
@@ -3252,6 +3341,7 @@ def main(*, perform_maintenance: bool = False) -> dict:
         **broad_publisher_cleanup_result,
         **evidence_cleanup_result,
         "removed_duplicates": removed_duplicates,
+        **ambiguous_location_result,
         "failed_sources": failed_sources,
     }
 
