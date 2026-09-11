@@ -9,6 +9,7 @@ const CLUSTER_LAYER_ID = 'incident-clusters';
 const CLUSTER_COUNT_LAYER_ID = 'incident-cluster-count';
 const POINT_LAYER_ID = 'incident-point';
 const POINT_ICON_LAYER_ID = 'incident-point-icon';
+const NATIONAL_CLUSTER_MAX_ZOOM = 8;
 
 const clusterLayer = {
   id: CLUSTER_LAYER_ID,
@@ -394,7 +395,7 @@ export default function IncidentMap({
           type="geojson"
           data={incidentGeoJSON}
           cluster
-          clusterMaxZoom={16}
+          clusterMaxZoom={NATIONAL_CLUSTER_MAX_ZOOM}
           clusterRadius={50}
         >
           <Layer {...clusterLayer} />
