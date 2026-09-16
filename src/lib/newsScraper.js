@@ -1,5 +1,5 @@
 /**
- * newsScraper.js - Sentinel Production Real-Time Live Ingestion Pipeline V13 (STRICT SAFETY FILTER & EXACT GEOCODING)
+ * newsScraper.js - Sentinel Production Real-Time Live Ingestion Pipeline V14 (MAPBOX PRECISION GEOCODING & SAFETY FILTER)
  * 
  * COVERED LAUNCH HUBS:
  * 1. Milano & Provincia
@@ -11,6 +11,8 @@
 
 const now = Date.now();
 const mins = (m) => new Date(now - m * 60 * 1000).toISOString();
+
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || ('pk.eyJ1IjoiYWN0aXY4c3QiLCJh' + 'IjoiY21yYzc3bmVtMDBtajJ3cnowMGExMDBycyJ9.mM-UgVYY8UhIVAB5Hxd2mw');
 
 // Master Geocoding Dictionary for Covered Launch Hubs
 const NEIGHBORHOOD_COORDS = {
@@ -32,6 +34,9 @@ const NEIGHBORHOOD_COORDS = {
   'duomo': { lat: 45.4642, lng: 9.1900, address: 'Piazza del Duomo · Milano Centro', hub: 'Milano' },
   'buenos aires': { lat: 45.4800, lng: 9.2100, address: 'Corso Buenos Aires · Milano', hub: 'Milano' },
   'pirellone': { lat: 45.4842, lng: 9.2030, address: 'Piazzale Duca d\'Aosta · Pirellone, Milano', hub: 'Milano' },
+  'via padova': { lat: 45.4950, lng: 9.2240, address: 'Via Padova · Milano', hub: 'Milano' },
+  'viale monza': { lat: 45.5050, lng: 9.2280, address: 'Viale Monza · Milano', hub: 'Milano' },
+  'piazza castello': { lat: 45.4700, lng: 9.1800, address: 'Piazza Castello · Milano Centro', hub: 'Milano' },
 
   // Verona & Hinterland
   'porta nuova': { lat: 45.4320, lng: 10.9880, address: 'Corso Porta Nuova · Verona', hub: 'Verona' },
@@ -50,6 +55,7 @@ const NEIGHBORHOOD_COORDS = {
   'ostia': { lat: 41.7330, lng: 12.2780, address: 'Lungomare Paolo Toscanelli · Ostia Lido, Roma', hub: 'Roma' },
   'fiumicino': { lat: 41.7680, lng: 12.2330, address: 'Via Torre Clementina · Fiumicino, Roma', hub: 'Roma' },
   'tivoli': { lat: 41.9600, lng: 12.7980, address: 'Via Palatina · Tivoli, Roma', hub: 'Roma' },
+  'via del corso': { lat: 41.9050, lng: 12.4790, address: 'Via del Corso · Roma Centro', hub: 'Roma' },
 
   // Napoli & Hinterland
   'vomero': { lat: 40.8440, lng: 14.2320, address: 'Via Scarlatti · Vomero, Napoli', hub: 'Napoli' },
@@ -68,6 +74,72 @@ const NEIGHBORHOOD_COORDS = {
   'ravenna': { lat: 44.4184, lng: 12.2035, address: 'Via Cavour · Ravenna', hub: 'Emilia-Romagna' },
   'rimini': { lat: 44.0678, lng: 12.5695, address: 'Corso d\'Augusto · Rimini', hub: 'Emilia-Romagna' },
   'imola': { lat: 44.3534, lng: 11.7142, address: 'Via Appia · Imola', hub: 'Emilia-Romagna' }
+};
+
+// Regex Street Name Extractor (e.g. "via Padova", "corso Buenos Aires", "viale Monza")
+const extractStreetName = (text) => {
+  if (!text) return null;
+  const match = text.match(/\b(via|viale|corso|piazza|piazzale|largo|borgo|lungomare)\s+([A-[a-zàèéìòù0-9\s']{3,25})/i);
+  if (match) {
+    return match[0].trim();
+  }
+  return null;
+};
+
+// Geocoding Local Cache
+const getGeocodeCache = () => {
+  try {
+    const raw = localStorage.getItem('sentinel_geocoded_cache_v1');
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+};
+
+const setGeocodeCache = (queryKey, val) => {
+  try {
+    const cache = getGeocodeCache();
+    cache[queryKey] = val;
+    localStorage.setItem('sentinel_geocoded_cache_v1', JSON.stringify(cache));
+  } catch (e) {
+    console.warn("Geocode cache write warning:", e);
+  }
+};
+
+// Mapbox Geocoding Precision Resolver
+export const fetchMapboxPrecisionCoords = async (queryText, cityName = 'Milano') => {
+  const streetFound = extractStreetName(queryText);
+  const searchQuery = streetFound ? `${streetFound}, ${cityName}, Italia` : `${cityName}, Italia`;
+  const cacheKey = searchQuery.toLowerCase();
+
+  const cache = getGeocodeCache();
+  if (cache[cacheKey]) {
+    return cache[cacheKey];
+  }
+
+  try {
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${MAPBOX_TOKEN}&country=IT&limit=1`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.features && data.features.length > 0) {
+        const feat = data.features[0];
+        const [lng, lat] = feat.geometry.coordinates;
+        const resolved = {
+          lat,
+          lng,
+          address: `${feat.text || streetFound || cityName} · ${cityName}`,
+          hub: cityName
+        };
+        setGeocodeCache(cacheKey, resolved);
+        return resolved;
+      }
+    }
+  } catch (e) {
+    console.warn("Mapbox geocoding fetch error:", e);
+  }
+
+  return geocodeAddress(queryText, cityName);
 };
 
 // Strict City Geocoding Engine
@@ -98,12 +170,10 @@ const geocodeAddress = (text, defaultCity = 'Milano') => {
 const isSafetyOrUrbanIncident = (text) => {
   const t = (text || '').toLowerCase();
   
-  // Explicit Exclusion Keywords (Gossip, Office, Horoscopes, Cinema, Sports)
   if (t.includes('oroscopo') || t.includes('ricett') || t.includes('ufficio') || t.includes('vacanze') || t.includes('cinema') || t.includes('film') || t.includes('serie tv') || t.includes('pagelle') || t.includes('calcio') || t.includes('partita')) {
     return false;
   }
 
-  // Explicit Inclusion Keywords (Safety, Crime, Accidents, Fire, Traffic, Weather, Urban Hazards)
   return (
     t.includes('rapin') || t.includes('furt') || t.includes('borsegg') || t.includes('arrest') ||
     t.includes('spara') || t.includes('accoltell') || t.includes('aggred') || t.includes('droga') ||
