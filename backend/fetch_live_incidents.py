@@ -2598,6 +2598,7 @@ def incident_id(source: Source, guid: str) -> str:
 
 
 def save_item(db, source: Source, item: dict[str, str]) -> bool:
+    from backend.gemini_news import analyze_article
     published_at = parse_published_at(item.get("published", ""))
     if not is_recent_enough(published_at):
         return False
@@ -2623,6 +2624,18 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
     publisher = source_display_name(source, title_publisher)
     trust = effective_source_trust(source, publisher)
     coords = coordinates_for(raw_title, description, source.name, allow_geocode=True)
+    analysis = analyze_article(title, clean_text(item['description'], 16000))
+    category = analysis['category'] if analysis else classify_type(title, description, source.default_type)
+    if analysis and analysis['municipality']:
+        ai_city = analysis['municipality']
+        center = CITY_COORDS.get(ai_city.lower())
+        if center and is_allowed_area(ai_city, *center):
+            ai_address = ', '.join(p for p in (analysis['place'], ai_city) if p)
+            precise = geocode_place(ai_address) if analysis['place'] else None
+            if precise and distance_km(center[0], center[1], precise[0], precise[1]) <= 45:
+                coords = (*precise, ai_city, ai_address, True)
+            elif not analysis['place']:
+                coords = (*center, ai_city, ai_city, True)
     if coords is None:
         if existing:
             existing.last_seen_at = now
@@ -2645,7 +2658,7 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
         existing.title = title
         if len(description_with_reference) >= len(existing.description or ""):
             existing.description = description_with_reference
-        existing.type = classify_type(title, description, source.default_type)
+        existing.type = category
         existing.severity = classify_severity(title, description)
         existing.latitude = lat
         existing.longitude = lon
@@ -2678,7 +2691,7 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
 
     inc = Incident(
         id=incident_id(source, source_event_id),
-        type=classify_type(title, description, source.default_type),
+        type=category,
         title=title,
         description=description_with_reference,
         severity=classify_severity(title, description),

@@ -232,20 +232,20 @@ export default function IncidentCard({ incident, distance, unread = false }) {
         <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between text-xs text-white/60">
           
           <div className="flex items-center gap-2">
-            {incident.source_url ? (
+            {(incident.source_url || incident.media_urls?.find(url => /^https?:\/\//i.test(url))) ? (
               <a
-                href={incident.source_url}
+                href={incident.source_url || incident.media_urls?.find(url => /^https?:\/\//i.test(url))}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-xl transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                Fonte Ufficiale
+                Leggi la notizia
               </a>
             ) : (
               <span className="text-[11px] font-bold text-white/40">
-                Fonte Verificata
+                Link non disponibile
               </span>
             )}
           </div>
