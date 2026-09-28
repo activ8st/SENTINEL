@@ -8,6 +8,7 @@ from pathlib import Path
 import sqlite3
 import threading
 import time
+from contextlib import closing
 
 import requests
 
@@ -64,7 +65,7 @@ def analyze_article(title, body):
         with LOCK:
             path = Path(os.getenv('SENTINEL_GEMINI_CACHE', '.sentinel-cache/gemini.sqlite3'))
             path.parent.mkdir(parents=True, exist_ok=True)
-            with sqlite3.connect(path) as db:
+            with closing(sqlite3.connect(path)) as db:
                 db.execute('CREATE TABLE IF NOT EXISTS cache (id TEXT PRIMARY KEY, result TEXT)')
                 db.execute('CREATE TABLE IF NOT EXISTS quota (day TEXT PRIMARY KEY, used INTEGER, last REAL, blocked INTEGER)')
                 cached = db.execute('SELECT result FROM cache WHERE id=?', (digest,)).fetchone()
@@ -75,9 +76,12 @@ def analyze_article(title, body):
                 used, last, blocked = db.execute('SELECT used,last,blocked FROM quota WHERE day=?', (day,)).fetchone()
                 if blocked or used >= max(0, int(os.getenv('SENTINEL_GEMINI_DAILY_LIMIT', '20'))):
                     return None
-                if time.time() - last < 15:
-                    return None
-                db.execute('UPDATE quota SET used=used+1,last=? WHERE day=?', (time.time(), day))
+                min_interval = max(0.0, float(os.getenv('SENTINEL_GEMINI_MIN_INTERVAL_SECONDS', '6')))
+                wait_seconds = min_interval - (time.time() - last)
+                if wait_seconds > 0:
+                    time.sleep(wait_seconds)
+                request_time = time.time()
+                db.execute('UPDATE quota SET used=used+1,last=? WHERE day=?', (request_time, day))
                 db.commit()
                 response = requests.post(
                     f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
@@ -86,15 +90,20 @@ def analyze_article(title, body):
                           'contents': [{'parts': [{'text': json.dumps({'title': title, 'body': body})}]}],
                           'generationConfig': {'temperature': 0, 'responseMimeType': 'application/json',
                                                'responseSchema': SCHEMA}}, timeout=25)
-                if response.status_code in (400, 401, 403, 404, 429):
+                if response.status_code in (400, 401, 403, 404):
                     db.execute('UPDATE quota SET blocked=1 WHERE day=?', (day,))
+                    db.commit()
                     logging.warning('Gemini suspended for today: HTTP %s', response.status_code)
+                    return None
+                if response.status_code == 429:
+                    logging.warning('Gemini rate limit reached; retrying during a later refresh')
                     return None
                 response.raise_for_status()
                 parts = response.json()['candidates'][0]['content']['parts']
                 result = validate_result(json.loads(''.join(p.get('text', '') for p in parts)), body)
                 if result:
                     db.execute('INSERT OR REPLACE INTO cache VALUES (?,?)', (digest, json.dumps(result)))
+                    db.commit()
                 return result
     except (requests.RequestException, ValueError, KeyError, IndexError, TypeError, OSError, sqlite3.Error):
         logging.warning('Gemini analysis unavailable; using existing extraction')
