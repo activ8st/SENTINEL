@@ -21,6 +21,22 @@ class LocationResolverTests(unittest.TestCase):
         )
         self.assertEqual(candidates, [])
 
+    def test_street_can_end_before_event_preposition(self):
+        candidates = extract_location_candidates(
+            "Incidente sul lavoro",
+            "Il fatto e avvenuto in viale Fulvio Testi a Milano nella serata di lunedi.",
+            "Milano",
+        )
+        self.assertEqual(candidates[0].name, "viale Fulvio Testi")
+
+    def test_station_is_a_precise_landmark(self):
+        candidates = extract_location_candidates(
+            "Tragedia ferroviaria",
+            "Il fatto e avvenuto nella stazione di Greco Pirelli nella serata di lunedi.",
+            "Milano",
+        )
+        self.assertEqual(candidates[0].name, "stazione Greco Pirelli")
+
     def test_geocoded_hamlet_must_be_near_its_municipality(self):
         description = "Incidente lungo la SP 146 Sapigno - Romagnano, nel comune di Sant'Agata Feltria."
 

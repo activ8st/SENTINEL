@@ -9,12 +9,14 @@ from backend.database import SessionLocal
 from backend.fetch_live_incidents import (
     FULL_ARTICLE_SOURCE_NAMES,
     coordinates_for,
+    coordinates_from_analysis,
     fetch_article_context,
 )
+from backend.gemini_news import analyze_article
 from backend.models import Incident
 
 
-LOCATION_CHECK_MARKER = "location-checked"
+LOCATION_CHECK_MARKER = "location-checked-v2"
 REPAIR_WORKERS = 6
 
 
@@ -62,15 +64,13 @@ def repair_recent_locations(db: Session, limit: int = 40) -> dict[str, int]:
             if not description:
                 continue
             checked += 1
-            coords = coordinates_for(
-                incident.title,
-                description,
-                incident.source,
-                allow_geocode=True,
+            analysis = analyze_article(incident.title, description)
+            coords = coordinates_from_analysis(analysis) or coordinates_for(
+                incident.title, description, incident.source, allow_geocode=True,
             )
             if coords is not None:
                 lat, lon, city, address, _position_from_text = coords
-                if address != city:
+                if address != city or city.casefold() != (incident.city or "").casefold():
                     incident.latitude = lat
                     incident.longitude = lon
                     incident.city = city

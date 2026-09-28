@@ -70,6 +70,53 @@ class RepairIncidentLocationsTests(unittest.TestCase):
         self.assertAlmostEqual(incident.latitude, 43.9219111)
         self.assertIn("location-checked", incident.source_trust)
 
+    def test_replaces_wrong_city_even_when_only_new_municipality_is_known(self):
+        incident = Incident(
+            id="wrong-city-test",
+            type="incident",
+            title="Intervento dei vigili del fuoco",
+            description="Descrizione breve",
+            severity="medium",
+            latitude=45.4642,
+            longitude=9.1900,
+            address="Milano",
+            city="Milano",
+            status="active",
+            source="riminitoday-diretto",
+            source_event_id="wrong-city-test",
+            source_trust="local-news",
+            created_date=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+        )
+        incident.media.append(Media(url="https://example.test/ravenna", type="source"))
+        self.db.add(incident)
+        self.db.commit()
+
+        analysis = {
+            "category": "fire",
+            "municipality": "Ravenna",
+            "place": "",
+            "location_evidence": "nel comune di Ravenna",
+            "category_evidence": "incendio",
+        }
+        corrected = (44.4184, 12.2035, "Ravenna", "Ravenna", True)
+        with (
+            patch(
+                "backend.repair_incident_locations.fetch_article_context",
+                return_value=("Incendio nel comune di Ravenna.", None),
+            ),
+            patch("backend.repair_incident_locations.analyze_article", return_value=analysis),
+            patch(
+                "backend.repair_incident_locations.coordinates_from_analysis",
+                return_value=corrected,
+            ),
+        ):
+            result = repair_recent_locations(self.db, limit=1)
+
+        self.assertEqual(result["precise_locations_repaired"], 1)
+        self.assertEqual(incident.city, "Ravenna")
+        self.assertEqual(incident.address, "Ravenna")
+        self.assertAlmostEqual(incident.latitude, 44.4184)
+
 
 if __name__ == "__main__":
     unittest.main()

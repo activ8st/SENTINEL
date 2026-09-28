@@ -15,7 +15,9 @@ class LocationCandidate:
 
 
 PROPER_WORD = r"[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’.-]+"
-PROPER_NAME = rf"{PROPER_WORD}(?:\s+(?:(?:di|del|della|dei|san|sant'|santa)\s+)?{PROPER_WORD}){{0,3}}"
+NAME_CONNECTOR = r"(?:di|del|dello|della|delle|dei|degli|da|dal|dalla|dell'|san|sant'|santa)"
+PROPER_NAME = rf"{PROPER_WORD}(?:\s+(?:{NAME_CONNECTOR}\s+)?{PROPER_WORD}){{0,5}}"
+PLACE_END = r"(?=\s+(?:a|ad|al|alla|all'altezza|nel|nella|nei|nelle|sul|sulla|dove|quando)\b|\s*[,.;:!?]|$)"
 
 
 def _clean(value: str) -> str:
@@ -56,7 +58,7 @@ def extract_location_candidates(
 
     route_pattern = re.compile(
         rf"\b(?P<road>(?i:sp|s\.p\.|sr|s\.r\.|ss|s\.s\.|strada provinciale|strada regionale|strada statale))"
-        rf"\s*(?P<number>\d+[a-zA-Z]?)\s+(?P<from>{PROPER_NAME})\s*[-–—]\s*(?P<to>{PROPER_NAME})(?=\s*[,.;])"
+        rf"\s*(?P<number>\d+[a-zA-Z]?)\s+(?P<from>{PROPER_NAME})\s*[-–—]\s*(?P<to>{PROPER_NAME}){PLACE_END}"
     )
     for match in route_pattern.finditer(text):
         road = f"{match.group('road').upper().replace('.', '')} {match.group('number')}"
@@ -64,17 +66,25 @@ def extract_location_candidates(
         _append_unique(candidates, seen, match.group("from"), municipality, "road-endpoint", road)
 
     locality_pattern = re.compile(
-        rf"\b(?i:località|localita|frazione|borgo|quartiere|zona)\s+(?:(?i:di|del|della)\s+)?(?P<name>{PROPER_NAME})(?=\s*[,.;])"
+        rf"\b(?i:località|localita|frazione|borgo|quartiere|zona)\s+(?:(?i:di|del|della)\s+)?(?P<name>{PROPER_NAME}){PLACE_END}"
     )
     for match in locality_pattern.finditer(text):
         _append_unique(candidates, seen, match.group("name"), municipality, "locality")
 
     street_pattern = re.compile(
-        rf"\b(?P<street>(?i:via|viale|piazza|piazzale|lungomare|strada))\s+(?P<name>{PROPER_NAME})(?=\s*[,.;])"
+        rf"\b(?P<street>(?i:via|viale|piazza|piazzale|lungomare|strada))\s+(?P<name>{PROPER_NAME}){PLACE_END}"
     )
     for match in street_pattern.finditer(text):
         street = f"{match.group('street')} {match.group('name')}"
         _append_unique(candidates, seen, street, municipality, "street")
+
+    landmark_pattern = re.compile(
+        rf"\b(?P<kind>(?i:stazione|aeroporto|porto|casello|svincolo|ospedale|parco))"
+        rf"\s+(?:(?i:di|del|della)\s+)?(?P<name>{PROPER_NAME}){PLACE_END}"
+    )
+    for match in landmark_pattern.finditer(text):
+        landmark = f"{match.group('kind')} {match.group('name')}"
+        _append_unique(candidates, seen, landmark, municipality, "landmark")
 
     return candidates
 
@@ -100,7 +110,7 @@ def resolve_text_location(
     municipality: str,
     municipality_center: tuple[float, float] | None,
     geocode: Callable[[str], tuple[float, float] | None],
-    max_distance_km: float = 45.0,
+    max_distance_km: float = 25.0,
 ) -> tuple[float, float, str, LocationCandidate] | None:
     for candidate in extract_location_candidates(title, description, municipality):
         coordinates = geocode(candidate.query)

@@ -1495,6 +1495,31 @@ LOCATION_ALIASES.update({
     "trapanese": "trapani",
 })
 
+# Proper area, district, and landmark names are reliable even when a headline
+# omits a preposition. Demonyms still require explicit locative context.
+EXPLICIT_LOCATION_ALIASES = {
+    "romagna faentina",
+    "pilastro",
+    "borgo panigale",
+    "bolognina",
+    "quartiere navile",
+    "giardini margherita",
+    "arcoveggio",
+    "piazza maggiore",
+    "due torri",
+    "brianza",
+    "valtellina",
+    "ciociaria",
+    "irpinia",
+    "sannio",
+    "sulcis",
+    "gallura",
+    "ogliastra",
+    "barbagia",
+    "medio campidano",
+    "sarrabus",
+}
+
 PUBLISHER_CITY_ALIASES = {
     "romatoday": "roma",
     "milanotoday": "milano",
@@ -1867,6 +1892,7 @@ def enrich_item_description(source: Source, item: dict[str, str]) -> bool:
     if not description:
         return False
     item["description"] = description
+    item["_article_enriched"] = "1"
     if parse_published_at(published_at):
         item["published"] = published_at
     return True
@@ -2177,7 +2203,7 @@ def format_city_name(city: str) -> str:
 
 AMBIGUOUS_CITY_NAMES = {
     "cento", "classe", "dello", "fondi", "marino", "medicina", "meta", "minori",
-    "opera", "pace", "ponte", "rocca", "russi", "sala",
+    "opera", "pace", "ponte", "rocca", "russi", "sala", "zone",
 }
 
 
@@ -2304,8 +2330,21 @@ def detect_city_evidence(
 
     combined_text = f"{title_text} {description_text}".strip()
     for alias, city in sorted(LOCATION_ALIASES.items(), key=lambda item: len(item[0]), reverse=True):
-        if re.search(rf"\b{re.escape(alias)}\b", combined_text):
-            return format_city_name(city), "location-alias"
+        for match in re.finditer(rf"\b{re.escape(alias)}\b", combined_text):
+            before = combined_text[max(0, match.start() - 45):match.start()]
+            after = combined_text[match.end():match.end() + 12]
+            alias_has_context = re.match(
+                r"(?:nel|nella|nei|nelle|area|hinterland|quartiere|piazza|monte|valle)\b",
+                alias,
+            )
+            explicit_context = re.search(
+                r"\b(?:a|ad|al|alla|in|nel|nella|nei|nelle|tra|fra|verso|presso|"
+                r"zona di|territorio di|provincia di|comune di)\s*$",
+                before,
+            )
+            dateline = match.start() == 0 and re.match(r"\s*[,;:()\-]", after)
+            if alias in EXPLICIT_LOCATION_ALIASES or alias_has_context or explicit_context or dateline:
+                return format_city_name(city), "location-alias"
 
     publisher = title_publisher
     source = SOURCE_BY_NAME.get(source_name or "")
@@ -2341,7 +2380,13 @@ def explicit_recognized_city(
 
 
 def geocode_place(place: str) -> tuple[float, float] | None:
-    query = urllib.parse.urlencode({"q": f"{place}, Italia", "format": "json", "limit": "1", "addressdetails": "1"})
+    query = urllib.parse.urlencode({
+        "q": f"{place}, Italia",
+        "format": "json",
+        "limit": "1",
+        "addressdetails": "1",
+        "countrycodes": "it",
+    })
     url = f"https://nominatim.openstreetmap.org/search?{query}"
     try:
         data = json.loads(fetch_url(url).decode("utf-8"))
@@ -2551,6 +2596,25 @@ def allowed_area_for(city: str, lat: float, lon: float) -> str | None:
 def is_allowed_area(city: str, lat: float, lon: float) -> bool:
     return allowed_area_for(city, lat, lon) is not None
 
+
+def coordinates_from_analysis(analysis: dict[str, str] | None) -> tuple[float, float, str, str, bool] | None:
+    if not analysis or not analysis.get("municipality"):
+        return None
+    city = format_city_name(analysis["municipality"])
+    center = CITY_COORDS.get(normalize(city))
+    if center is None or not is_allowed_area(city, *center):
+        return None
+
+    place = clean_text(analysis.get("place", ""), 120)
+    if place:
+        address = f"{place}, {city}"
+        precise = geocode_place(address)
+        max_distance = 35.0 if normalize(city) == "roma" else 25.0
+        if precise and distance_km(center[0], center[1], precise[0], precise[1]) <= max_distance:
+            return precise[0], precise[1], city, address, True
+
+    return center[0], center[1], city, city, True
+
 def concise_event_description(title: str, description: str) -> str:
     body = clean_feed_description(description, title)
     if body:
@@ -2624,18 +2688,15 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
     publisher = source_display_name(source, title_publisher)
     trust = effective_source_trust(source, publisher)
     coords = coordinates_for(raw_title, description, source.name, allow_geocode=True)
-    analysis = analyze_article(title, clean_text(item['description'], 16000))
+    analysis = (
+        analyze_article(title, clean_text(item["description"], 16000))
+        if item.get("_article_enriched") == "1"
+        else None
+    )
     category = analysis['category'] if analysis else classify_type(title, description, source.default_type)
-    if analysis and analysis['municipality']:
-        ai_city = analysis['municipality']
-        center = CITY_COORDS.get(ai_city.lower())
-        if center and is_allowed_area(ai_city, *center):
-            ai_address = ', '.join(p for p in (analysis['place'], ai_city) if p)
-            precise = geocode_place(ai_address) if analysis['place'] else None
-            if precise and distance_km(center[0], center[1], precise[0], precise[1]) <= 45:
-                coords = (*precise, ai_city, ai_address, True)
-            elif not analysis['place']:
-                coords = (*center, ai_city, ai_city, True)
+    ai_coords = coordinates_from_analysis(analysis)
+    if ai_coords is not None:
+        coords = ai_coords
     if coords is None:
         if existing:
             existing.last_seen_at = now
@@ -2667,8 +2728,9 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
         existing.status = "active"
         existing_trust = existing.source_trust or ""
         existing.source_trust = source_trust_value(trust, position_from_text)
-        if "location-checked" in existing_trust:
-            existing.source_trust += "-location-checked"
+        checked_markers = re.findall(r"location-checked(?:-v\d+)?", existing_trust)
+        for marker in dict.fromkeys(checked_markers):
+            existing.source_trust += f"-{marker}"
         if published_at is not None:
             existing.created_date = event_at or published_at
         existing.last_seen_at = now

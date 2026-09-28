@@ -320,6 +320,7 @@ class IncidentImportQualityTests(unittest.TestCase):
             ("Cento uomini impegnati contro le fiamme", "Incendio sul monte Morrone"),
             ("Incidente, due minori feriti", "Lo scontro e avvenuto ad Aci Sant'Antonio"),
             ("Vandalizzato il Ponte dei Martiri", "Il monumento e stato danneggiato"),
+            ("Allerta meteo: le zone colpite", "Temporali previsti in Sicilia"),
             ("Emergenza sangue: senza donazioni non si opera", "Appello nazionale"),
         )
         for title, description in examples:
@@ -333,6 +334,30 @@ class IncidentImportQualityTests(unittest.TestCase):
                 "Potenziata la funzionalita dello storico manufatto",
                 "google-news-incidenti",
             )
+        )
+
+    def test_demonyms_do_not_override_the_event_location(self):
+        self.assertIsNone(
+            detect_city(
+                "Incidente a Monaco di Baviera",
+                "Coinvolti due membri della comunita milanese in gita.",
+                "google-news-incidenti",
+            )
+        )
+        self.assertIsNone(
+            detect_city(
+                "Bici elettrica urtata da un'auto",
+                "Incidente lungo la via Emilia Pavese.",
+                "ilpiacenza-direct",
+            )
+        )
+        self.assertEqual(
+            detect_city(
+                "Incendio nel Milanese",
+                "Vigili del fuoco al lavoro nel milanese.",
+                "google-news-incidenti",
+            ),
+            "Milano",
         )
 
     def test_ambiguous_municipality_is_accepted_with_explicit_context(self):
@@ -650,6 +675,25 @@ class IncidentImportQualityTests(unittest.TestCase):
             self.assertFalse(save_item(session, source, short_item))
             session.commit()
             self.assertEqual(session.query(Incident).one().description, rich_description)
+        finally:
+            session.close()
+
+    def test_gemini_is_reserved_for_full_article_text(self):
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        session = sessionmaker(bind=engine)()
+        item = {
+            "guid": "rss-summary-only",
+            "title": "Incendio a Milano",
+            "description": "Un incendio ha richiesto l'intervento dei vigili del fuoco a Milano.",
+            "published": email.utils.format_datetime(dt.datetime.now(dt.timezone.utc)),
+            "link": "https://example.test/rss-summary-only",
+        }
+        try:
+            ensure_sentinel_bot(session)
+            with patch("backend.gemini_news.analyze_article") as analyze:
+                self.assertTrue(save_item(session, SOURCE_BY_NAME["milanotoday-direct"], item))
+                analyze.assert_not_called()
         finally:
             session.close()
 

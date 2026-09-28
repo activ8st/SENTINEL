@@ -24,9 +24,11 @@ Use the BODY, not the publisher location, hospital destination, residence of a v
 or title, to identify where the incident occurred. municipality is the municipality;
 place is the explicit street or hamlet, or empty if unknown. A route with two endpoints
 does not prove which endpoint contains the incident: leave place empty in that case.
-Do not infer names absent from the body. location_evidence and category_evidence must
-be exact quotations from the body supporting your decisions. Use empty strings for
-unknown location fields. Category describes the incident, not the publisher.'''
+Do not infer names absent from the body. A demonym, a victim's residence, a hospital,
+or a publisher does not establish the incident location. location_evidence and
+category_evidence must be exact quotations from the body supporting your decisions,
+and location_evidence must contain the returned municipality and place. Use empty
+strings for unknown location fields. Category describes the incident, not the publisher.'''
 
 
 def validate_result(result, body):
@@ -43,6 +45,11 @@ def validate_result(result, body):
         return None
     if result['municipality'] and not result['location_evidence']:
         return None
+    evidence = ' '.join(result['location_evidence'].casefold().split())
+    if result['municipality'] and result['municipality'].casefold() not in evidence:
+        return None
+    if result['place'] and result['place'].casefold() not in evidence:
+        return None
     return result
 
 
@@ -50,7 +57,7 @@ def analyze_article(title, body):
     key = os.getenv('GEMINI_API_KEY', '').strip()
     if not key or os.getenv('SENTINEL_GEMINI_ENABLED', 'false').lower() != 'true':
         return None
-    model = os.getenv('SENTINEL_GEMINI_MODEL', 'gemini-2.5-flash-lite')
+    model = os.getenv('SENTINEL_GEMINI_MODEL', 'gemini-3.5-flash-lite')
     body = body[:16000]
     digest = hashlib.sha256((model + PROMPT + title + body).encode()).hexdigest()
     try:
@@ -79,7 +86,7 @@ def analyze_article(title, body):
                           'contents': [{'parts': [{'text': json.dumps({'title': title, 'body': body})}]}],
                           'generationConfig': {'temperature': 0, 'responseMimeType': 'application/json',
                                                'responseSchema': SCHEMA}}, timeout=25)
-                if response.status_code in (401, 403, 429):
+                if response.status_code in (400, 401, 403, 404, 429):
                     db.execute('UPDATE quota SET blocked=1 WHERE day=?', (day,))
                     logging.warning('Gemini suspended for today: HTTP %s', response.status_code)
                     return None

@@ -4,7 +4,7 @@ Set environment variables on the backend host (Render), never in VITE variables:
 
     GEMINI_API_KEY=<key from Google AI Studio>
     SENTINEL_GEMINI_ENABLED=true
-    SENTINEL_GEMINI_MODEL=gemini-2.5-flash-lite
+    SENTINEL_GEMINI_MODEL=gemini-3.5-flash-lite
     SENTINEL_GEMINI_DAILY_LIMIT=20
 
 Use an API project on Google's free tier without billing for a zero-cost trial.
