@@ -52,10 +52,17 @@ export const fetchApiIncidents = async () => {
       && Number.isFinite(Number(incident.latitude))
       && Number.isFinite(Number(incident.longitude))
     ))
-    .map((incident) => ({
-      ...incident,
-      source_url: incident.source_url || incident.media_urls?.[0] || '',
-      official_verified: incident.official_verified
-        ?? String(incident.source_trust || '').startsWith('institutional'),
-    }));
+    .map((incident) => {
+      const inferredPrecision = (
+        String(incident.address || '').trim().toLocaleLowerCase('it-IT')
+        !== String(incident.city || '').trim().toLocaleLowerCase('it-IT')
+      ) ? 'precise' : 'municipality';
+      return {
+        ...incident,
+        location_precision: incident.location_precision || inferredPrecision,
+        source_url: incident.source_url || incident.media_urls?.[0] || '',
+        official_verified: incident.official_verified
+          ?? String(incident.source_trust || '').startsWith('institutional'),
+      };
+    });
 };

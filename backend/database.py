@@ -46,6 +46,8 @@ SCHEMA_COMPAT_COLUMNS = {
     },
     "incidents": {
         "fake_votes": "INTEGER NOT NULL DEFAULT 0",
+        "location_precision": "VARCHAR NOT NULL DEFAULT 'unknown'",
+        "location_evidence": "VARCHAR",
     },
 }
 

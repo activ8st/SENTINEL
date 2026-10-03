@@ -3,13 +3,15 @@ import Map, { Marker, Source, Layer, NavigationControl } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { TYPE_CONFIG } from '@/components/data/mockData';
 import { UserRound } from 'lucide-react';
+import { hasPreciseIncidentLocation } from '@/lib/incidentLocation';
 
 const INCIDENT_SOURCE_ID = 'incident-points';
 const CLUSTER_LAYER_ID = 'incident-clusters';
 const CLUSTER_COUNT_LAYER_ID = 'incident-cluster-count';
 const POINT_LAYER_ID = 'incident-point';
 const POINT_ICON_LAYER_ID = 'incident-point-icon';
-const NATIONAL_CLUSTER_MAX_ZOOM = 8;
+const CLUSTER_DISTANCE_THRESHOLD_KM = 100;
+const CLUSTER_MAX_ZOOM = 24;
 
 const clusterLayer = {
   id: CLUSTER_LAYER_ID,
@@ -152,6 +154,33 @@ const createRadiusCircle = (center, radiusKm, points = 96) => {
   };
 };
 
+const distanceKm = (from, to) => {
+  const earthRadiusKm = 6371;
+  const toRadians = value => value * Math.PI / 180;
+  const latitudeDelta = toRadians(to.lat - from.lat);
+  const longitudeDelta = toRadians(to.lng - from.lng);
+  const fromLatitude = toRadians(from.lat);
+  const toLatitude = toRadians(to.lat);
+  const haversine = (
+    Math.sin(latitudeDelta / 2) ** 2
+    + Math.cos(fromLatitude) * Math.cos(toLatitude) * Math.sin(longitudeDelta / 2) ** 2
+  );
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+};
+
+const visibleRadiusKm = map => {
+  if (!map) return 0;
+  const center = map.getCenter();
+  const bounds = map.getBounds();
+  const corners = [
+    bounds.getNorthEast(),
+    bounds.getNorthWest(),
+    bounds.getSouthEast(),
+    bounds.getSouthWest(),
+  ];
+  return Math.max(...corners.map(corner => distanceKm(center, corner)));
+};
+
 export default function IncidentMap({
   incidents = [],
   center,
@@ -169,6 +198,7 @@ export default function IncidentMap({
   const containerRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapCursor, setMapCursor] = useState('grab');
+  const [shouldCluster, setShouldCluster] = useState(false);
 
   const defaultCenter = userLocation 
     ? [userLocation.lat, userLocation.lng] 
@@ -300,6 +330,11 @@ export default function IncidentMap({
     });
   };
 
+  const updateClustering = map => {
+    const radius = visibleRadiusKm(map || mapRef.current?.getMap());
+    setShouldCluster(radius > CLUSTER_DISTANCE_THRESHOLD_KM);
+  };
+
   const incidentsById = useMemo(
     () => new globalThis.Map(incidents.map(incident => [String(incident.id), incident])),
     [incidents]
@@ -308,7 +343,7 @@ export default function IncidentMap({
   const incidentGeoJSON = useMemo(() => ({
     type: 'FeatureCollection',
     features: incidents
-      .filter(incident => Number.isFinite(Number(incident.latitude)) && Number.isFinite(Number(incident.longitude)))
+      .filter(hasPreciseIncidentLocation)
       .map(incident => ({
         type: 'Feature',
         geometry: {
@@ -366,12 +401,18 @@ export default function IncidentMap({
         ref={mapRef}
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
+        onMoveEnd={evt => updateClustering(evt.target)}
         onClick={handleMapClick}
         onMouseEnter={() => setMapCursor('pointer')}
         onMouseLeave={() => setMapCursor('grab')}
         interactiveLayerIds={[CLUSTER_LAYER_ID, POINT_LAYER_ID, POINT_ICON_LAYER_ID]}
         cursor={mapCursor}
-        onLoad={() => { addIncidentIcons(); add3DBuildingsLayer(); setMapLoaded(true); }}
+        onLoad={event => {
+          addIncidentIcons();
+          add3DBuildingsLayer();
+          updateClustering(event.target);
+          setMapLoaded(true);
+        }}
         minPitch={0}
         maxPitch={55}
         minZoom={3}
@@ -391,12 +432,13 @@ export default function IncidentMap({
         )}
 
         <Source
+          key={shouldCluster ? 'incident-source-clustered' : 'incident-source-points'}
           id={INCIDENT_SOURCE_ID}
           type="geojson"
           data={incidentGeoJSON}
-          cluster
-          clusterMaxZoom={NATIONAL_CLUSTER_MAX_ZOOM}
-          clusterRadius={50}
+          cluster={shouldCluster}
+          clusterMaxZoom={CLUSTER_MAX_ZOOM}
+          clusterRadius={60}
         >
           <Layer {...clusterLayer} />
           <Layer {...clusterCountLayer} />

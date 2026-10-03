@@ -18,6 +18,18 @@ class GeminiNewsTests(unittest.TestCase):
         self.assertIsNone(validate_result({**result, 'municipality': 'Roma'}, body))
         self.assertIsNone(validate_result({**result, 'category': 'invented'}, body))
 
+    def test_accepts_exact_location_evidence_from_title(self):
+        title = 'Feroce rapina a Marebello, individuati i presunti autori'
+        body = 'La rapina e avvenuta nel territorio comunale di Rimini.'
+        result = dict(
+            category='crime',
+            category_evidence='rapina',
+            municipality='Rimini',
+            place='Marebello',
+            location_evidence='rapina a Marebello',
+        )
+        self.assertEqual(validate_result(result, body, title), result)
+
     @patch.dict('os.environ', {'SENTINEL_GEMINI_ENABLED': 'false'})
     @patch('backend.gemini_news.requests.post')
     def test_disabled_never_calls_api(self, post):

@@ -43,6 +43,14 @@ import os
 os.chdir(PROJECT_ROOT)
 
 from backend.database import SessionLocal, engine  # noqa: E402
+from backend.incident_enrichment import (  # noqa: E402
+    EnrichedIncident,
+    PrecisePosition,
+    apply_resolved_location,
+    build_enriched_incident,
+    location_precision_for,
+    resolve_incident,
+)
 from backend.models import Base, Incident, Media, User  # noqa: E402
 from sqlalchemy.exc import SQLAlchemyError  # noqa: E402
 from backend.event_time import extract_event_time
@@ -1432,6 +1440,15 @@ LOCATION_ALIASES.update({
     "forlivese": "forli",
     "cesenate": "cesena",
     "riminese": "rimini",
+    "marebello": "rimini",
+    "rivazzurra": "rimini",
+    "miramare": "rimini",
+    "marina centro": "rimini",
+    "bellariva": "rimini",
+    "viserbella": "rimini",
+    "viserba": "rimini",
+    "torre pedrera": "rimini",
+    "san giuliano mare": "rimini",
     # Toscana
     "toscana": "firenze",
     "fiorentino": "firenze",
@@ -1507,6 +1524,15 @@ EXPLICIT_LOCATION_ALIASES = {
     "arcoveggio",
     "piazza maggiore",
     "due torri",
+    "marebello",
+    "rivazzurra",
+    "miramare",
+    "marina centro",
+    "bellariva",
+    "viserbella",
+    "viserba",
+    "torre pedrera",
+    "san giuliano mare",
     "brianza",
     "valtellina",
     "ciociaria",
@@ -2400,6 +2426,73 @@ def geocode_place(place: str) -> tuple[float, float] | None:
     return float(data[0]["lat"]), float(data[0]["lon"])
 
 
+def geocode_precise_position(place: str, municipality: str) -> PrecisePosition | None:
+    place = clean_text(place, 120).strip(" ,.;")
+    city = format_city_name(municipality)
+    if not place or not city or normalize(place) == normalize(city):
+        return None
+
+    city_norm = normalize(city)
+    center = CITY_COORDS.get(city_norm)
+    if center is None or not is_allowed_area(city, *center):
+        return None
+
+    query = urllib.parse.urlencode({
+        "q": f"{place}, {city}, Italia",
+        "format": "json",
+        "limit": "5",
+        "addressdetails": "1",
+        "countrycodes": "it",
+    })
+    try:
+        results = json.loads(
+            fetch_url(f"https://nominatim.openstreetmap.org/search?{query}").decode("utf-8")
+        )
+    except Exception:
+        return None
+
+    place_norm = normalize(place.split(",", 1)[0])
+    place_tokens = set(re.findall(r"[a-z0-9]+", place_norm))
+    max_distance = 35.0 if city_norm == "roma" else 25.0
+    for result in results:
+        address_data = result.get("address") or {}
+        display_name = clean_text(result.get("display_name", ""), 240)
+        display_norm = normalize(display_name)
+        if address_data.get("country_code") != "it":
+            continue
+        city_matches = re.search(
+            rf"(?<![a-z0-9]){re.escape(city_norm)}(?![a-z0-9])",
+            display_norm,
+        )
+        display_tokens = set(re.findall(r"[a-z0-9]+", display_norm))
+        if not city_matches or not place_tokens or not place_tokens.issubset(display_tokens):
+            continue
+        try:
+            latitude = float(result["lat"])
+            longitude = float(result["lon"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if distance_km(center[0], center[1], latitude, longitude) > max_distance:
+            continue
+
+        if address_data.get("house_number"):
+            precision = "address"
+        elif any(address_data.get(key) for key in ("road", "pedestrian", "footway")):
+            precision = "street"
+        elif any(address_data.get(key) for key in ("hamlet", "suburb", "quarter", "village")):
+            precision = "locality"
+        else:
+            continue
+
+        return PrecisePosition(
+            latitude=latitude,
+            longitude=longitude,
+            address=display_name or f"{place}, {city}",
+            precision=precision,
+        )
+    return None
+
+
 BLOCKED_PLACE_WORDS = {
     "croce", "rossa", "guardia", "finanza", "polizia", "carabinieri", "vigili",
     "fuoco", "ministero", "ansa", "agi", "adnkronos", "google", "italia",
@@ -2536,9 +2629,13 @@ def coordinates_for(
     key = city.lower()
     if allow_geocode:
         def geocode_candidate(place: str) -> tuple[float, float] | None:
-            coords = geocode_place(place)
+            city_suffix = re.compile(rf",\s*{re.escape(city)}\s*$", flags=re.I)
+            candidate_place = city_suffix.sub("", place).strip()
+            position = geocode_precise_position(candidate_place, city)
             time.sleep(GEOCODE_DELAY_SECONDS)
-            return coords
+            if position is None:
+                return None
+            return position.latitude, position.longitude
 
         precise_location = resolve_text_location(
             title,
@@ -2597,23 +2694,31 @@ def is_allowed_area(city: str, lat: float, lon: float) -> bool:
     return allowed_area_for(city, lat, lon) is not None
 
 
+def precise_incident_from_analysis(
+    analysis: dict[str, str] | None,
+) -> EnrichedIncident | None:
+    event = build_enriched_incident(analysis, geocode_precise_position)
+    if event is None:
+        return None
+    city = format_city_name(event.municipality)
+    if normalize(city) not in CITY_COORDS:
+        return None
+    return EnrichedIncident(
+        event_type=event.event_type,
+        municipality=city,
+        place=event.place,
+        latitude=event.latitude,
+        longitude=event.longitude,
+        address=event.address,
+        precision=event.precision,
+        location_evidence=event.location_evidence,
+        category_evidence=event.category_evidence,
+    )
+
+
 def coordinates_from_analysis(analysis: dict[str, str] | None) -> tuple[float, float, str, str, bool] | None:
-    if not analysis or not analysis.get("municipality"):
-        return None
-    city = format_city_name(analysis["municipality"])
-    center = CITY_COORDS.get(normalize(city))
-    if center is None or not is_allowed_area(city, *center):
-        return None
-
-    place = clean_text(analysis.get("place", ""), 120)
-    if place:
-        address = f"{place}, {city}"
-        precise = geocode_place(address)
-        max_distance = 35.0 if normalize(city) == "roma" else 25.0
-        if precise and distance_km(center[0], center[1], precise[0], precise[1]) <= max_distance:
-            return precise[0], precise[1], city, address, True
-
-    return center[0], center[1], city, city, True
+    event = precise_incident_from_analysis(analysis)
+    return event.coordinates() if event else None
 
 def concise_event_description(title: str, description: str) -> str:
     body = clean_feed_description(description, title)
@@ -2687,16 +2792,23 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
 
     publisher = source_display_name(source, title_publisher)
     trust = effective_source_trust(source, publisher)
-    coords = coordinates_for(raw_title, description, source.name, allow_geocode=True)
-    analysis = (
-        analyze_article(title, clean_text(item["description"], 16000))
-        if item.get("_article_enriched") == "1"
-        else None
+    analysis_enabled = item.get("_article_enriched") == "1"
+    resolution = resolve_incident(
+        title=title,
+        description=clean_text(item["description"], 16000),
+        source_name=source.name,
+        default_event_type=source.default_type,
+        classify_event=classify_type,
+        resolve_from_text=lambda _title, body, source_name: coordinates_for(
+            raw_title, body, source_name, allow_geocode=True,
+        ),
+        analyze_with_ai=analyze_article if analysis_enabled else None,
+        build_from_analysis=precise_incident_from_analysis if analysis_enabled else None,
+        prefer_ai=analysis_enabled,
     )
-    category = analysis['category'] if analysis else classify_type(title, description, source.default_type)
-    ai_coords = coordinates_from_analysis(analysis)
-    if ai_coords is not None:
-        coords = ai_coords
+    analysis = resolution.analysis
+    coords = resolution.coordinates
+    category = resolution.event_type
     if coords is None:
         if existing:
             existing.last_seen_at = now
@@ -2706,6 +2818,12 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
     lat, lon, city, address, position_from_text = coords
     if not is_allowed_area(city, lat, lon):
         return False
+    location_precision = location_precision_for(city, address)
+    location_evidence = (
+        resolution.enriched_incident.location_evidence
+        if resolution.enriched_incident
+        else address if location_precision == "precise" else city
+    )
     description_with_reference = make_description(title, description, publisher, city, address)
     if event_at is not None:
         local_event = event_at.replace(tzinfo=dt.UTC).astimezone(ITALY_TIMEZONE)
@@ -2725,6 +2843,8 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
         existing.longitude = lon
         existing.address = address
         existing.city = city
+        existing.location_precision = location_precision
+        existing.location_evidence = location_evidence
         existing.status = "active"
         existing_trust = existing.source_trust or ""
         existing.source_trust = source_trust_value(trust, position_from_text)
@@ -2761,6 +2881,8 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
         longitude=lon,
         address=address,
         city=city,
+        location_precision=location_precision,
+        location_evidence=location_evidence,
         status="active",
         created_date=event_at or published_at or now,
         source=source.name,
@@ -2798,10 +2920,7 @@ def cleanup_generic_locations(db) -> dict[str, int]:
                 removed += 1
             continue
         lat, lon, city, address, _position_from_text = coords
-        incident.latitude = lat
-        incident.longitude = lon
-        incident.city = city
-        incident.address = address
+        apply_resolved_location(incident, coords)
         updated += 1
     return {"updated_generic_locations": updated, "removed_generic_locations": removed}
 
@@ -2853,10 +2972,7 @@ def cleanup_sardinia_regional_locations(db) -> dict[str, int]:
             continue
         lat, lon, city, address, _position_from_text = coords
         if city != incident.city or address != incident.address:
-            incident.latitude = lat
-            incident.longitude = lon
-            incident.city = city
-            incident.address = address
+            apply_resolved_location(incident, coords)
             updated += 1
     return {"updated_sardinia_locations": updated, "removed_sardinia_locations": removed}
 
@@ -2902,10 +3018,7 @@ def cleanup_region_locations(db) -> dict[str, int]:
             removed += 1
             continue
         lat, lon, city, address, _position_from_text = coords
-        incident.latitude = lat
-        incident.longitude = lon
-        incident.city = city
-        incident.address = address
+        apply_resolved_location(incident, coords)
         updated += 1
     return {"updated_region_locations": updated, "removed_region_locations": removed}
 
@@ -2966,10 +3079,7 @@ def cleanup_broad_publisher_locations(db) -> dict[str, int]:
             continue
         lat, lon, city, address, _position_from_text = coords
         if city != incident.city or address != incident.address:
-            incident.latitude = lat
-            incident.longitude = lon
-            incident.city = city
-            incident.address = address
+            apply_resolved_location(incident, coords)
             updated += 1
     return {"updated_broad_publisher_locations": updated, "removed_broad_publisher_locations": removed}
 
@@ -3025,10 +3135,7 @@ def cleanup_location_evidence(db) -> dict[str, int]:
 
         lat, lon, city, address, _position_from_text = coords
         if city != incident.city or address != incident.address:
-            incident.latitude = lat
-            incident.longitude = lon
-            incident.city = city
-            incident.address = address
+            apply_resolved_location(incident, coords)
             updated += 1
     return {
         "updated_location_evidence": updated,
@@ -3182,10 +3289,7 @@ def revalidate_ambiguous_locations(db) -> dict[str, int]:
             pending += 1
             continue
         lat, lon, city, address, _position_from_text = coords
-        incident.latitude = lat
-        incident.longitude = lon
-        incident.city = city
-        incident.address = address
+        apply_resolved_location(incident, coords)
         incident.status = "active"
         corrected += 1
     return {"corrected_ambiguous_locations": corrected, "pending_locations": pending}
@@ -3376,7 +3480,8 @@ def main(*, perform_maintenance: bool = False) -> dict:
         db.commit()
         from backend.repair_incident_locations import repair_recent_locations
 
-        location_repair_result = repair_recent_locations(db, limit=40)
+        repair_batch = max(1, int(os.getenv("SENTINEL_LOCATION_REPAIR_BATCH", "200")))
+        location_repair_result = repair_recent_locations(db, limit=repair_batch)
         db.commit()
     finally:
         db.close()
@@ -3406,6 +3511,9 @@ def main(*, perform_maintenance: bool = False) -> dict:
     print(f"Posizioni da testate ampie rimosse: {broad_publisher_cleanup_result['removed_broad_publisher_locations']}")
     print(f"Posizioni corrette con nuova verifica: {evidence_cleanup_result['updated_location_evidence']}")
     print(f"Eventi senza luogo verificabile rimossi: {evidence_cleanup_result['removed_without_location_evidence']}")
+    print(f"Posizioni precise riparate: {location_repair_result['precise_locations_repaired']}")
+    print(f"Posizioni precise confermate: {location_repair_result['precise_locations_confirmed']}")
+    print(f"Articoli ancora da verificare: {location_repair_result['location_articles_remaining']}")
     print(f"Duplicati uniti: {removed_duplicates}")
     print(f"Posizioni ambigue corrette: {ambiguous_location_result['corrected_ambiguous_locations']}")
     print(f"Eventi conservati in attesa di posizione: {ambiguous_location_result['pending_locations']}")

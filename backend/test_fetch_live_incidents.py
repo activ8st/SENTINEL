@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.models import Base, Incident, Media, User
+from backend.incident_enrichment import EnrichedIncident, PrecisePosition
 from backend.schemas import Incident as IncidentSchema
 
 from backend.fetch_live_incidents import (
@@ -34,12 +35,14 @@ from backend.fetch_live_incidents import (
     ensure_sentinel_bot,
     explicit_recognized_city,
     fetch_article_context,
+    geocode_precise_position,
     is_relevant_incident,
     likely_same_report,
     load_active_region_municipalities,
     municipality_source,
     parse_published_at,
     parse_rss,
+    precise_incident_from_analysis,
     revalidate_ambiguous_locations,
     save_item,
     select_enrichment_jobs,
@@ -47,6 +50,95 @@ from backend.fetch_live_incidents import (
 
 
 class IncidentImportQualityTests(unittest.TestCase):
+    def test_precise_geocoder_requires_place_and_municipality_match(self):
+        valid = [{
+            "lat": "45.4631",
+            "lon": "9.1867",
+            "display_name": "Via Torino, Municipio 1, Milano, Lombardia, Italia",
+            "address": {
+                "road": "Via Torino",
+                "city": "Milano",
+                "country_code": "it",
+            },
+        }]
+        wrong_city = [{
+            "lat": "45.0703",
+            "lon": "7.6869",
+            "display_name": "Via Torino, Torino, Piemonte, Italia",
+            "address": {
+                "road": "Via Torino",
+                "city": "Torino",
+                "country_code": "it",
+            },
+        }]
+
+        with patch("backend.fetch_live_incidents.fetch_url", return_value=json.dumps(valid).encode()):
+            position = geocode_precise_position("Via Torino", "Milano")
+        self.assertIsNotNone(position)
+        self.assertEqual(position.precision, "street")
+
+        with patch("backend.fetch_live_incidents.fetch_url", return_value=json.dumps(wrong_city).encode()):
+            self.assertIsNone(geocode_precise_position("Via Torino", "Milano"))
+
+        reversed_house_number = [{
+            "lat": "45.4631",
+            "lon": "9.1867",
+            "display_name": "12, Via Torino, Municipio 1, Milano, Lombardia, Italia",
+            "address": {
+                "house_number": "12",
+                "road": "Via Torino",
+                "city": "Milano",
+                "country_code": "it",
+            },
+        }]
+        with patch(
+            "backend.fetch_live_incidents.fetch_url",
+            return_value=json.dumps(reversed_house_number).encode(),
+        ):
+            position = geocode_precise_position("Via Torino 12", "Milano")
+        self.assertEqual(position.precision, "address")
+
+    def test_gemini_analysis_does_not_fall_back_to_city_center(self):
+        analysis = {
+            "category": "fire",
+            "municipality": "Milano",
+            "place": "",
+            "location_evidence": "nel comune di Milano",
+            "category_evidence": "incendio",
+        }
+        with patch("backend.fetch_live_incidents.geocode_precise_position") as geocode:
+            self.assertIsNone(precise_incident_from_analysis(analysis))
+        geocode.assert_not_called()
+
+    def test_marebello_title_maps_to_precise_rimini_neighborhood(self):
+        title = "Feroce rapina a Marebello, individuati i presunti autori"
+        description = "La violenta aggressione e avvenuta nella notte."
+
+        self.assertEqual(detect_city(title, description, "riminitoday-diretto"), "Rimini")
+        with (
+            patch(
+                "backend.fetch_live_incidents.geocode_precise_position",
+                return_value=PrecisePosition(
+                    latitude=44.0417567,
+                    longitude=12.608035,
+                    address="Marebello, Rimini",
+                    precision="locality",
+                ),
+            ),
+            patch("backend.fetch_live_incidents.time.sleep"),
+        ):
+            coordinates = coordinates_for(
+                title,
+                description,
+                "riminitoday-diretto",
+                allow_geocode=True,
+            )
+
+        self.assertEqual(
+            coordinates,
+            (44.0417567, 12.608035, "Rimini", "Marebello, Rimini", True),
+        )
+
     def test_api_serializes_database_datetimes_as_utc(self):
         incident = IncidentSchema(
             id="test-time",
@@ -694,6 +786,58 @@ class IncidentImportQualityTests(unittest.TestCase):
             with patch("backend.gemini_news.analyze_article") as analyze:
                 self.assertTrue(save_item(session, SOURCE_BY_NAME["milanotoday-direct"], item))
                 analyze.assert_not_called()
+        finally:
+            session.close()
+
+    def test_precise_gemini_event_object_drives_saved_type_and_position(self):
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        session = sessionmaker(bind=engine)()
+        item = {
+            "guid": "gemini-precise-event",
+            "title": "Incidente in via Torino a Milano",
+            "description": "Un incidente stradale e avvenuto in via Torino a Milano.",
+            "published": email.utils.format_datetime(dt.datetime.now(dt.timezone.utc)),
+            "link": "https://example.test/gemini-precise-event",
+            "_article_enriched": "1",
+        }
+        analysis = {
+            "category": "accident",
+            "municipality": "Milano",
+            "place": "via Torino",
+            "location_evidence": "in via Torino a Milano",
+            "category_evidence": "incidente stradale",
+        }
+        enriched = EnrichedIncident(
+            event_type="accident",
+            municipality="Milano",
+            place="via Torino",
+            latitude=45.4631,
+            longitude=9.1867,
+            address="Via Torino, Milano, Lombardia, Italia",
+            precision="street",
+            location_evidence=analysis["location_evidence"],
+            category_evidence=analysis["category_evidence"],
+        )
+        try:
+            ensure_sentinel_bot(session)
+            with (
+                patch("backend.gemini_news.analyze_article", return_value=analysis),
+                patch(
+                    "backend.fetch_live_incidents.precise_incident_from_analysis",
+                    return_value=enriched,
+                ),
+                patch("backend.fetch_live_incidents.coordinates_for") as fallback,
+            ):
+                self.assertTrue(save_item(session, SOURCE_BY_NAME["milanotoday-direct"], item))
+
+            fallback.assert_not_called()
+            incident = session.query(Incident).filter_by(source_event_id=item["guid"]).one()
+            self.assertEqual(incident.type, "accident")
+            self.assertEqual(incident.city, "Milano")
+            self.assertEqual(incident.address, "Via Torino, Milano, Lombardia, Italia")
+            self.assertAlmostEqual(incident.latitude, 45.4631)
+            self.assertAlmostEqual(incident.longitude, 9.1867)
         finally:
             session.close()
 

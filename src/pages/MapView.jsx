@@ -11,6 +11,7 @@ import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
 import IncidentMap from '@/components/incidents/IncidentMap';
 import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { AREA_RADIUS_PRESETS, loadAreaFilter, saveAreaFilter } from '@/lib/areaFilter';
+import { hasPreciseIncidentLocation } from '@/lib/incidentLocation';
 
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
@@ -106,6 +107,11 @@ export default function MapView() {
       });
   }, [incidentsWithDistance, activeTypes, useRadius, userGpsActive, radius, selectedHours]);
 
+  const mappedIncidents = useMemo(
+    () => filteredIncidents.filter(hasPreciseIncidentLocation),
+    [filteredIncidents]
+  );
+
   const handleRefresh = async () => {
     setRefreshingNews(true);
     await refetch();
@@ -192,7 +198,7 @@ export default function MapView() {
       {/* 2. Full-Screen 3D Map View Container */}
       <div style={{ width: '100%', height: '100%', minHeight: '500px' }}>
         <IncidentMap
-          incidents={filteredIncidents}
+          incidents={mappedIncidents}
           center={mapCenter}
           userLocation={userGpsActive ? location : null}
           zoom={mapZoom}

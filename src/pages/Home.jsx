@@ -7,6 +7,7 @@ import { RefreshCw, ChevronDown, Radio, ShieldCheck, Sparkles, Clock3, MapPin } 
 import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
 import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { loadAreaFilter, saveAreaFilter } from '@/lib/areaFilter';
+import { hasPreciseIncidentLocation } from '@/lib/incidentLocation';
 
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
@@ -85,14 +86,16 @@ export default function Home() {
   const incidentsWithDistance = useMemo(() => {
     return baseIncidents.map(inc => ({
       ...inc,
-      distance: calcDistance(userLocation.lat, userLocation.lng, inc.latitude, inc.longitude)
+      distance: hasPreciseIncidentLocation(inc)
+        ? calcDistance(userLocation.lat, userLocation.lng, inc.latitude, inc.longitude)
+        : null,
     }));
   }, [baseIncidents, userLocation]);
 
   const filteredIncidents = useMemo(() => {
     const cutoffTime = Date.now() - selectedHours * 3600 * 1000;
     const filtered = incidentsWithDistance
-      .filter(i => !useRadius || !hasUserLocation || (i.distance ?? 999999) <= radius)
+      .filter(i => !useRadius || !hasUserLocation || (i.distance != null && i.distance <= radius))
       .filter(i => {
         const timestamp = incidentTimestamp(i);
         return timestamp === 0 || timestamp >= cutoffTime;

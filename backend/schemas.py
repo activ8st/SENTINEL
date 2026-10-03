@@ -40,6 +40,8 @@ class IncidentBase(BaseModel):
     longitude: float
     address: str
     city: str
+    location_precision: str = "unknown"
+    location_evidence: Optional[str] = None
     status: str = "active"
     reported_by_id: Optional[str] = None
     reporter_karma: int = 0

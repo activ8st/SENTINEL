@@ -37,7 +37,7 @@ class RepairIncidentLocationsTests(unittest.TestCase):
             status="active",
             source="riminitoday-diretto",
             source_event_id="romagnano-test",
-            source_trust="local-news",
+            source_trust="local-news-location-checked-v2",
             created_date=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
         )
         incident.media.append(Media(url="https://example.test/article", type="source"))
@@ -67,10 +67,15 @@ class RepairIncidentLocationsTests(unittest.TestCase):
         self.assertEqual(result["location_articles_checked"], 1)
         self.assertEqual(result["precise_locations_repaired"], 1)
         self.assertEqual(incident.address, "SP 146, Romagnano, Sant'Agata Feltria")
+        self.assertEqual(incident.location_precision, "precise")
+        self.assertEqual(
+            incident.location_evidence,
+            "SP 146, Romagnano, Sant'Agata Feltria",
+        )
         self.assertAlmostEqual(incident.latitude, 43.9219111)
-        self.assertIn("location-checked", incident.source_trust)
+        self.assertIn("location-checked-v3", incident.source_trust)
 
-    def test_replaces_wrong_city_even_when_only_new_municipality_is_known(self):
+    def test_replaces_wrong_city_when_precise_new_place_is_verified(self):
         incident = Incident(
             id="wrong-city-test",
             type="incident",
@@ -94,28 +99,40 @@ class RepairIncidentLocationsTests(unittest.TestCase):
         analysis = {
             "category": "fire",
             "municipality": "Ravenna",
-            "place": "",
-            "location_evidence": "nel comune di Ravenna",
+            "place": "via Cavour",
+            "location_evidence": "in via Cavour nel comune di Ravenna",
             "category_evidence": "incendio",
         }
-        corrected = (44.4184, 12.2035, "Ravenna", "Ravenna", True)
+        corrected = (44.4189, 12.2017, "Ravenna", "via Cavour, Ravenna", True)
         with (
             patch(
                 "backend.repair_incident_locations.fetch_article_context",
-                return_value=("Incendio nel comune di Ravenna.", None),
+                return_value=("Incendio in via Cavour nel comune di Ravenna.", None),
+            ),
+            patch(
+                "backend.repair_incident_locations.coordinates_for",
+                return_value=None,
             ),
             patch("backend.repair_incident_locations.analyze_article", return_value=analysis),
             patch(
-                "backend.repair_incident_locations.coordinates_from_analysis",
-                return_value=corrected,
+                "backend.repair_incident_locations.precise_incident_from_analysis",
+                return_value=type(
+                    "PreciseEvent",
+                    (),
+                    {
+                        "event_type": "fire",
+                        "coordinates": lambda self: corrected,
+                    },
+                )(),
             ),
         ):
             result = repair_recent_locations(self.db, limit=1)
 
         self.assertEqual(result["precise_locations_repaired"], 1)
         self.assertEqual(incident.city, "Ravenna")
-        self.assertEqual(incident.address, "Ravenna")
-        self.assertAlmostEqual(incident.latitude, 44.4184)
+        self.assertEqual(incident.address, "via Cavour, Ravenna")
+        self.assertEqual(incident.location_precision, "precise")
+        self.assertAlmostEqual(incident.latitude, 44.4189)
 
 
 if __name__ == "__main__":

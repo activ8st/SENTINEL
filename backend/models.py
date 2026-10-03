@@ -28,6 +28,8 @@ class Incident(Base):
     longitude = Column(Float)
     address = Column(String)
     city = Column(String)
+    location_precision = Column(String, default="unknown", server_default="unknown")
+    location_evidence = Column(String, nullable=True)
     status = Column(String, default="active")
     created_date = Column(DateTime, default=datetime.datetime.utcnow)
     

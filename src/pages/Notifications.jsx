@@ -11,6 +11,7 @@ import {
 import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
 import { getPersistentIncidents, syncSentinelFeedsPermanently } from '@/lib/liveSyncEngine';
 import { loadAreaFilter, saveAreaFilter } from '@/lib/areaFilter';
+import { hasPreciseIncidentLocation } from '@/lib/incidentLocation';
 import { useQuery } from '@tanstack/react-query';
 import { Trash2, MapPin, ChevronRight, Settings, Check, ShieldCheck } from 'lucide-react';
 
@@ -75,6 +76,7 @@ export default function Notifications() {
   const alerts = useMemo(() =>
     fetchedAlerts
       .filter(i => !dismissed.has(i.id))
+      .filter(hasPreciseIncidentLocation)
       .map(i => ({
         ...i,
         distance: calcDistance(location.lat, location.lng, i.latitude, i.longitude),

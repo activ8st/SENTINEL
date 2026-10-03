@@ -26,7 +26,11 @@ class SchemaCompatibilityTests(unittest.TestCase):
             column["name"] for column in inspect(test_engine).get_columns("incidents")
         }
         self.assertTrue({"strikes", "is_read_only", "role"}.issubset(user_columns))
-        self.assertIn("fake_votes", incident_columns)
+        self.assertTrue({
+            "fake_votes",
+            "location_precision",
+            "location_evidence",
+        }.issubset(incident_columns))
 
         with test_engine.connect() as connection:
             existing_user = connection.execute(

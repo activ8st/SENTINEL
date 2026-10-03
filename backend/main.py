@@ -141,6 +141,13 @@ def incident_in_allowed_area(incident: models.Incident) -> bool:
 
 def attach_incident_metadata(incident: models.Incident) -> models.Incident:
     incident.media_urls = [media.url for media in incident.media]
+    if not incident.location_precision or incident.location_precision == "unknown":
+        has_precise_address = bool(
+            incident.address
+            and incident.city
+            and incident.address.strip().casefold() != incident.city.strip().casefold()
+        )
+        incident.location_precision = "precise" if has_precise_address else "municipality"
     match = re.search(
         r"\bFonte:\s*(.+?)\.\s+Localizzazione:",
         incident.description or "",

@@ -37,6 +37,16 @@ class LocationResolverTests(unittest.TestCase):
         )
         self.assertEqual(candidates[0].name, "stazione Greco Pirelli")
 
+    def test_named_neighborhood_in_title_is_a_precise_candidate(self):
+        candidates = extract_location_candidates(
+            "Feroce rapina a Marebello, individuati i presunti autori",
+            "La violenta aggressione e avvenuta nella notte.",
+            "Rimini",
+        )
+        self.assertEqual(candidates[0].name, "Marebello")
+        self.assertEqual(candidates[0].query, "Marebello, Rimini")
+        self.assertEqual(candidates[0].kind, "named-place")
+
     def test_geocoded_hamlet_must_be_near_its_municipality(self):
         description = "Incidente lungo la SP 146 Sapigno - Romagnano, nel comune di Sant'Agata Feltria."
 

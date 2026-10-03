@@ -71,6 +71,12 @@ def extract_location_candidates(
     for match in locality_pattern.finditer(text):
         _append_unique(candidates, seen, match.group("name"), municipality, "locality")
 
+    named_place_pattern = re.compile(
+        rf"\b(?i:a|ad|in|presso)\s+(?P<name>{PROPER_NAME}){PLACE_END}"
+    )
+    for match in named_place_pattern.finditer(text):
+        _append_unique(candidates, seen, match.group("name"), municipality, "named-place")
+
     street_pattern = re.compile(
         rf"\b(?P<street>(?i:via|viale|piazza|piazzale|lungomare|strada))\s+(?P<name>{PROPER_NAME}){PLACE_END}"
     )

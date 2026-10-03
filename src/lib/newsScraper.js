@@ -142,7 +142,7 @@ export const fetchMapboxPrecisionCoords = async (queryText, cityName = 'Milano')
   return geocodeAddress(queryText, cityName);
 };
 
-// Strict City Geocoding Engine
+// Strict local fallback: return only a known, explicit place from the article.
 const geocodeAddress = (text, defaultCity = 'Milano') => {
   const t = (text || '').toLowerCase();
   for (const [key, loc] of Object.entries(NEIGHBORHOOD_COORDS)) {
@@ -151,19 +151,7 @@ const geocodeAddress = (text, defaultCity = 'Milano') => {
     }
   }
 
-  if (defaultCity === 'Roma') {
-    return { lat: 41.9028 + (Math.random() - 0.5) * 0.03, lng: 12.4964 + (Math.random() - 0.5) * 0.03, address: 'Piazza Venezia · Roma Centro', hub: 'Roma' };
-  }
-  if (defaultCity === 'Verona') {
-    return { lat: 45.4384 + (Math.random() - 0.5) * 0.02, lng: 10.9916 + (Math.random() - 0.5) * 0.02, address: 'Corso Cavour · Verona Centro', hub: 'Verona' };
-  }
-  if (defaultCity === 'Napoli') {
-    return { lat: 40.8518 + (Math.random() - 0.5) * 0.03, lng: 14.2681 + (Math.random() - 0.5) * 0.03, address: 'Corso Umberto I · Napoli Centro', hub: 'Napoli' };
-  }
-  if (defaultCity === 'Emilia-Romagna' || defaultCity === 'Bologna') {
-    return { lat: 44.4949 + (Math.random() - 0.5) * 0.03, lng: 11.3426 + (Math.random() - 0.5) * 0.03, address: 'Via Ugo Bassi · Bologna', hub: 'Emilia-Romagna' };
-  }
-  return { lat: 45.4642 + (Math.random() - 0.5) * 0.03, lng: 9.1900 + (Math.random() - 0.5) * 0.03, address: 'Corso Vittorio Emanuele · Milano Centro', hub: 'Milano' };
+  return null;
 };
 
 // Filter out lifestyle, horoscopes, sports, recipes, cinema, office tips
@@ -287,6 +275,7 @@ export const fetchMilanoToday = async () => {
 
     const cat = classifyCategory(cleanTitle + ' ' + cleanDesc);
     const geocoded = geocodeAddress(cleanTitle + ' ' + cleanDesc, 'Milano');
+    if (!geocoded) return null;
 
     return {
       id: `milanotoday-${idx}-${now}`,
@@ -318,6 +307,7 @@ export const fetchRomaToday = async () => {
 
     const cat = classifyCategory(cleanTitle + ' ' + cleanDesc);
     const geocoded = geocodeAddress(cleanTitle + ' ' + cleanDesc, 'Roma');
+    if (!geocoded) return null;
 
     return {
       id: `romatoday-${idx}-${now}`,
@@ -349,6 +339,7 @@ export const fetchVeronaLiveFeeds = async () => {
 
     const cat = classifyCategory(cleanTitle + ' ' + cleanDesc);
     const geocoded = geocodeAddress(cleanTitle + ' ' + cleanDesc, 'Verona');
+    if (!geocoded) return null;
 
     return {
       id: `verona-${idx}-${now}`,
@@ -380,6 +371,7 @@ export const fetchNapoliLiveFeeds = async () => {
 
     const cat = classifyCategory(cleanTitle + ' ' + cleanDesc);
     const geocoded = geocodeAddress(cleanTitle + ' ' + cleanDesc, 'Napoli');
+    if (!geocoded) return null;
 
     return {
       id: `napoli-${idx}-${now}`,
@@ -411,6 +403,7 @@ export const fetchBolognaLiveFeeds = async () => {
 
     const cat = classifyCategory(cleanTitle + ' ' + cleanDesc);
     const geocoded = geocodeAddress(cleanTitle + ' ' + cleanDesc, 'Emilia-Romagna');
+    if (!geocoded) return null;
 
     return {
       id: `bologna-${idx}-${now}`,
@@ -432,94 +425,8 @@ export const fetchBolognaLiveFeeds = async () => {
   }).filter(Boolean);
 };
 
-// Rich Balanced Cold Boot Feeds across ALL 5 Launch Hubs (Milano, Verona, Roma, Napoli, Bologna)
-export const getColdBootRealLiveFeeds = () => [
-  {
-    id: `live-m1-${now}`,
-    title: 'Controlli Straordinari di Sicurezza Urbana alla Stazione Centrale',
-    description: 'Pattuglie congiunte della Polizia di Stato e Polizia Locale nei pressi di Piazza Duca d\'Aosta per presidio di sicurezza urbana e controllo flussi.',
-    type: 'crime',
-    severity: 'high',
-    status: 'active',
-    latitude: 45.4850,
-    longitude: 9.2040,
-    address: 'Piazza Duca d\'Aosta · Stazione Centrale, Milano',
-    city: 'Milano',
-    is_live: true,
-    created_date: mins(4),
-    source: 'ANSA Ufficiale',
-    official_verified: true,
-    source_url: 'https://www.ansa.it'
-  },
-  {
-    id: `live-rm1-${now}`,
-    title: 'Presidio Preventivo di Sicurezza e Viabilità alla Stazione Termini',
-    description: 'Pattuglie di Polizia Locale e Forze dell\'Ordine in Piazza dei Cinquecento a Roma per controlli integrati sulla viabilità e sicurezza del territorio.',
-    type: 'crime',
-    severity: 'high',
-    status: 'active',
-    latitude: 41.9010,
-    longitude: 12.5010,
-    address: 'Piazza dei Cinquecento · Stazione Termini, Roma',
-    city: 'Roma',
-    is_live: true,
-    created_date: mins(6),
-    source: 'RomaToday Live',
-    official_verified: true,
-    source_url: 'https://www.romatoday.it'
-  },
-  {
-    id: `live-bo1-${now}`,
-    title: 'Monitoraggio della Viabilità e Presidio in Via Ugo Bassi',
-    description: 'Presidio della Polizia Locale in Via Ugo Bassi a Bologna per rilievi sulla viabilità e controllo del traffico urbano.',
-    type: 'traffic',
-    severity: 'medium',
-    status: 'active',
-    latitude: 44.4949,
-    longitude: 11.3426,
-    address: 'Via Ugo Bassi · Bologna',
-    city: 'Emilia-Romagna',
-    is_live: true,
-    created_date: mins(8),
-    source: 'BolognaToday Live',
-    official_verified: true,
-    source_url: 'https://www.bolognatoday.it'
-  },
-  {
-    id: `live-na1-${now}`,
-    title: 'Controlli di Sicurezza e Viabilità in Corso Umberto I',
-    description: 'Pattuglia sul posto nei pressi di Piazza Garibaldi a Napoli per presidio e controllo dell\'ordine pubblico.',
-    type: 'crime',
-    severity: 'medium',
-    status: 'active',
-    latitude: 40.8518,
-    longitude: 14.2681,
-    address: 'Corso Umberto I · Napoli',
-    city: 'Napoli',
-    is_live: true,
-    created_date: mins(10),
-    source: 'NapoliToday Live',
-    official_verified: true,
-    source_url: 'https://www.napolitoday.it'
-  },
-  {
-    id: `live-vr1-${now}`,
-    title: 'Controlli della Polizia Locale in Corso Porta Nuova e Zona Stazione',
-    description: 'Presidio perimetrale della Polizia Locale in Corso Porta Nuova e Piazza Bra per la viabilità e la sicurezza urbana.',
-    type: 'traffic',
-    severity: 'medium',
-    status: 'active',
-    latitude: 45.4320,
-    longitude: 10.9880,
-    address: 'Corso Porta Nuova · Verona',
-    city: 'Verona',
-    is_live: true,
-    created_date: mins(12),
-    source: 'VeronaSera Live',
-    official_verified: true,
-    source_url: 'https://www.veronasera.it'
-  }
-];
+// Never present demo incidents as live data when both the API and RSS fail.
+export const getColdBootRealLiveFeeds = () => [];
 
 export const fetchAllLiveSentinelFeeds = async () => {
   try {

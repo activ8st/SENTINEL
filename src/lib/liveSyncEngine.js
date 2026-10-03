@@ -73,6 +73,7 @@ export const syncSentinelFeedsPermanently = async () => {
       const userReports = await db.reports.toArray();
       userReports.forEach(rep => {
         if (!rep || !rep.title) return;
+        if (!Number.isFinite(Number(rep.latitude)) || !Number.isFinite(Number(rep.longitude))) return;
         const normKey = rep.title.toLowerCase().replace(/\s+/g, ' ').trim();
         titleMap.set(normKey, {
           id: rep.id || `usr-${Date.now()}`,
@@ -81,10 +82,10 @@ export const syncSentinelFeedsPermanently = async () => {
           type: rep.type || 'suspicious',
           severity: rep.severity || 'medium',
           status: 'active',
-          latitude: rep.latitude || 45.4642,
-          longitude: rep.longitude || 9.1900,
-          address: rep.address || 'Milano · Centro',
-          city: rep.city || 'Milano',
+          latitude: Number(rep.latitude),
+          longitude: Number(rep.longitude),
+          address: rep.address || 'Posizione della segnalazione',
+          city: rep.city || '',
           is_live: true,
           created_date: rep.created_date || new Date().toISOString(),
           source: 'Community Sentinel',
