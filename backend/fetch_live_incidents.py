@@ -85,13 +85,56 @@ FOCUS_METROPOLITAN_AREAS = {
     "Roma": "roma",
     "Napoli": "napoli",
     "Bologna": "bologna",
+    "Ferrara": "emilia-romagna-ferrara",
+    "Forlì-Cesena": "emilia-romagna-forli-cesena",
+    "Modena": "emilia-romagna-modena",
+    "Parma": "emilia-romagna-parma",
+    "Piacenza": "emilia-romagna-piacenza",
+    "Ravenna": "emilia-romagna-ravenna",
+    "Reggio nell'Emilia": "emilia-romagna-reggio-emilia",
+    "Rimini": "emilia-romagna-rimini",
     "Verona": "verona",
 }
 MUNICIPALITIES_PER_QUERY = 18
 FOCUS_MUNICIPALITIES_PER_QUERY = {
-    # Smaller groups prevent Bologna city from crowding out the 54 surrounding towns.
+    # Small groups prevent provincial capitals from crowding out smaller towns.
+    "Milano": 8,
+    "Roma": 8,
+    "Napoli": 8,
     "Bologna": 6,
+    "Ferrara": 8,
+    "Forlì-Cesena": 8,
+    "Modena": 8,
+    "Parma": 8,
+    "Piacenza": 8,
+    "Ravenna": 8,
+    "Reggio nell'Emilia": 8,
+    "Rimini": 8,
     "Verona": 4,
+}
+MUNICIPALITY_REGION_MINIMUMS = {
+    "Lombardia": 1400,
+    "Lazio": 350,
+    "Campania": 500,
+    "Emilia-Romagna": 300,
+}
+MUNICIPALITY_PROVINCE_MINIMUMS = {
+    # Official ISTAT counts at 21 February 2026. Keeping the launch areas
+    # explicit prevents a truncated upstream catalog from silently dropping
+    # smaller municipalities from the search queries.
+    "Milano": 133,
+    "Roma": 121,
+    "Napoli": 92,
+    "Bologna": 55,
+    "Ferrara": 21,
+    "Forlì-Cesena": 30,
+    "Modena": 47,
+    "Parma": 44,
+    "Piacenza": 46,
+    "Ravenna": 18,
+    "Reggio nell'Emilia": 42,
+    "Rimini": 27,
+    "Verona": 98,
 }
 
 EMILIA_ROMAGNA_CITIES = {
@@ -2019,8 +2062,30 @@ def _municipality_rows_from_payload(payload: bytes) -> list[dict]:
     ]
 
 
+def municipality_catalog_is_complete(rows: list[dict]) -> bool:
+    region_counts = {region: 0 for region in MUNICIPALITY_REGION_MINIMUMS}
+    province_counts = {province: 0 for province in MUNICIPALITY_PROVINCE_MINIMUMS}
+    for row in rows:
+        region = (row.get("regione") or {}).get("nome")
+        province = (row.get("provincia") or {}).get("nome")
+        if region in region_counts:
+            region_counts[region] += 1
+        if province in province_counts:
+            province_counts[province] += 1
+    return (
+        all(
+            region_counts[region] >= minimum
+            for region, minimum in MUNICIPALITY_REGION_MINIMUMS.items()
+        )
+        and all(
+            province_counts[province] >= minimum
+            for province, minimum in MUNICIPALITY_PROVINCE_MINIMUMS.items()
+        )
+    )
+
+
 def load_active_region_municipalities() -> dict[str, int | str]:
-    """Recognize all active-region towns and deeply scan the four metro areas."""
+    """Recognize active-region towns and scan every configured launch province."""
     global _MUNICIPALITY_CATALOG_STATE
     if _MUNICIPALITY_CATALOG_STATE is not None:
         return {**_MUNICIPALITY_CATALOG_STATE, "origin": "memory"}
@@ -2028,7 +2093,10 @@ def load_active_region_municipalities() -> dict[str, int | str]:
     rows = []
     origin = "fallback"
     try:
-        rows = _municipality_rows_from_payload(fetch_url(MUNICIPALITY_DATA_URL, timeout=45))
+        fetched_rows = _municipality_rows_from_payload(fetch_url(MUNICIPALITY_DATA_URL, timeout=45))
+        if not municipality_catalog_is_complete(fetched_rows):
+            raise ValueError("Anagrafica comuni online incompleta")
+        rows = fetched_rows
         MUNICIPALITY_CACHE.parent.mkdir(parents=True, exist_ok=True)
         MUNICIPALITY_CACHE.write_text(
             json.dumps(rows, ensure_ascii=False, separators=(",", ":")),
@@ -2037,7 +2105,10 @@ def load_active_region_municipalities() -> dict[str, int | str]:
         origin = "online"
     except Exception:
         try:
-            rows = _municipality_rows_from_payload(MUNICIPALITY_CACHE.read_bytes())
+            cached_rows = _municipality_rows_from_payload(MUNICIPALITY_CACHE.read_bytes())
+            if not municipality_catalog_is_complete(cached_rows):
+                raise ValueError("Cache comuni incompleta")
+            rows = cached_rows
             origin = "cache"
         except Exception:
             rows = []

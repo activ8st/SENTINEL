@@ -1,7 +1,9 @@
 import datetime as dt
 import email.utils
 import json
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from sqlalchemy import create_engine
@@ -39,6 +41,7 @@ from backend.fetch_live_incidents import (
     is_relevant_incident,
     likely_same_report,
     load_active_region_municipalities,
+    municipality_catalog_is_complete,
     municipality_source,
     parse_published_at,
     parse_rss,
@@ -841,12 +844,16 @@ class IncidentImportQualityTests(unittest.TestCase):
         finally:
             session.close()
 
-    def test_focus_areas_are_the_four_metropolitan_territories(self):
-        self.assertEqual(
-            FOCUS_METROPOLITAN_AREAS,
-            {"Milano": "milano", "Roma": "roma", "Napoli": "napoli", "Bologna": "bologna", "Verona": "verona"},
-        )
+    def test_focus_areas_cover_launch_provinces_and_all_emilia_romagna(self):
+        for province in (
+            "Milano", "Roma", "Bologna", "Ferrara", "Forlì-Cesena", "Modena",
+            "Parma", "Piacenza", "Ravenna", "Reggio nell'Emilia", "Rimini", "Verona",
+        ):
+            self.assertIn(province, FOCUS_METROPOLITAN_AREAS)
+        self.assertEqual(FOCUS_MUNICIPALITIES_PER_QUERY["Milano"], 8)
+        self.assertEqual(FOCUS_MUNICIPALITIES_PER_QUERY["Roma"], 8)
         self.assertEqual(FOCUS_MUNICIPALITIES_PER_QUERY["Bologna"], 6)
+        self.assertEqual(FOCUS_MUNICIPALITIES_PER_QUERY["Verona"], 4)
         source = municipality_source(
             "focus-test",
             ("Abbiategrasso", "Tivoli", "Acerra", "Imola"),
@@ -854,6 +861,16 @@ class IncidentImportQualityTests(unittest.TestCase):
         )
         self.assertTrue(source.enrich_article)
         self.assertIn("Abbiategrasso", source.url)
+
+    def test_incomplete_municipality_catalog_is_rejected(self):
+        rows = [{
+            "nome": "Bologna",
+            "regione": {"nome": "Emilia-Romagna"},
+            "provincia": {"nome": "Bologna"},
+            "coordinate": {"lat": 44.4949, "lng": 11.3426},
+        }]
+
+        self.assertFalse(municipality_catalog_is_complete(rows))
 
     def test_bologna_focus_sources_use_small_batches_and_reload_cleanly(self):
         names = (
@@ -871,7 +888,13 @@ class IncidentImportQualityTests(unittest.TestCase):
         ]
         payload = json.dumps(rows).encode("utf-8")
 
-        with patch("backend.fetch_live_incidents.fetch_url", return_value=payload):
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch("backend.fetch_live_incidents.fetch_url", return_value=payload),
+            patch("backend.fetch_live_incidents.municipality_catalog_is_complete", return_value=True),
+            patch("backend.fetch_live_incidents.MUNICIPALITY_CACHE", Path(directory) / "comuni.json"),
+            patch("backend.fetch_live_incidents._MUNICIPALITY_CATALOG_STATE", None),
+        ):
             first = load_active_region_municipalities()
             second = load_active_region_municipalities()
 

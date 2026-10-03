@@ -26,7 +26,8 @@ class VeronaCoverageTests(unittest.TestCase):
         with patch("backend.fetch_live_incidents.geocode_place", return_value=None), patch("backend.fetch_live_incidents.time.sleep"):
             result = coordinates_for(title, body)
         self.assertEqual(result[2], "Sant'Agata Feltria")
-        self.assertAlmostEqual(result[0], 43.8639857)
+        self.assertEqual(result[3], "SP 146, Romagnano, Sant'Agata Feltria")
+        self.assertAlmostEqual(result[0], 43.9219111)
 
     def test_direct_feeds_do_not_assign_publisher_city(self):
         for name in ("riminitoday-diretto", "veronasera-diretto"):
