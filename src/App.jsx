@@ -26,8 +26,6 @@ const LayoutWrapper = ({ children, currentPageName }) => {
   return Layout ? <Layout currentPageName={currentPageName}>{children}</Layout> : <>{children}</>;
 };
 
-const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
-
 const notifyKeyForType = (type) => `notify_${type}`;
 
 const loadNotifySettings = () => {
@@ -43,6 +41,22 @@ const AuthenticatedApp = () => {
   const notifySettings = loadNotifySettings();
   const prevIncidentIdsRef = useRef(new Set());
   const isFirstFetchRef = useRef(true);
+  const [userRealGps, setUserRealGps] = useState(null);
+
+  // 1. Instant High-Accuracy Physical GPS Triangulation at App Boot
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserRealGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      (err) => {
+        console.warn("Global GPS radar location error:", err);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  }, []);
 
   // Poll incidents for radar alerts
   const { data: dbIncidents = [] } = useQuery({
@@ -54,10 +68,6 @@ const AuthenticatedApp = () => {
     refetchInterval: 30000,
   });
 
-  // User location for radar alerts
-  const userLat = user?.location?.lat ?? DEFAULT_LOC.lat;
-  const userLng = user?.location?.lng ?? DEFAULT_LOC.lng;
-
   useEffect(() => {
     if (!dbIncidents.length) return;
 
@@ -67,6 +77,9 @@ const AuthenticatedApp = () => {
       return;
     }
 
+    // Only fire "ALLERTA IN ZONA" toasts if user's real physical GPS location is active
+    if (!userRealGps) return;
+
     dbIncidents.forEach((inc) => {
       if (!prevIncidentIdsRef.current.has(inc.id)) {
         prevIncidentIdsRef.current.add(inc.id);
@@ -74,16 +87,17 @@ const AuthenticatedApp = () => {
         const isEnabled = notifySettings[notifyKeyForType(inc.type)] !== false;
         if (!isEnabled) return;
 
-        const dist = calcDistance(userLat, userLng, inc.latitude, inc.longitude);
-        if (dist <= 5) {
+        const dist = calcDistance(userRealGps.lat, userRealGps.lng, inc.latitude, inc.longitude);
+        // Only trigger toast for real incidents within 15 km of the user's actual physical location
+        if (dist <= 15) {
           toast.warning(`ALLERTA IN ZONA: ${inc.title}`, {
-            description: `${inc.address} (${dist.toFixed(1)} km da te)`,
+            description: `${inc.address || inc.city} (${dist.toFixed(1)} km da te)`,
             duration: 8000,
           });
         }
       }
     });
-  }, [dbIncidents, userLat, userLng, notifySettings]);
+  }, [dbIncidents, userRealGps, notifySettings]);
 
   return (
     <Routes>
@@ -127,26 +141,24 @@ const AuthenticatedApp = () => {
   );
 };
 
-function App() {
+export default function App() {
   useEffect(() => {
-    initializeDB();
+    initializeDB().catch(console.error);
   }, []);
 
   return (
-    <LanguageThemeProvider>
+    <QueryClientProvider client={queryClientInstance}>
       <AuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
+        <LanguageThemeProvider>
           <Router>
             <AuthenticatedApp />
           </Router>
           <Toaster />
-          <SonnerToaster />
+          <SonnerToaster position="top-right" theme="dark" />
           <SpeedInsights />
           <Analytics />
-        </QueryClientProvider>
+        </LanguageThemeProvider>
       </AuthProvider>
-    </LanguageThemeProvider>
-  )
+    </QueryClientProvider>
+  );
 }
-
-export default App

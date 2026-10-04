@@ -167,14 +167,6 @@ export default function IncidentCard({ incident, distance, unread = false }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1017] via-black/20 to-transparent" />
 
-        {/* Mute/Sound Toggle Top Right */}
-        <button
-          type="button"
-          onClick={() => setIsMuted(!isMuted)}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 backdrop-blur border border-white/20 text-white flex items-center justify-center hover:bg-black/80 transition-all z-10"
-        >
-          {isMuted ? <VolumeX className="w-4 h-4 text-white/80" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-        </button>
 
         {/* Persistent Heart Like Button Bottom Right */}
         <button
