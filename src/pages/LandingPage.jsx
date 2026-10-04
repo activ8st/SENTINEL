@@ -19,11 +19,6 @@ export default function LandingPage() {
   const [showStickyBar, setShowStickyBar] = useState(false);
 
   useEffect(() => {
-    // Import Google Font Funnel Display
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300;400;500;600;700;800&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
     document.title = lang === 'it' 
       ? "Sentinel — Sicurezza verificata, prima di uscire" 
       : "Sentinel — Verified Safety, Before Stepping Outside";

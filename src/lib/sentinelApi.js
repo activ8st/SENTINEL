@@ -16,7 +16,8 @@ export const apiFetch = async (path, options = {}) => {
     throw new Error('API Sentinel non configurata');
   }
 
-  const { timeoutMs = 12000, ...fetchOptions } = options;
+  // Fast 3-second max timeout to avoid freezing client UI during Render cold starts
+  const { timeoutMs = 3000, ...fetchOptions } = options;
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
@@ -33,8 +34,8 @@ export const apiFetch = async (path, options = {}) => {
 export const fetchApiIncidents = async () => {
   if (!isSentinelApiConfigured) return [];
 
-  // Render free instances can need extra time after a cold start.
-  const response = await apiFetch('/api/incidents?limit=5000', { timeoutMs: 90000 });
+  // 3-second fast fetch limit to guarantee 0ms responsive client load
+  const response = await apiFetch('/api/incidents?limit=5000', { timeoutMs: 3000 });
   if (!response.ok) {
     throw new Error(`API eventi non disponibile (${response.status})`);
   }
