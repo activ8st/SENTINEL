@@ -185,7 +185,7 @@ export default function IncidentDetail() {
       </div>
 
       {/* Map area */}
-      <div className="relative h-48 overflow-hidden bg-gray-800">
+      <div className="relative h-64 md:h-80 overflow-hidden bg-gray-800">
         <Suspense fallback={<div className="w-full h-full bg-gray-900 flex items-center justify-center"><div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /></div>}>
           <IncidentMap
             incidents={[incident]}

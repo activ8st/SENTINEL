@@ -6,11 +6,13 @@ export const incidentLocationPrecision = incident => {
 
   const address = normalized(incident?.address);
   const city = normalized(incident?.city);
-  return address && city && address !== city ? 'precise' : 'municipality';
+  if (address || city) return 'precise';
+  return 'municipality';
 };
 
 export const hasPreciseIncidentLocation = incident => (
-  incidentLocationPrecision(incident) === 'precise'
-  && Number.isFinite(Number(incident?.latitude))
+  Number.isFinite(Number(incident?.latitude))
   && Number.isFinite(Number(incident?.longitude))
+  && Number(incident?.latitude) !== 0
+  && Number(incident?.longitude) !== 0
 );
