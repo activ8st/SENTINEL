@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShieldAlert, Key, ArrowRight, Phone, CheckCircle } from 'lucide-react';
+import { ShieldAlert, Key, ArrowRight, Phone, CheckCircle, Mail } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/sentinelApi';
@@ -25,6 +25,8 @@ const COUNTRY_CODES = [
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+  const [authMethod, setAuthMethod] = useState('email'); // 'email' | 'phone'
+  const [email, setEmail] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
   const [phone, setPhone] = useState('');
   const [otpSent, setOtpSent] = useState(false);
@@ -47,20 +49,30 @@ export default function Auth() {
   }, []);
 
   const fullPhone = `${selectedCountry.code}${phone.replace(/\s+/g, '')}`;
+  const targetIdentifier = authMethod === 'email' ? email.trim() : fullPhone;
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    if (phone.trim().length < 6) {
-      toast.error('Inserisci un numero di telefono valido.');
-      return;
+    if (authMethod === 'email') {
+      if (!email.trim() || !email.includes('@')) {
+        toast.error('Inserisci un indirizzo email valido.');
+        return;
+      }
+    } else {
+      if (phone.trim().length < 6) {
+        toast.error('Inserisci un numero di telefono valido.');
+        return;
+      }
     }
 
     setLoading(true);
     try {
+      const payload = authMethod === 'email' ? { email: email.trim() } : { phone: fullPhone };
       const response = await apiFetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: fullPhone }),
+        body: JSON.stringify(payload),
+        timeoutMs: 20000
       });
 
       if (!response.ok) {
@@ -73,12 +85,12 @@ export default function Auth() {
 
       if (IS_DEMO_MODE && data.demo_code) {
         setDemoCode(data.demo_code);
-        toast.success(`[DEMO MODE] Codice generato per ${fullPhone}: ${data.demo_code}`, { duration: 10000 });
+        toast.success(`[DEMO MODE] Codice generato per ${targetIdentifier}: ${data.demo_code}`, { duration: 10000 });
       } else {
-        toast.success(`Codice di verifica inviato via SMS a ${fullPhone}`);
+        const destinationLabel = authMethod === 'email' ? `all'email ${email}` : `via SMS a ${fullPhone}`;
+        toast.success(`Codice di verifica inviato ${destinationLabel}`);
       }
     } catch (err) {
-      // Fallback for offline client
       if (IS_DEMO_MODE) {
         const mockCode = '1234';
         setDemoCode(mockCode);
@@ -101,10 +113,15 @@ export default function Auth() {
 
     setLoading(true);
     try {
+      const payload = authMethod === 'email' 
+        ? { email: email.trim(), code: otp } 
+        : { phone: fullPhone, code: otp };
+
       const response = await apiFetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: fullPhone, code: otp }),
+        body: JSON.stringify(payload),
+        timeoutMs: 20000
       });
 
       if (!response.ok) {
@@ -169,9 +186,9 @@ export default function Auth() {
           <h1 className="text-3xl font-bold text-center mb-2 relative z-10">
             {isLogin ? 'Accedi al Network' : 'Diventa un Pioniere'}
           </h1>
-          <p className="text-white/50 text-center mb-8 relative z-10 text-sm">
+          <p className="text-white/50 text-center mb-6 relative z-10 text-sm">
             {isLogin 
-              ? 'Inserisci il tuo numero per sbloccare la mappa viva.' 
+              ? 'Inserisci la tua email o numero per sbloccare la mappa viva.' 
               : 'Unisciti alla prima rete di emergenza guidata dai cittadini.'}
           </p>
 
@@ -179,38 +196,82 @@ export default function Auth() {
             <div>
               {!otpSent ? (
                 <form onSubmit={handleSendOtp} className="flex flex-col gap-5 relative z-10">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-bold text-white/70 uppercase tracking-wider">Numero di Telefono</label>
-                    <div className="flex gap-2">
-                      {/* Country Code Dropdown */}
-                      <select 
-                        value={selectedCountry.code}
-                        onChange={(e) => {
-                          const country = COUNTRY_CODES.find(c => c.code === e.target.value);
-                          if (country) setSelectedCountry(country);
-                        }}
-                        className="bg-[#050505] border border-white/10 rounded-xl px-3 py-4 text-white font-medium text-sm focus:outline-none focus:border-[#10b981] transition-colors cursor-pointer"
-                      >
-                        {COUNTRY_CODES.map((c) => (
-                          <option key={c.code + c.name} value={c.code} className="bg-[#111] text-white">
-                            {c.flag} {c.code} ({c.name})
-                          </option>
-                        ))}
-                      </select>
+                  {/* Selector Tabs: Email / Phone */}
+                  <div className="flex bg-[#050505] p-1 rounded-xl border border-white/10 mb-1">
+                    <button
+                      type="button"
+                      onClick={() => setAuthMethod('email')}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                        authMethod === 'email' 
+                          ? 'bg-[#10b981] text-black shadow-md' 
+                          : 'text-white/50 hover:text-white'
+                      }`}
+                    >
+                      <Mail className="w-3.5 h-3.5" /> Email OTP
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuthMethod('phone')}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                        authMethod === 'phone' 
+                          ? 'bg-[#10b981] text-black shadow-md' 
+                          : 'text-white/50 hover:text-white'
+                      }`}
+                    >
+                      <Phone className="w-3.5 h-3.5" /> Telefono
+                    </button>
+                  </div>
 
-                      <div className="relative flex-1">
-                        <Phone className="w-5 h-5 text-white/30 absolute left-4 top-1/2 -translate-y-1/2" />
+                  {authMethod === 'email' ? (
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-bold text-white/70 uppercase tracking-wider">Indirizzo Email</label>
+                      <div className="relative">
+                        <Mail className="w-5 h-5 text-white/30 absolute left-4 top-1/2 -translate-y-1/2" />
                         <input 
-                          type="tel" 
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="w-full bg-[#050505] border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-[#10b981] transition-colors font-mono" 
-                          placeholder="333 000 0000" 
+                          type="email" 
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full bg-[#050505] border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-[#10b981] transition-colors" 
+                          placeholder="nome@esempio.com" 
                           required
                         />
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-bold text-white/70 uppercase tracking-wider">Numero di Telefono</label>
+                      <div className="flex gap-2">
+                        {/* Country Code Dropdown */}
+                        <select 
+                          value={selectedCountry.code}
+                          onChange={(e) => {
+                            const country = COUNTRY_CODES.find(c => c.code === e.target.value);
+                            if (country) setSelectedCountry(country);
+                          }}
+                          className="bg-[#050505] border border-white/10 rounded-xl px-3 py-4 text-white font-medium text-sm focus:outline-none focus:border-[#10b981] transition-colors cursor-pointer"
+                        >
+                          {COUNTRY_CODES.map((c) => (
+                            <option key={c.code + c.name} value={c.code} className="bg-[#111] text-white">
+                              {c.flag} {c.code} ({c.name})
+                            </option>
+                          ))}
+                        </select>
+
+                        <div className="relative flex-1">
+                          <Phone className="w-5 h-5 text-white/30 absolute left-4 top-1/2 -translate-y-1/2" />
+                          <input 
+                            type="tel" 
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="w-full bg-[#050505] border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-[#10b981] transition-colors font-mono" 
+                            placeholder="333 000 0000" 
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     type="submit"
                     disabled={loading}
@@ -224,7 +285,7 @@ export default function Auth() {
                   <div className="bg-[#10b981]/10 border border-[#10b981]/30 p-4 rounded-xl flex items-center justify-between text-xs text-[#10b981] animate-in fade-in">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-[#10b981]" />
-                      <span>Codice inviato a <b>{fullPhone}</b></span>
+                      <span>Codice inviato a <b>{targetIdentifier}</b></span>
                     </div>
                     {IS_DEMO_MODE && demoCode && (
                       <span className="font-mono font-bold bg-[#10b981]/20 px-2 py-1 rounded text-sm text-white">{demoCode}</span>

@@ -229,13 +229,12 @@ def send_otp(req: schemas.OTPSendRequest, request: Request):
                     detail="Errore nell'invio dell'email OTP tramite il provider Resend."
                 )
         else:
-            # Phone number target in pilot/production mode: require valid email or configured provider
-            if not RESEND_API_KEY:
-                print(f"[OTP Error] Provider OTP non configurato per l'invio a {target}")
-                raise HTTPException(
-                    status_code=503,
-                    detail="Servizio OTP per numero di telefono non configurato in modalità pilot/production. Utilizzare un'email valida per il login."
-                )
+            # Phone number target in pilot/production mode: SMS provider is not active
+            print(f"[OTP Error] Invio SMS tentato per {target} ma l'SMS gateway non è configurato in pilot/production mode.")
+            raise HTTPException(
+                status_code=400,
+                detail="In modalità pilot l'invio OTP via SMS non è attivo. Seleziona la scheda 'Email OTP' per accedere con la tua email."
+            )
 
     otp_store[target] = {
         "hash": code_hash,
