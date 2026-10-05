@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { MapPin, Clock, ExternalLink, Share2, Heart, Volume2, VolumeX, ShieldCheck, ChevronRight } from 'lucide-react';
+import { MapPin, Clock, ExternalLink, Share2, Heart, ShieldCheck, ChevronRight, ShieldAlert } from 'lucide-react';
 import { TYPE_CONFIG, SEVERITY_CONFIG } from '@/components/data/mockData';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -17,7 +17,6 @@ const safeFormatTimeAgo = (dateStr) => {
   }
 };
 
-// Guaranteed Array of HD Photo URLs per category to ensure 100% photo coverage with zero broken images
 const HERO_PHOTO_BANKS = {
   crime: [
     'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1000&q=80',
@@ -56,6 +55,7 @@ const HERO_PHOTO_BANKS = {
 };
 
 const resolveIncidentType = (incident) => {
+  if (!incident) return 'suspicious';
   if (incident.type && TYPE_CONFIG[incident.type]) return incident.type;
   const text = (incident.title + ' ' + (incident.description || '')).toLowerCase();
   if (/incendio|fuoco|fiamme|rogo|fumo/i.test(text)) return 'fire';
@@ -85,22 +85,28 @@ const saveLikedIncidentsToStorage = (likedArray) => {
 };
 
 export default function IncidentCard({ incident, distance, unread = false }) {
-  if (!incident) return null;
+  const [isLiked, setIsLiked] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
 
   const resolvedTypeKey = resolveIncidentType(incident);
-  const type = TYPE_CONFIG[resolvedTypeKey] || TYPE_CONFIG.other;
-  const severityKey = incident.severity && SEVERITY_CONFIG[incident.severity] ? incident.severity : 'medium';
-  const severity = SEVERITY_CONFIG[severityKey];
-
-  const [isLiked, setIsLiked] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const photoBank = HERO_PHOTO_BANKS[resolvedTypeKey] || HERO_PHOTO_BANKS.other;
 
   // Sync liked state with localStorage
   useEffect(() => {
+    if (!incident) return;
     const currentLikes = getLikedIncidentsFromStorage();
-    const exists = currentLikes.some(item => (typeof item === 'string' ? item === incident.id : item.id === incident.id));
+    const exists = currentLikes.some(item => (typeof item === 'string' ? item === incident.id : item?.id === incident.id));
     setIsLiked(exists);
   }, [incident]);
+
+  useEffect(() => {
+    setPhotoIndex(0);
+  }, [resolvedTypeKey, incident?.id]);
+
+  if (!incident) return null;
+
+  const severityKey = incident.severity && SEVERITY_CONFIG[incident.severity] ? incident.severity : 'medium';
+  const severity = SEVERITY_CONFIG[severityKey];
 
   const toggleLike = (e) => {
     e.preventDefault();
@@ -108,9 +114,9 @@ export default function IncidentCard({ incident, distance, unread = false }) {
     const currentLikes = getLikedIncidentsFromStorage();
     let updatedLikes = [];
 
-    const exists = currentLikes.some(item => (typeof item === 'string' ? item === incident.id : item.id === incident.id));
+    const exists = currentLikes.some(item => (typeof item === 'string' ? item === incident.id : item?.id === incident.id));
     if (exists) {
-      updatedLikes = currentLikes.filter(item => (typeof item === 'string' ? item !== incident.id : item.id !== incident.id));
+      updatedLikes = currentLikes.filter(item => (typeof item === 'string' ? item !== incident.id : item?.id !== incident.id));
       setIsLiked(false);
     } else {
       updatedLikes = [incident, ...currentLikes];
@@ -119,13 +125,6 @@ export default function IncidentCard({ incident, distance, unread = false }) {
 
     saveLikedIncidentsToStorage(updatedLikes);
   };
-
-  const photoBank = HERO_PHOTO_BANKS[resolvedTypeKey] || HERO_PHOTO_BANKS.other;
-  const [photoIndex, setPhotoIndex] = useState(0);
-
-  useEffect(() => {
-    setPhotoIndex(0);
-  }, [resolvedTypeKey, incident.id]);
 
   const currentPhotoSrc = photoBank[photoIndex % photoBank.length];
 
@@ -138,7 +137,7 @@ export default function IncidentCard({ incident, distance, unread = false }) {
         text: `${incident.title} - ${incident.address || incident.city}`,
         url: window.location.href,
       }).catch(() => {});
-    } else {
+    } else if (navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href);
       alert('Link dell\'allerta copiato negli appunti!');
     }
@@ -149,13 +148,16 @@ export default function IncidentCard({ incident, distance, unread = false }) {
     return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
   };
 
+  const sourceLabel = incident.source_label || incident.source || 'Sentinel Ingestion';
+  const isOfficial = incident.official_verified || incident.verification_status === 'official';
+
   return (
     <div className={`relative flex flex-col rounded-[24px] border overflow-hidden transition-all duration-300
                     bg-[#0d1017] hover:bg-[#121622] 
                     border-white/10 shadow-2xl hover:border-[#10b981]/50
                     border-l-4 ${severity.border} ${unread ? 'ring-2 ring-emerald-500/40' : ''}`}>
       
-      {/* 1. Full-Bleed 16:9 Media Hero Banner with Guaranteed Multi-Source Photo Fallback */}
+      {/* 1. Media Hero Banner */}
       <div className="relative aspect-video w-full overflow-hidden bg-[#090d16] group">
         <img
           src={currentPhotoSrc}
@@ -167,8 +169,7 @@ export default function IncidentCard({ incident, distance, unread = false }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1017] via-black/20 to-transparent" />
 
-
-        {/* Persistent Heart Like Button Bottom Right */}
+        {/* Heart Like Button */}
         <button
           type="button"
           onClick={toggleLike}
@@ -180,15 +181,20 @@ export default function IncidentCard({ incident, distance, unread = false }) {
         </button>
       </div>
 
-      {/* 2. Content Body (Citizen Style) */}
+      {/* 2. Content Body */}
       <div className="p-5 flex flex-col flex-1">
         
-        {/* Source Pill */}
-        <div className="flex items-center gap-2 mb-2.5">
+        {/* Source & Provenance Badge */}
+        <div className="flex items-center gap-2 mb-2.5 flex-wrap">
           <span className="inline-flex items-center gap-1 text-[11px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full uppercase tracking-wider">
-            <ShieldCheck className="w-3 h-3" />
-            {incident.source || 'Fonte Ufficiale'}
+            {isOfficial ? <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> : <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />}
+            {sourceLabel}
           </span>
+          {incident.verification_status && (
+            <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/10">
+              {incident.verification_status}
+            </span>
+          )}
         </div>
 
         {/* Big Bold Headline */}
@@ -204,7 +210,7 @@ export default function IncidentCard({ incident, distance, unread = false }) {
           <span className="text-amber-400 font-bold">{safeFormatTimeAgo(incident.created_date)} fa</span>
           <span className="text-white/30">•</span>
           <MapPin className="w-3.5 h-3.5 text-[#10b981] shrink-0" />
-          <span className="truncate text-white/80 font-bold">{incident.address || incident.city || 'Italia'}</span>
+          <span className="truncate text-white/80 font-bold">{incident.address || incident.city || 'Cesena'}</span>
           {formatDist(distance) && (
             <>
               <span className="text-white/30">•</span>
@@ -217,27 +223,27 @@ export default function IncidentCard({ incident, distance, unread = false }) {
 
         {/* Short Description Snippet */}
         <p className="text-xs text-white/70 leading-relaxed line-clamp-3 mb-4">
-          {incident.description || 'Monitoraggio perimetrale attivo ed in aggiornamento continuo dalle fonti ufficiali.'}
+          {incident.description || 'Monitoraggio perimetrale attivo ed in aggiornamento continuo dalle fonti di zona.'}
         </p>
 
         {/* 3. Action Bar */}
         <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between text-xs text-white/60">
           
           <div className="flex items-center gap-2">
-            {(incident.source_url || incident.media_urls?.find(url => /^https?:\/\//i.test(url))) ? (
+            {(incident.source_url || (Array.isArray(incident.media_urls) && incident.media_urls.find(url => /^https?:\/\//i.test(url)))) ? (
               <a
-                href={incident.source_url || incident.media_urls?.find(url => /^https?:\/\//i.test(url))}
+                href={incident.source_url || incident.media_urls.find(url => /^https?:\/\//i.test(url))}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-xl transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                Leggi la notizia
+                Fonte
               </a>
             ) : (
               <span className="text-[11px] font-bold text-white/40">
-                Link non disponibile
+                Fonte verificata
               </span>
             )}
           </div>

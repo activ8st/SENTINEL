@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, MapPin, Phone, CheckCircle2, ArrowRight, Send, ShieldCheck } from 'lucide-react';
+import { Mail, MapPin, Send, ShieldCheck } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import WaitlistModal from '@/components/ui/WaitlistModal';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
 import { toast } from 'sonner';
 import emailjs from '@emailjs/browser';
-import { createAutoresponderHtml, createAdminNotificationHtml } from '@/lib/emailService';
+import { createAutoresponderHtml } from '@/lib/emailService';
 
 export default function Contact() {
   const { t } = useLanguageTheme();

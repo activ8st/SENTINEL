@@ -30,9 +30,20 @@ class Incident(Base):
     city = Column(String)
     location_precision = Column(String, default="unknown", server_default="unknown")
     location_evidence = Column(String, nullable=True)
-    status = Column(String, default="active")
+    status = Column(String, default="active") # active, monitoring, pending_review, resolved, rejected, archived
     created_date = Column(DateTime, default=datetime.datetime.utcnow)
     
+    # Provenance and Data Verification Fields
+    verification_status = Column(String, default="unverified", server_default="unverified") # unverified, verified, official, user_submitted
+    confidence_score = Column(Float, default=0.5, server_default="0.5")
+    source_type = Column(String, default="rss", server_default="rss") # rss, user, official_feed, ingv
+    source_url = Column(String, nullable=True)
+    published_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    resolved_at = Column(DateTime, nullable=True)
+    resolution_reason = Column(String, nullable=True)
+    last_verified_at = Column(DateTime, nullable=True)
+
     # Bot tracking fields
     source = Column(String, nullable=True) # "ingv", "user", etc.
     source_event_id = Column(String, nullable=True)
@@ -60,7 +71,7 @@ class ModerationAuditLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, nullable=True)
-    action = Column(String, index=True) # "BLOCK", "FLAG_FOR_REVIEW"
+    action = Column(String, index=True) # "BLOCK", "FLAG_FOR_REVIEW", "APPROVE", "REJECT"
     reason = Column(String)
     text = Column(String)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)

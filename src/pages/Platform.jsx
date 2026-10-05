@@ -1,6 +1,5 @@
 import React, { useEffect, Component, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { ShieldAlert, Zap, Server, Smartphone, Database, Compass, Radio, Search, Navigation, AlertTriangle, X } from 'lucide-react';
+import { ShieldAlert, Server, Smartphone, Database, Compass, Radio, Search, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Shield, X } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 const STORAGE_KEY = 'sentinel_gdpr_consent';
 

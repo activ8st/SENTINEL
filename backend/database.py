@@ -48,6 +48,15 @@ SCHEMA_COMPAT_COLUMNS = {
         "fake_votes": "INTEGER NOT NULL DEFAULT 0",
         "location_precision": "VARCHAR NOT NULL DEFAULT 'unknown'",
         "location_evidence": "VARCHAR",
+        "verification_status": "VARCHAR DEFAULT 'unverified'",
+        "confidence_score": "FLOAT DEFAULT 0.5",
+        "source_type": "VARCHAR DEFAULT 'rss'",
+        "source_url": "VARCHAR",
+        "published_at": "DATETIME",
+        "updated_at": "DATETIME",
+        "resolved_at": "DATETIME",
+        "resolution_reason": "VARCHAR",
+        "last_verified_at": "DATETIME",
     },
 }
 

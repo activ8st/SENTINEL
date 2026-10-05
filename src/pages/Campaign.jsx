@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, ArrowRight, Lock, Users, Sparkles, Trophy, MapPin, CheckCircle2, Award, Zap } from 'lucide-react';
+import { ArrowRight, Lock, Users, Sparkles, Trophy, MapPin, CheckCircle2, Award, Zap } from 'lucide-react';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import WaitlistModal from '@/components/ui/WaitlistModal';

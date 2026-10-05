@@ -31,6 +31,22 @@ export const apiFetch = async (path, options = {}) => {
   }
 };
 
+export const checkApiHealth = async () => {
+  if (!isSentinelApiConfigured) {
+    return { status: 'unavailable', mode: 'offline', details: 'API non configurata' };
+  }
+  try {
+    const response = await apiFetch('/api/health', { timeoutMs: 2500 });
+    if (response.ok) {
+      const data = await response.json();
+      return { status: 'backend_live', mode: data.mode || 'production', details: data };
+    }
+  } catch (err) {
+    console.warn('API health check error:', err);
+  }
+  return { status: 'rss_fallback', mode: 'fallback', details: 'Backend offline, fallback a RSS locale/cache' };
+};
+
 export const fetchApiIncidents = async () => {
   if (!isSentinelApiConfigured) return [];
 

@@ -15,7 +15,7 @@ import { hasPreciseIncidentLocation } from '@/lib/incidentLocation';
 import { useQuery } from '@tanstack/react-query';
 import { Trash2, MapPin, ChevronRight, Settings, Check, ShieldCheck } from 'lucide-react';
 
-const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 }; // Milan center default
+const DEFAULT_LOC = { lat: 44.1391, lng: 12.2432 }; // Cesena pilot area default
 
 export default function Notifications() {
   const navigate = useNavigate();
@@ -266,7 +266,7 @@ export default function Notifications() {
                                   {typeConf.label || inc.type}
                                 </span>
                                 <span className="text-[10px] font-bold text-slate-400 dark:text-white/40">
-                                  ● {inc.distance ? `${inc.distance.toFixed(1)} km da te` : 'Milano'}
+                                  ● {hasUserLocation && Number.isFinite(inc.distance) ? `${inc.distance.toFixed(1)} km da te` : (inc.city || 'Cesena')}
                                 </span>
                               </div>
 

@@ -4,10 +4,9 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { useQuery } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes, useNavigate, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { toast } from 'sonner';
 import { calcDistance } from '@/components/data/mockData';
@@ -18,7 +17,7 @@ import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
 
-const { Pages, Layout, mainPage } = pagesConfig;
+const { Pages, Layout } = pagesConfig;
 
 const LayoutWrapper = ({ children, currentPageName }) => {
   const marketingPages = ['LandingPage', 'Platform', 'Manifesto', 'Contact', 'Auth'];
@@ -37,7 +36,6 @@ const loadNotifySettings = () => {
 };
 
 const AuthenticatedApp = () => {
-  const { user } = useAuth();
   const notifySettings = loadNotifySettings();
   const prevIncidentIdsRef = useRef(new Set());
   const isFirstFetchRef = useRef(true);
@@ -101,7 +99,7 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
-      {/* PUBLIC MARKETING ROUTES */}
+      {/* PUBLIC MARKETING & AUTH ROUTES */}
       <Route path="/" element={<LayoutWrapper currentPageName="LandingPage"><Pages.LandingPage /></LayoutWrapper>} />
       <Route path="/LandingPage" element={<LayoutWrapper currentPageName="LandingPage"><Pages.LandingPage /></LayoutWrapper>} />
       <Route path="/Platform" element={<LayoutWrapper currentPageName="Platform"><Pages.Platform /></LayoutWrapper>} />
@@ -109,19 +107,19 @@ const AuthenticatedApp = () => {
       <Route path="/Contact" element={<LayoutWrapper currentPageName="Contact"><Pages.Contact /></LayoutWrapper>} />
       <Route path="/Auth" element={<LayoutWrapper currentPageName="Auth"><Pages.Auth /></LayoutWrapper>} />
 
-      {/* APP FUNCTIONAL ROUTES */}
-      <Route path="/Home" element={<LayoutWrapper currentPageName="Home"><Pages.Home /></LayoutWrapper>} />
-
-      {/* ALL APP ROUTES PUBLIC & DIRECTLY ACCESSIBLE */}
-      <Route path="/Notifications" element={<LayoutWrapper currentPageName="Notifications"><Pages.Notifications /></LayoutWrapper>} />
-      <Route path="/Profile" element={<LayoutWrapper currentPageName="Profile"><Pages.Profile /></LayoutWrapper>} />
-      <Route path="/Report" element={<LayoutWrapper currentPageName="Report"><Pages.Report /></LayoutWrapper>} />
-      <Route path="/MapView" element={<LayoutWrapper currentPageName="MapView"><Pages.MapView /></LayoutWrapper>} />
-      <Route path="/IncidentDetail" element={<LayoutWrapper currentPageName="IncidentDetail"><Pages.IncidentDetail /></LayoutWrapper>} />
+      {/* PROTECTED APP FUNCTIONAL ROUTES */}
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/Auth" replace />} />}>
+        <Route path="/Home" element={<LayoutWrapper currentPageName="Home"><Pages.Home /></LayoutWrapper>} />
+        <Route path="/Notifications" element={<LayoutWrapper currentPageName="Notifications"><Pages.Notifications /></LayoutWrapper>} />
+        <Route path="/Profile" element={<LayoutWrapper currentPageName="Profile"><Pages.Profile /></LayoutWrapper>} />
+        <Route path="/Report" element={<LayoutWrapper currentPageName="Report"><Pages.Report /></LayoutWrapper>} />
+        <Route path="/MapView" element={<LayoutWrapper currentPageName="MapView"><Pages.MapView /></LayoutWrapper>} />
+        <Route path="/IncidentDetail" element={<LayoutWrapper currentPageName="IncidentDetail"><Pages.IncidentDetail /></LayoutWrapper>} />
+      </Route>
 
       {Object.entries(Pages).map(([pageName, PageComponent]) => {
-        const publicPages = ['LandingPage', 'Platform', 'Manifesto', 'Contact', 'Auth', 'Home', 'Notifications', 'Profile', 'Report', 'MapView', 'IncidentDetail'];
-        if (publicPages.includes(pageName)) return null;
+        const knownPages = ['LandingPage', 'Platform', 'Manifesto', 'Contact', 'Auth', 'Home', 'Notifications', 'Profile', 'Report', 'MapView', 'IncidentDetail'];
+        if (knownPages.includes(pageName)) return null;
 
         return (
           <Route

@@ -1,7 +1,7 @@
-import { db } from '@/lib/db';
+import { db, IS_DEMO_MODE } from '@/lib/db';
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -54,18 +54,27 @@ export default function IncidentDetail() {
       const foundPersistent = persistent.find(i => String(i.id) === String(incidentId));
       if (foundPersistent) return foundPersistent;
 
-      // 2. Check static mock incidents
-      const foundMock = MOCK_INCIDENTS.find(i => String(i.id) === String(incidentId));
-      if (foundMock) return foundMock;
+      // 2. Check static mock incidents (ONLY in demo mode)
+      if (IS_DEMO_MODE) {
+        const foundMock = MOCK_INCIDENTS.find(i => String(i.id) === String(incidentId));
+        if (foundMock) return { ...foundMock, is_demo: true };
+        const fallback = getIncidentById(incidentId);
+        return fallback ? { ...fallback, is_demo: true } : null;
+      }
 
-      // 3. Fallback helper
-      return getIncidentById(incidentId);
+      return null;
     },
     enabled: !!incidentId,
     initialData: () => {
       if (!incidentId) return null;
       const persistent = getPersistentIncidents();
-      return persistent.find(i => String(i.id) === String(incidentId)) || MOCK_INCIDENTS.find(i => String(i.id) === String(incidentId));
+      const foundPersistent = persistent.find(i => String(i.id) === String(incidentId));
+      if (foundPersistent) return foundPersistent;
+      if (IS_DEMO_MODE) {
+        const foundMock = MOCK_INCIDENTS.find(i => String(i.id) === String(incidentId));
+        return foundMock ? { ...foundMock, is_demo: true } : null;
+      }
+      return null;
     }
   });
 
@@ -172,6 +181,9 @@ export default function IncidentDetail() {
         <div className="flex items-center gap-2">
           {incident.is_live && (
             <Badge className="bg-red-600 text-white animate-pulse">🔴 LIVE</Badge>
+          )}
+          {(incident.is_demo || IS_DEMO_MODE) && (
+            <Badge className="bg-amber-500/20 text-amber-500 border border-amber-500/30 font-mono">⚠️ DEMO</Badge>
           )}
           <button
             className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-white/15 text-gray-900 dark:text-white rounded-full px-4 py-2 text-sm font-semibold shadow active:scale-95 transition-transform"

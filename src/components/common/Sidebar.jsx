@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { Home, Map as MapIcon, PlusSquare, Bell, User, Shield, Menu, Sun, Moon } from 'lucide-react';
+import { Home, Map as MapIcon, PlusSquare, Bell, User, Menu, Sun, Moon } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { useTheme } from 'next-themes';
 

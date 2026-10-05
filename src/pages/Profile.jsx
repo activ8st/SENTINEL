@@ -6,12 +6,11 @@ import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-  MapPin, Sun, Moon, Heart, Shield, Loader2, Star, Sparkles
+  MapPin, Sun, Moon, Heart, Shield, Sparkles
 } from 'lucide-react';
 import HistorySection from '@/components/profile/HistorySection';
 import IncidentCard from '@/components/incidents/IncidentCard';
 import { getReliabilityLevel, getNextTier } from '@/components/data/reliability';
-import { toast } from 'sonner';
 
 const getLikedIncidentsFromStorage = () => {
   try {

@@ -1,6 +1,9 @@
 import Dexie from 'dexie';
 import { MOCK_INCIDENTS } from '@/components/data/mockData';
 
+export const APP_MODE = import.meta.env.VITE_APP_MODE || 'production';
+export const IS_DEMO_MODE = APP_MODE === 'demo';
+
 export const db = new Dexie('SentinelDB');
 
 db.version(1).stores({
@@ -13,13 +16,18 @@ db.version(1).stores({
 export const initializeDB = async () => {
   try {
     await db.open();
-    // Refresh stale mock incidents with fresh timestamps
-    await db.incidents.clear();
-    const freshIncidents = MOCK_INCIDENTS.map(inc => ({
-      ...inc,
-      created_date: inc.created_date || new Date().toISOString()
-    }));
-    await db.incidents.bulkAdd(freshIncidents);
+    if (IS_DEMO_MODE) {
+      // In demo mode, seed mock incidents for testing/demonstration
+      const count = await db.incidents.count();
+      if (count === 0) {
+        const freshIncidents = MOCK_INCIDENTS.map(inc => ({
+          ...inc,
+          is_demo: true,
+          created_date: inc.created_date || new Date().toISOString()
+        }));
+        await db.incidents.bulkAdd(freshIncidents);
+      }
+    }
   } catch (err) {
     console.error('Failed to open or seed db', err);
   }

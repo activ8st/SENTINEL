@@ -1,7 +1,6 @@
 import { db } from '@/lib/db';
 import React, { useState, useEffect } from 'react';
 
-import { useMutation } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,10 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { TYPE_CONFIG } from '@/components/data/mockData';
 import { getPersistentIncidents } from '@/lib/liveSyncEngine';
+import { apiFetch } from '@/lib/sentinelApi';
 import {
-  ChevronLeft, ChevronRight, MapPin, Loader2, Check, Shield, Upload, X
+  ChevronLeft, ChevronRight, MapPin, Loader2, Check, Shield, Upload, X, ShieldAlert
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -35,13 +34,14 @@ const SEVERITIES = [
   { value: 'critical', dot: 'bg-red-500',    label: 'Critico', desc: 'Emergenza immediata' },
 ];
 
-const DEFAULT_LOC = { lat: 41.9028, lng: 12.4964 };
+const DEFAULT_LOC = { lat: 44.1391, lng: 12.2432 }; // Cesena
 
 export default function Report() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1=type, 2=details, 3=confirm
   const [successId, setSuccessId] = useState(null);
   const [pendingReview, setPendingReview] = useState(false);
+  const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false);
   const [form, setForm] = useState({
     type: '', title: '', description: '', severity: 'medium',
     latitude: null, longitude: null, address: '', city: '',
@@ -50,9 +50,13 @@ export default function Report() {
   const [locLoading, setLocLoading] = useState(false);
   const [locError, setLocError] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [user, setUser] = useState(null);
 
-  useEffect(() => { fetchLocation(); setUser({ id: 'user-1', name: 'User', karma: 100 }); }, []);
+  useEffect(() => {
+    fetchLocation();
+    setUser({ id: 'user-1', name: 'Pioniere', karma: 100 });
+  }, []);
 
   const fetchLocation = () => {
     setLocError(null);
@@ -70,10 +74,12 @@ export default function Report() {
           const data = await res.json();
           setForm(f => ({
             ...f,
-            address: data.display_name?.split(',').slice(0, 3).join(', ') || '',
-            city: data.address?.city || data.address?.town || '',
+            address: data.display_name?.split(',').slice(0, 3).join(', ') || 'Cesena',
+            city: data.address?.city || data.address?.town || data.address?.village || 'Cesena',
           }));
-        } catch {}
+        } catch {
+          setForm(f => ({ ...f, city: f.city || 'Cesena' }));
+        }
         setLocLoading(false);
       },
       (err) => {
@@ -87,16 +93,87 @@ export default function Report() {
 
   const hasRealGps = form.latitude !== null && form.longitude !== null;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!acceptedDisclaimer) {
+      toast.error('Devi confermare di aver preso visione del disclaimer di emergenza.');
+      return;
+    }
     if (!hasRealGps) {
       toast.error('Posizione GPS necessaria per inviare la segnalazione');
       return;
     }
-    submitMutation.mutate({
-      ...form,
-      reported_by_id: user?.id,
-      reporter_karma: user?.karma ?? 0,
-    });
+
+    setIsSubmitting(true);
+    const hasMedia = form.media_urls && form.media_urls.length > 0;
+    const isPending = hasMedia || form.severity === 'critical';
+    setPendingReview(isPending);
+
+    const incidentId = 'inc-' + Date.now();
+    const incidentPayload = {
+      id: incidentId,
+      title: form.title || 'Segnalazione Utente',
+      description: form.description || 'Segnalazione in tempo reale inviata dalla community Sentinel.',
+      type: form.type || 'other',
+      severity: form.severity || 'medium',
+      status: isPending ? 'pending_review' : 'active',
+      verification_status: isPending ? 'pending_review' : 'user_submitted',
+      latitude: form.latitude || DEFAULT_LOC.lat,
+      longitude: form.longitude || DEFAULT_LOC.lng,
+      address: form.address || 'Cesena, Forlì-Cesena',
+      city: form.city || 'Cesena',
+      location_precision: 'precise',
+      is_live: true,
+      created_date: new Date().toISOString(),
+      source: 'Utente Sentinel',
+      source_label: 'Segnalazione Utente',
+      data_origin: 'user_community',
+      source_url: form.media_urls[0] || '',
+      official_verified: false,
+      media_urls: form.media_urls,
+      reported_by_id: user?.id || 'user-1',
+      reporter_karma: user?.karma ?? 100,
+    };
+
+    try {
+      // Send to API if available
+      try {
+        await apiFetch('/api/incidents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(incidentPayload),
+        });
+      } catch (apiErr) {
+        console.warn('API post incident error fallback to local storage:', apiErr);
+      }
+
+      // Save locally
+      try {
+        const current = getPersistentIncidents();
+        const updated = [incidentPayload, ...current];
+        localStorage.setItem(`sentinel_live_production_v12`, JSON.stringify(updated));
+      } catch (e) {
+        console.warn('LocalStorage save report warning:', e);
+      }
+
+      try {
+        await db.open();
+        await db.incidents.add(incidentPayload);
+        await db.reports.add(incidentPayload);
+      } catch (e) {
+        console.warn('Dexie save report warning:', e);
+      }
+
+      setSuccessId(incidentId);
+      if (isPending) {
+        toast.info('Segnalazione inviata: in fase di moderazione prima della pubblicazione.');
+      } else {
+        toast.success('Segnalazione pubblicata in tempo reale sul network!');
+      }
+    } catch (e) {
+      toast.error(e.message || 'Errore nell\'invio della segnalazione.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFileUpload = async (e) => {
@@ -109,56 +186,6 @@ export default function Report() {
     }
     setForm(f => ({ ...f, media_urls: [...f.media_urls, ...urls] }));
     setUploading(false);
-  };
-
-  const submitMutation = {
-    mutate: async (data) => {
-      try {
-        const incidentId = 'inc-' + Date.now();
-        const newIncident = {
-          id: incidentId,
-          title: data.title || 'Segnalazione Utente',
-          description: data.description || 'Segnalazione in tempo reale inviata dalla community Sentinel.',
-          type: data.type || 'other',
-          severity: data.severity || 'medium',
-          status: 'active',
-          latitude: data.latitude || DEFAULT_LOC.lat,
-          longitude: data.longitude || DEFAULT_LOC.lng,
-          address: data.address || 'Posizione Rilevata',
-          city: data.city || 'Italia',
-          is_live: true,
-          viewers_count: 1,
-          reports_count: 1,
-          created_date: new Date().toISOString(),
-          source: 'Utente Sentinel',
-          official_verified: false
-        };
-
-        // 1. Save to LocalStorage persistent cache
-        try {
-          const current = getPersistentIncidents();
-          const updated = [newIncident, ...current];
-          localStorage.setItem('sentinel_live_feed_v2', JSON.stringify(updated));
-        } catch (e) {
-          console.warn('LocalStorage report save warning:', e);
-        }
-
-        // 2. Save to Dexie IndexedDB
-        try {
-          await db.open();
-          await db.incidents.add(newIncident);
-          await db.reports.add(newIncident);
-        } catch (e) {
-          console.warn('Dexie report save warning:', e);
-        }
-
-        setSuccessId(incidentId);
-        toast.success("Segnalazione pubblicata in tempo reale sul network!");
-      } catch (e) {
-        toast.error(e.message || 'Errore nella pubblicazione della segnalazione.');
-      }
-    },
-    isPending: false
   };
 
   const canGoNext = () => {
@@ -185,7 +212,7 @@ export default function Report() {
           </h2>
           <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md">
             {pendingReview
-              ? 'La tua segnalazione è stata ricevuta ed è in fase di verifica da parte dei moderatori. Diventerà visibile sulla mappa dopo l\'approvazione.'
+              ? 'La tua segnalazione (contenente media o allerta critica) è stata ricevuta ed è in fase di verifica da parte dei moderatori. Diventerà visibile sulla mappa pubblica dopo l\'approvazione.'
               : 'Grazie. La tua segnalazione aiuta la comunità a restare al sicuro.'}
           </p>
           <div className="flex flex-col gap-3">
@@ -198,7 +225,12 @@ export default function Report() {
             <Button
               variant="outline"
               className="border-gray-700 text-gray-300"
-              onClick={() => { setSuccessId(null); setStep(1); setForm({ type:'',title:'',description:'',severity:'medium',latitude:null,longitude:null,address:'',city:'',media_urls:[] }); }}
+              onClick={() => {
+                setSuccessId(null);
+                setStep(1);
+                setAcceptedDisclaimer(false);
+                setForm({ type:'',title:'',description:'',severity:'medium',latitude:null,longitude:null,address:'',city:'',media_urls:[] });
+              }}
             >
               Nuova segnalazione
             </Button>
@@ -276,7 +308,7 @@ export default function Report() {
                 <div>
                   <Label className="text-gray-700 dark:text-gray-300 text-sm mb-1 block">Titolo breve *</Label>
                   <Input
-                    placeholder="Es: Auto in fiamme sul GRA"
+                    placeholder="Es: Auto in fiamme in via Roma a Cesena"
                     value={form.title}
                     onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))}
                     className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white h-11"
@@ -321,16 +353,16 @@ export default function Report() {
                 {/* Location */}
                 <div>
                   <Label className="text-gray-700 dark:text-gray-300 text-sm mb-1 block">Posizione</Label>
-                  <div className={`bg-white dark:bg-gray-900 border rounded-xl p-3 shadow-sm dark:shadow-none ${locError ? 'border-emergency/50' : 'border-gray-200 dark:border-gray-700'}`}>
+                  <div className={`bg-white dark:bg-gray-900 border rounded-xl p-3 shadow-sm dark:shadow-none ${locError ? 'border-red-500/50' : 'border-gray-200 dark:border-gray-700'}`}>
                     {locLoading ? (
                       <div className="flex items-center gap-2 text-sm text-gray-400">
                         <Loader2 className="w-4 h-4 animate-spin" /> Rilevamento GPS...
                       </div>
                     ) : locError ? (
                       <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-emergency mt-0.5 flex-shrink-0" />
+                        <MapPin className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <p className="text-emergency text-sm font-medium">Posizione richiesta</p>
+                          <p className="text-red-500 text-sm font-medium">Posizione richiesta</p>
                           <p className="text-xs text-gray-500 mt-0.5">{locError}</p>
                         </div>
                         <button onClick={fetchLocation} className="text-xs text-orange-400 hover:text-orange-300 font-medium">Riprova</button>
@@ -358,7 +390,7 @@ export default function Report() {
 
                 {/* Photo upload */}
                 <div>
-                  <Label className="text-gray-700 dark:text-gray-300 text-sm mb-1 block">Foto (opzionale)</Label>
+                  <Label className="text-gray-700 dark:text-gray-300 text-sm mb-1 block">Foto / Media (opzionale - richiede moderazione)</Label>
                   <label htmlFor="photo-upload" className="flex items-center gap-3 p-3 bg-white dark:bg-gray-900 border border-dashed border-gray-300 dark:border-gray-700 rounded-xl cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors shadow-sm dark:shadow-none">
                     {uploading
                       ? <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
@@ -401,17 +433,25 @@ export default function Report() {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Conferma segnalazione</h2>
               <p className="text-sm text-gray-500 mb-5">Controlla i dettagli prima di inviare</p>
 
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-white/6 p-4 space-y-3 mb-6 shadow-sm dark:shadow-none">
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 mb-4 flex items-start gap-3">
+                <ShieldAlert className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="text-xs text-amber-200">
+                  <p className="font-bold text-amber-400 mb-1">DISCLAIMER SOCCORSI DI EMERGENZA</p>
+                  <p>SENTINEL è una piattaforma di consapevolezza cittadina e <b>NON sostituisce i numeri di emergenza (112, 115, 118)</b>. In caso di pericolo imminente chiama subito le forze dell'ordine.</p>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-white/6 p-4 space-y-3 mb-4 shadow-sm dark:shadow-none">
                 {[
                   { label: 'Tipo', value: TYPES.find(t => t.value === form.type)?.label },
                   { label: 'Titolo', value: form.title },
                   { label: 'Gravità', value: SEVERITIES.find(s => s.value === form.severity)?.label },
-                  { label: 'Posizione', value: form.address || '—' },
-                  { label: 'Foto', value: form.media_urls.length > 0 ? `${form.media_urls.length} foto` : 'Nessuna' },
+                  { label: 'Posizione', value: form.address || 'Cesena' },
+                  { label: 'Foto/Media', value: form.media_urls.length > 0 ? `${form.media_urls.length} allegati (revisione richiesta)` : 'Nessuno' },
                 ].map(row => (
                   <div key={row.label} className="flex items-start justify-between gap-4">
                     <span className="text-xs text-gray-500 min-w-[70px]">{row.label}</span>
-                    <span className="text-sm text-gray-900 dark:text-white text-right">{row.value}</span>
+                    <span className="text-sm text-gray-900 dark:text-white text-right font-medium">{row.value}</span>
                   </div>
                 ))}
                 {form.description && (
@@ -422,22 +462,31 @@ export default function Report() {
                 )}
               </div>
 
-              <p className="text-xs text-gray-500 text-center mb-5">
-                Inviando confermo che le informazioni siano veritiere e accetto che i dati vengano pubblicati in conformità al{' '}
-                <span className="text-orange-400">GDPR</span>.
-                La tua posizione e il contenuto saranno visibili agli altri utenti.
-              </p>
+              {/* Checkbox Emergency Disclaimer */}
+              <label className="flex items-start gap-3 mb-5 cursor-pointer bg-gray-50 dark:bg-gray-900 p-3 rounded-xl border border-gray-200 dark:border-gray-800">
+                <input
+                  type="checkbox"
+                  checked={acceptedDisclaimer}
+                  onChange={(e) => setAcceptedDisclaimer(e.target.checked)}
+                  className="mt-1 w-4 h-4 accent-orange-500 rounded cursor-pointer"
+                />
+                <span className="text-xs text-gray-700 dark:text-gray-300 leading-snug">
+                  Ho compreso che SENTINEL non sostituisce i servizi di emergenza e che le segnalazioni contenenti foto o descrizioni sensibili verranno sottoposte a moderazione prima di apparire sul feed pubblico.
+                </span>
+              </label>
 
               <Button
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white h-12 disabled:opacity-40"
                 onClick={handleSubmit}
-                disabled={submitMutation.isPending || !hasRealGps}
+                disabled={isSubmitting || !hasRealGps || !acceptedDisclaimer}
               >
-                {submitMutation.isPending
+                {isSubmitting
                   ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Invio in corso...</>
                   : !hasRealGps
                     ? <><MapPin className="w-4 h-4 mr-2" /> Posizione GPS richiesta</>
-                    : <><Check className="w-4 h-4 mr-2" /> Invia segnalazione</>
+                    : !acceptedDisclaimer
+                      ? 'Accetta disclaimer per inviare'
+                      : <><Check className="w-4 h-4 mr-2" /> Invia segnalazione</>
                 }
               </Button>
             </motion.div>

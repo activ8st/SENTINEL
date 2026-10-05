@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ShieldAlert, AlertTriangle, CloudLightning, Activity } from 'lucide-react';
+import { AlertTriangle, CloudLightning, Activity } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import WaitlistModal from '@/components/ui/WaitlistModal';

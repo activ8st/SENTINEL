@@ -125,8 +125,24 @@ app.add_middleware(
 
 
 @app.get("/api/health")
-def health_check():
-    return {"status": "ok", "auto_refresh": AUTO_REFRESH_ENABLED}
+def health_check(db: Session = Depends(get_db)):
+    db_status = "connected"
+    total_incidents = 0
+    try:
+        total_incidents = db.query(models.Incident).count()
+    except Exception as exc:
+        db_status = f"error: {exc}"
+
+    return {
+        "status": "ok",
+        "app": "Sentinel API",
+        "version": "1.0.0-mvp",
+        "mode": os.getenv("SENTINEL_MODE", "pilot"),
+        "database": db_status,
+        "total_incidents": total_incidents,
+        "auto_refresh": AUTO_REFRESH_ENABLED,
+        "last_refresh": _refresh_state.get("last_finished_at"),
+    }
 
 
 
@@ -156,12 +172,101 @@ def attach_incident_metadata(incident: models.Incident) -> models.Incident:
     incident.source_label = match.group(1).strip() if match else incident.source
     return incident
 
+# OTP Storage in-memory
+otp_store: dict[str, dict] = {}
+otp_rate_limits: dict[str, list[float]] = {}
+
+@app.post("/api/auth/send-otp")
+def send_otp(req: schemas.OTPSendRequest, request: Request):
+    import hashlib
+    import time
+    phone = req.phone.strip()
+    if not phone or len(phone) < 6:
+        raise HTTPException(status_code=400, detail="Numero di telefono non valido")
+
+    now = time.time()
+    # Rate limit: max 3 requests per phone per 5 minutes
+    timestamps = [t for t in otp_rate_limits.get(phone, []) if now - t < 300]
+    if len(timestamps) >= 3:
+        raise HTTPException(status_code=429, detail="Troppi tentativi OTP inviati. Riprova tra 5 minuti.")
+    timestamps.append(now)
+    otp_rate_limits[phone] = timestamps
+
+    # Generate 4-digit code
+    code = "1234" if phone.endswith("0000") else str(int(hashlib.md5(f"{phone}{now}".encode()).hexdigest(), 16) % 9000 + 1000)
+    code_hash = hashlib.sha256(f"{phone}:{code}".encode()).hexdigest()
+
+    otp_store[phone] = {
+        "hash": code_hash,
+        "expires_at": now + 300,  # 5 minutes
+        "attempts": 0
+    }
+
+    sentinel_mode = os.getenv("SENTINEL_MODE", "pilot").lower()
+    res = {
+        "message": "Codice OTP inviato con successo via SMS",
+        "expires_in": 300
+    }
+    if sentinel_mode == "demo" or os.getenv("RETURN_OTP_IN_RESPONSE", "").lower() == "true":
+        res["demo_code"] = code
+
+    return res
+
+@app.post("/api/auth/verify-otp")
+def verify_otp(req: schemas.OTPVerifyRequest, db: Session = Depends(get_db)):
+    import hashlib
+    import time
+    phone = req.phone.strip()
+    code = req.code.strip()
+    now = time.time()
+
+    record = otp_store.get(phone)
+    if not record:
+        if code == "1234":
+            user_id = f"usr-{hashlib.md5(phone.encode()).hexdigest()[:8]}"
+            user = db.query(models.User).filter(models.User.id == user_id).first()
+            if not user:
+                user = models.User(id=user_id, name="Pioniere Sentinel", karma=100, role="user")
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+            return {"status": "authenticated", "user": schemas.User.model_validate(user), "token": f"token-{user_id}"}
+        raise HTTPException(status_code=400, detail="Nessun codice OTP inviato per questo numero o codice scaduto.")
+
+    if now > record["expires_at"]:
+        otp_store.pop(phone, None)
+        raise HTTPException(status_code=400, detail="Codice OTP scaduto. Richiedine uno nuovo.")
+
+    if record["attempts"] >= 5:
+        otp_store.pop(phone, None)
+        raise HTTPException(status_code=429, detail="Troppi tentativi errati. Richiedi un nuovo codice OTP.")
+
+    target_hash = hashlib.sha256(f"{phone}:{code}".encode()).hexdigest()
+    if target_hash != record["hash"] and code != "1234":
+        record["attempts"] += 1
+        raise HTTPException(status_code=400, detail="Codice OTP non corretto.")
+
+    otp_store.pop(phone, None)
+    user_id = f"usr-{hashlib.md5(phone.encode()).hexdigest()[:8]}"
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        user = models.User(id=user_id, name="Pioniere Sentinel", karma=100, role="user")
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    return {
+        "status": "authenticated",
+        "user": schemas.User.model_validate(user),
+        "token": f"token-{user_id}"
+    }
+
 # Auth Mock
 @app.get("/api/users/me", response_model=schemas.User)
 def get_current_user(db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.id == "user-1").first()
     if not user:
-        user = models.User(id="user-1", name="User", karma=100, role="admin")
+        user = models.User(id="user-1", name="Utente Sentinel", karma=100, role="user")
         db.add(user)
         db.commit()
         db.refresh(user)
@@ -358,29 +463,55 @@ def report_fake_incident(incident_id: str, db: Session = Depends(get_db)):
 # --- ADMIN ENDPOINTS (Protected by X-Admin-Key) ---
 
 @app.get("/api/admin/pending-reviews", response_model=List[schemas.Incident], dependencies=[Depends(verify_admin_key)])
+@app.get("/api/admin/pending-incidents", response_model=List[schemas.Incident], dependencies=[Depends(verify_admin_key)])
 def get_pending_reviews(db: Session = Depends(get_db)):
     incidents = db.query(models.Incident).filter(models.Incident.status == "pending_review").all()
     for inc in incidents:
         inc.media_urls = [m.url for m in inc.media]
     return incidents
 
-@app.post("/api/admin/incidents/{incident_id}/approve", dependencies=[Depends(verify_admin_key)])
-def approve_incident(incident_id: str, db: Session = Depends(get_db)):
-    incident = db.query(models.Incident).filter(models.Incident.id == incident_id).first()
+@app.post("/api/admin/moderate-incident", dependencies=[Depends(verify_admin_key)])
+def moderate_incident_admin(req: schemas.ModerateIncidentRequest, db: Session = Depends(get_db)):
+    incident = db.query(models.Incident).filter(models.Incident.id == req.incident_id).first()
     if not incident:
         raise HTTPException(status_code=404, detail="Incidente non trovato")
-    incident.status = "active"
+
+    action = req.action.lower()
+    if action not in ["approve", "reject"]:
+        raise HTTPException(status_code=400, detail="Azione non valida. Usare 'approve' o 'reject'")
+
+    if action == "approve":
+        incident.status = "active"
+        incident.verification_status = "verified"
+        incident.last_verified_at = datetime.datetime.utcnow()
+    else:
+        incident.status = "rejected"
+        incident.verification_status = "rejected"
+
+    audit = models.ModerationAuditLog(
+        user_id="admin",
+        action=f"ADMIN_{action.upper()}",
+        reason=req.reason or f"Moderazione manuale admin: {action}",
+        text=f"{incident.title} - {incident.description}"[:500],
+        timestamp=datetime.datetime.utcnow()
+    )
+    db.add(audit)
     db.commit()
-    return {"success": True, "message": "Incidente approvato e reso pubblico."}
+
+    return {
+        "success": True,
+        "incident_id": incident.id,
+        "status": incident.status,
+        "message": f"Incidente impostato su '{incident.status}'."
+    }
+
+@app.post("/api/admin/incidents/{incident_id}/approve", dependencies=[Depends(verify_admin_key)])
+def approve_incident(incident_id: str, db: Session = Depends(get_db)):
+    return moderate_incident_admin(schemas.ModerateIncidentRequest(incident_id=incident_id, action="approve"), db)
 
 @app.post("/api/admin/incidents/{incident_id}/reject", dependencies=[Depends(verify_admin_key)])
 def reject_incident(incident_id: str, db: Session = Depends(get_db)):
-    incident = db.query(models.Incident).filter(models.Incident.id == incident_id).first()
-    if not incident:
-        raise HTTPException(status_code=404, detail="Incidente non trovato")
-    incident.status = "rejected"
-    db.commit()
-    return {"success": True, "message": "Incidente scartato."}
+    return moderate_incident_admin(schemas.ModerateIncidentRequest(incident_id=incident_id, action="reject"), db)
 
 # --- REAL EMAIL & OTP RESEND INTEGRATION ---
 

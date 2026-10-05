@@ -1,24 +1,43 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const isDev = import.meta.env.DEV;
-  const [user, setUser] = useState(isDev ? { name: 'Dev User', role: 'admin' } : null);
-  const [isAuthenticated, setIsAuthenticated] = useState(isDev);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sentinel_user');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn('Error reading saved user session:', e);
+    }
+    return null;
+  });
+  
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      return !!localStorage.getItem('sentinel_user');
+    } catch (e) {
+      return false;
+    }
+  });
+
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(true);
 
   const checkUserAuth = () => {
-    // Non facciamo nulla, gestiamo lo stato manualmente via login() per ora.
     setAuthChecked(true);
   };
 
   const login = (userData) => {
     setUser(userData);
     setIsAuthenticated(true);
+    try {
+      localStorage.setItem('sentinel_user', JSON.stringify(userData));
+    } catch (e) {
+      console.warn('Error persisting user session:', e);
+    }
   };
 
   const navigateToLogin = () => {
@@ -28,6 +47,11 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
+    try {
+      localStorage.removeItem('sentinel_user');
+    } catch (e) {
+      console.warn('Error clearing user session:', e);
+    }
   };
 
   const value = {

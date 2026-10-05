@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShieldAlert, Key, ArrowRight, User, Mail, Calendar, Phone, CheckCircle } from 'lucide-react';
+import { ShieldAlert, Key, ArrowRight, Phone, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
+import { apiFetch } from '@/lib/sentinelApi';
+import { IS_DEMO_MODE } from '@/lib/db';
 
 const COUNTRY_CODES = [
   { flag: '🇮🇹', name: 'Italia', code: '+39' },
@@ -26,8 +28,9 @@ export default function Auth() {
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
   const [phone, setPhone] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [demoCode, setDemoCode] = useState('');
   const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -43,29 +46,86 @@ export default function Auth() {
     window.scrollTo(0, 0);
   }, []);
 
-  const handleSendOtp = (e) => {
+  const fullPhone = `${selectedCountry.code}${phone.replace(/\s+/g, '')}`;
+
+  const handleSendOtp = async (e) => {
     e.preventDefault();
-    if (phone.trim().length >= 6) {
-      // Generate a demo 4-digit OTP
-      const code = Math.floor(1000 + Math.random() * 9000).toString();
-      setGeneratedOtp(code);
-      setOtpSent(true);
-      toast.success(`[DEMO OTP SENT] Codice inviato a ${selectedCountry.code} ${phone}: ${code}`, {
-        duration: 10000,
-      });
-    } else {
+    if (phone.trim().length < 6) {
       toast.error('Inserisci un numero di telefono valido.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiFetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: fullPhone }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Impossibile inviare il codice OTP.');
+      }
+
+      const data = await response.json();
+      setOtpSent(true);
+
+      if (IS_DEMO_MODE && data.demo_code) {
+        setDemoCode(data.demo_code);
+        toast.success(`[DEMO MODE] Codice generato per ${fullPhone}: ${data.demo_code}`, { duration: 10000 });
+      } else {
+        toast.success(`Codice di verifica inviato via SMS a ${fullPhone}`);
+      }
+    } catch (err) {
+      // Fallback for offline client
+      if (IS_DEMO_MODE) {
+        const mockCode = '1234';
+        setDemoCode(mockCode);
+        setOtpSent(true);
+        toast.success(`[DEMO MODE OFFLINE] Codice OTP: ${mockCode}`, { duration: 10000 });
+      } else {
+        toast.error(err.message || 'Errore nella connessione al servizio OTP.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    if (otp === generatedOtp || otp === '1234' || otp.length === 4) {
+    if (!otp.trim()) {
+      toast.error('Inserisci il codice OTP ricevuto.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiFetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: fullPhone, code: otp }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Codice OTP errato o scaduto.');
+      }
+
+      const data = await response.json();
       toast.success('Accesso effettuato con successo!');
-      login({ id: 'user-1', name: 'Pioniere', karma: 100 });
+      login(data.user || { id: 'user-1', name: 'Pioniere', karma: 100 });
       navigate('/');
-    } else {
-      toast.error('Codice OTP non valido.');
+    } catch (err) {
+      if (IS_DEMO_MODE && (otp === demoCode || otp === '1234')) {
+        toast.success('Accesso effettuato (Modalità DEMO)!');
+        login({ id: 'demo-user', name: 'Pioniere Demo', karma: 100 });
+        navigate('/');
+      } else {
+        toast.error(err.message || 'Codice OTP non valido.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,7 +154,7 @@ export default function Auth() {
         </div>
       </nav>
 
-      {/* Auth Container - Solarsis 401 Style */}
+      {/* Auth Container */}
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         
         <div className="w-full max-w-md bg-[#111] border border-white/10 rounded-[2rem] p-8 md:p-10 relative overflow-hidden shadow-2xl">
@@ -151,19 +211,24 @@ export default function Auth() {
                       </div>
                     </div>
                   </div>
-                  <button type="submit" className="w-full flex items-center justify-center gap-2 bg-[#10b981] hover:bg-[#059669] text-black font-bold text-lg py-4 rounded-xl mt-2 transition-all hover:scale-[1.02]">
-                    Ricevi Codice OTP <ArrowRight className="w-5 h-5" />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-2 bg-[#10b981] hover:bg-[#059669] disabled:opacity-50 text-black font-bold text-lg py-4 rounded-xl mt-2 transition-all hover:scale-[1.02]"
+                  >
+                    {loading ? 'Invio in corso...' : 'Ricevi Codice OTP'} <ArrowRight className="w-5 h-5" />
                   </button>
                 </form>
               ) : (
                 <form onSubmit={handleLoginSubmit} className="flex flex-col gap-5 relative z-10">
-                  {/* Simulated OTP Alert Banner */}
                   <div className="bg-[#10b981]/10 border border-[#10b981]/30 p-4 rounded-xl flex items-center justify-between text-xs text-[#10b981] animate-in fade-in">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-[#10b981]" />
-                      <span>Codice generato per <b>{selectedCountry.code} {phone}</b></span>
+                      <span>Codice inviato a <b>{fullPhone}</b></span>
                     </div>
-                    <span className="font-mono font-bold bg-[#10b981]/20 px-2 py-1 rounded text-sm text-white">{generatedOtp}</span>
+                    {IS_DEMO_MODE && demoCode && (
+                      <span className="font-mono font-bold bg-[#10b981]/20 px-2 py-1 rounded text-sm text-white">{demoCode}</span>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -176,22 +241,28 @@ export default function Auth() {
                         onChange={(e) => setOtp(e.target.value)}
                         className="w-full bg-[#050505] border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white font-mono text-center tracking-[0.5em] focus:outline-none focus:border-[#10b981] transition-colors text-lg" 
                         placeholder="0000" 
-                        maxLength={4}
+                        maxLength={6}
                         required
                         autoFocus
                       />
                     </div>
-                    <button 
-                      type="button" 
-                      onClick={() => setOtp(generatedOtp)} 
-                      className="text-xs text-[#10b981] underline hover:opacity-80 text-right mt-1"
-                    >
-                      Inserisci {generatedOtp} automaticamente
-                    </button>
+                    {IS_DEMO_MODE && demoCode && (
+                      <button 
+                        type="button" 
+                        onClick={() => setOtp(demoCode)} 
+                        className="text-xs text-[#10b981] underline hover:opacity-80 text-right mt-1"
+                      >
+                        Inserisci {demoCode} automaticamente
+                      </button>
+                    )}
                   </div>
 
-                  <button type="submit" className="w-full flex items-center justify-center gap-2 bg-[#10b981] hover:bg-[#059669] text-black font-bold text-lg py-4 rounded-xl mt-2 transition-all hover:scale-[1.02]">
-                    Sblocca & Entra <ArrowRight className="w-5 h-5" />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-2 bg-[#10b981] hover:bg-[#059669] disabled:opacity-50 text-black font-bold text-lg py-4 rounded-xl mt-2 transition-all hover:scale-[1.02]"
+                  >
+                    {loading ? 'Verifica in corso...' : 'Sblocca & Entra'} <ArrowRight className="w-5 h-5" />
                   </button>
                 </form>
               )}
