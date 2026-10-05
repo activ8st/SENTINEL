@@ -5,52 +5,48 @@
 Sentinel supporta 3 modalità di esecuzione gestite tramite variabili d'ambiente:
 
 1. **`demo`**: Modalità dimostrativa con dati mock statici e badge `DEMO` visibile.
-2. **`production`**: Modalità di produzione standard con ingestione in tempo reale e autenticazione OTP backend.
-3. **`pilot`** *(Predefinito)*: Perimetro pilota locale focalizzato su Cesena / Forlì-Cesena / Emilia-Romagna.
+2. **`production`**: Modalità di produzione standard con ingestione in tempo reale e autenticazione OTP backend reale.
+3. **`pilot`** *(Predefinito per il Lancio Locale)*: Perimetro pilota locale focalizzato su **Cesena / Forlì-Cesena / Emilia-Romagna**.
 
 ---
 
-## 2. Variabili d'Ambiente
+## 2. Variabili d'Ambiente Obbligatorie per il Deployment
 
-### Frontend (`.env` o `.env.local`)
-```env
-# Modalità applicazione: 'production' | 'pilot' | 'demo'
-VITE_APP_MODE=pilot
+### Backend su Render (Environment Variables)
 
-# URL del backend FastAPI (lasciare vuoto per fallback in dev a 127.0.0.1:8000)
-VITE_API_URL=http://127.0.0.1:8000
-```
+Configurare le seguenti chiavi nel pannello di Render (Dashboard -> Environment Variables):
 
-### Backend (`.env` backend)
-```env
-# Modalità backend: 'pilot' | 'production' | 'demo'
-SENTINEL_MODE=pilot
+| Variabile | Valore Raccomandato | Descrizione |
+|---|---|---|
+| `SENTINEL_MODE` | `pilot` | Attiva la modalità pilota su Cesena ed inibisce codici OTP mock. |
+| `ADMIN_SECRET_KEY` | *(Secret Key generata)* | Chiave d'accesso per accedere agli endpoint protetti `/api/admin/*`. |
+| `RESEND_API_KEY` | `re_...` | Chiave API Resend per l'invio reale delle mail con codice OTP. |
+| `DATABASE_URL` | `sqlite:///./sentinel.db` | Percorso DB SQLite o stringa di connessione PostgreSQL. |
+| `SENTINEL_AUTO_REFRESH_MINUTES` | `15` | Intervallo in minuti per il refresh automatico dei feed di cronaca. |
+| `SENTINEL_AUTO_REFRESH_ENABLED` | `true` | Attiva/disattiva l'aggiornamento automatico in background. |
 
-# Database SQLite / PostgreSQL
-DATABASE_URL=sqlite:///./sentinel.db
+### Frontend su Vercel (Environment Variables)
 
-# Chiave segreta per gli endpoint amministrativi (moderazione)
-ADMIN_SECRET_KEY=super-secret-admin-key-change-me
+Configurare le seguenti chiavi nel pannello di Vercel (Project Settings -> Environment Variables):
 
-# Frequenza aggiornamento feed automatico (in minuti)
-SENTINEL_AUTO_REFRESH_MINUTES=15
-SENTINEL_AUTO_REFRESH_ENABLED=true
-```
+| Variabile | Valore Raccomandato | Descrizione |
+|---|---|---|
+| `VITE_APP_MODE` | `pilot` | Imposta la modalità frontend a pilota (nessun seeding mock automatico). |
+| `VITE_API_URL` | `https://sentinel-api-6hlm.onrender.com` | URL pubblico del backend FastAPI registrato su Render. |
 
 ---
 
-## 3. Avvio in Sviluppo Locale
+## 3. Avvio Locale per lo Sviluppo
 
 ### Backend (FastAPI)
 ```powershell
-# Dalla radice del progetto
 $env:PYTHONPATH="."
+$env:SENTINEL_MODE="pilot"
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 ### Frontend (Vite)
 ```powershell
-# Dalla radice del progetto
 npm install
 npm run dev
 ```
@@ -71,11 +67,11 @@ python -m backend.fetch_live_incidents
 
 ---
 
-## 5. Verifiche di Salute e Diagnostica
+## 5. Verifiche di Salute e Diagnostica (Endpoint Pubblico)
 
-Per verificare lo stato operativo dell'API senza esporre credenziali:
+Per verificare lo stato operativo dell'API senza esporre credenziali o chiavi segrete:
 ```http
-GET http://127.0.0.1:8000/api/health
+GET https://sentinel-api-6hlm.onrender.com/api/health
 ```
 
 **Esempio di Risposta JSON**:
@@ -88,6 +84,6 @@ GET http://127.0.0.1:8000/api/health
   "database": "connected",
   "total_incidents": 42,
   "auto_refresh": true,
-  "last_refresh": "2026-10-05T09:30:00Z"
+  "last_refresh": "2026-10-05T12:00:00Z"
 }
 ```

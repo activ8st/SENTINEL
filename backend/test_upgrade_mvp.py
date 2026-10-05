@@ -1,8 +1,10 @@
 """
-Test suite per l'aggiornamento Sentinel MVP (FASE 10)
-Verifica il nuovo contratto dati, gli endpoint di salute, il flusso OTP reale e la moderazione admin.
+Test suite per l'aggiornamento Sentinel MVP (FASE 10 & 11)
+Verifica il nuovo contratto dati, gli endpoint di salute, la sicurezza OTP in pilot/production,
+l'assenza di rotte duplicate e i vincoli di moderazione.
 """
 
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -72,7 +74,7 @@ def test_incident_data_contract_fields():
     db.close()
 
 # 2. Test Health Check Endpoint
-def test_health_check_endpoint():
+def test_public_health_returns_version_and_database():
     response = client.get("/api/health")
     assert response.status_code == 200
     data = response.json()
@@ -80,26 +82,46 @@ def test_health_check_endpoint():
     assert data["app"] == "Sentinel API"
     assert data["version"] == "1.0.0-mvp"
     assert data["database"] == "connected"
+    assert "total_incidents" in data
+    assert "ADMIN_SECRET_KEY" not in str(data)
 
-# 3. Test OTP Flow & Rate Limiting
-def test_otp_auth_flow():
-    phone = "+393339998877"
-    send_resp = client.post("/api/auth/send-otp", json={"phone": phone})
-    assert send_resp.status_code == 200
-    send_data = send_resp.json()
-    assert "expires_in" in send_data
+# 3. Test OTP 1234 Rejected in Pilot Mode
+def test_otp_1234_rejected_in_pilot_mode():
+    os.environ["SENTINEL_MODE"] = "pilot"
+    target = "user-pilot@sentinel.app"
+    
+    # Verification with code '1234' without a valid OTP session in pilot mode MUST fail
+    verify_resp = client.post("/api/auth/verify-otp", json={"email": target, "code": "1234"})
+    assert verify_resp.status_code == 400
+    assert "Nessun codice OTP inviato" in verify_resp.json()["detail"] or "non corretto" in verify_resp.json()["detail"]
 
-    verify_wrong = client.post("/api/auth/verify-otp", json={"phone": phone, "code": "0000"})
-    assert verify_wrong.status_code == 400
+# 4. Test OTP Demo Accepted ONLY in Demo Mode
+def test_otp_demo_accepted_only_in_demo_mode():
+    os.environ["SENTINEL_MODE"] = "demo"
+    target = "user-demo@sentinel.app"
+    
+    verify_resp = client.post("/api/auth/verify-otp", json={"email": target, "code": "1234"})
+    assert verify_resp.status_code == 200
+    assert verify_resp.json()["status"] == "authenticated"
 
-    verify_ok = client.post("/api/auth/verify-otp", json={"phone": phone, "code": "1234"})
-    assert verify_ok.status_code == 200
-    auth_data = verify_ok.json()
-    assert auth_data["status"] == "authenticated"
-    assert "user" in auth_data
-    assert "token" in auth_data
+# 5. Test send-otp Fails When Provider Is Not Configured
+def test_send_otp_fails_when_provider_not_configured():
+    os.environ["SENTINEL_MODE"] = "pilot"
+    old_key = main_module.RESEND_API_KEY
+    main_module.RESEND_API_KEY = None
+    try:
+        res = client.post("/api/auth/send-otp", json={"email": "pilot-user@sentinel.app"})
+        assert res.status_code == 503
+        assert "RESEND_API_KEY" in res.json()["detail"] or "non configurato" in res.json()["detail"]
+    finally:
+        main_module.RESEND_API_KEY = old_key
 
-# 4. Test Moderation Evaluation & Admin Endpoints
+# 6. Test No Duplicate Routes
+def test_no_duplicate_routes():
+    send_otp_routes = [r for r in app.routes if getattr(r, "path", None) == "/api/auth/send-otp"]
+    assert len(send_otp_routes) == 1, f"Found duplicate /api/auth/send-otp routes: {len(send_otp_routes)}"
+
+# 7. Test Moderation Evaluation & Admin Endpoints
 def test_moderation_evaluation_and_admin_endpoints():
     clean_res = evaluate_report_for_moderation("Incendio boschivo", "Fumo alto vicino a Cesena", has_media=False)
     assert clean_res.action == ModerationAction.ALLOW

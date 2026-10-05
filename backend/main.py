@@ -179,35 +179,75 @@ otp_rate_limits: dict[str, list[float]] = {}
 @app.post("/api/auth/send-otp")
 def send_otp(req: schemas.OTPSendRequest, request: Request):
     import hashlib
+    import random
     import time
-    phone = req.phone.strip()
-    if not phone or len(phone) < 6:
-        raise HTTPException(status_code=400, detail="Numero di telefono non valido")
+
+    target = (req.phone or req.email or "").strip().lower()
+    if not target or len(target) < 5:
+        raise HTTPException(status_code=400, detail="Numero di telefono o indirizzo email non valido.")
 
     now = time.time()
-    # Rate limit: max 3 requests per phone per 5 minutes
-    timestamps = [t for t in otp_rate_limits.get(phone, []) if now - t < 300]
+    # Rate limit: max 3 requests per target per 5 minutes
+    timestamps = [t for t in otp_rate_limits.get(target, []) if now - t < 300]
     if len(timestamps) >= 3:
         raise HTTPException(status_code=429, detail="Troppi tentativi OTP inviati. Riprova tra 5 minuti.")
     timestamps.append(now)
-    otp_rate_limits[phone] = timestamps
+    otp_rate_limits[target] = timestamps
 
-    # Generate 4-digit code
-    code = "1234" if phone.endswith("0000") else str(int(hashlib.md5(f"{phone}{now}".encode()).hexdigest(), 16) % 9000 + 1000)
-    code_hash = hashlib.sha256(f"{phone}:{code}".encode()).hexdigest()
+    sentinel_mode = os.getenv("SENTINEL_MODE", "pilot").lower()
 
-    otp_store[phone] = {
+    # Generate 6-digit random code
+    code = f"{random.randint(100000, 999999)}"
+    code_hash = hashlib.sha256(f"{target}:{code}".encode()).hexdigest()
+
+    # In pilot or production mode, dispatch code via real email/SMS provider
+    if sentinel_mode in ["pilot", "production"]:
+        if "@" in target:
+            if not RESEND_API_KEY:
+                print(f"[OTP Error] RESEND_API_KEY non configurata per l'invio OTP a {target}")
+                raise HTTPException(
+                    status_code=503,
+                    detail="Servizio di invio OTP non configurato nel server (RESEND_API_KEY mancante)."
+                )
+            html_content = f"""
+            <div style="font-family: Arial, sans-serif; background-color: #050505; color: #ffffff; padding: 40px 20px;">
+              <div style="max-w: 500px; margin: 0 auto; background: #0c0c0c; border: 1px solid #333; padding: 30px; border-radius: 20px; text-align: center;">
+                <h2 style="color: #10b981; margin-bottom: 10px;">Il tuo codice di verifica Sentinel</h2>
+                <p style="color: #aaa; font-size: 14px;">Inserisci questo codice a 6 cifre per completare l'accesso sicuro:</p>
+                <div style="font-size: 36px; font-weight: bold; letter-spacing: 6px; color: #10b981; background: #111; padding: 15px; border-radius: 12px; margin: 25px 0; border: 1px solid #10b981;">
+                  {code}
+                </div>
+                <p style="color: #666; font-size: 12px;">Il codice scade tra 5 minuti. Non condividerlo con nessuno.</p>
+              </div>
+            </div>
+            """
+            success = send_resend_email(target, f"Codice OTP Sentinel: {code}", html_content)
+            if not success:
+                print(f"[OTP Error] Invio email OTP fallito tramite Resend per {target}")
+                raise HTTPException(
+                    status_code=500,
+                    detail="Errore nell'invio dell'email OTP tramite il provider."
+                )
+        else:
+            if not RESEND_API_KEY:
+                print(f"[OTP Error] Provider SMS non configurato per l'invio a {target}")
+                raise HTTPException(
+                    status_code=503,
+                    detail="Servizio OTP per numero di telefono non configurato in modalità pilot/production. Utilizzare un'email valida."
+                )
+
+    otp_store[target] = {
         "hash": code_hash,
         "expires_at": now + 300,  # 5 minutes
         "attempts": 0
     }
 
-    sentinel_mode = os.getenv("SENTINEL_MODE", "pilot").lower()
     res = {
-        "message": "Codice OTP inviato con successo via SMS",
+        "message": "Codice OTP inviato con successo",
         "expires_in": 300
     }
-    if sentinel_mode == "demo" or os.getenv("RETURN_OTP_IN_RESPONSE", "").lower() == "true":
+    # NEVER return demo_code in pilot or production mode
+    if sentinel_mode == "demo":
         res["demo_code"] = code
 
     return res
@@ -216,38 +256,50 @@ def send_otp(req: schemas.OTPSendRequest, request: Request):
 def verify_otp(req: schemas.OTPVerifyRequest, db: Session = Depends(get_db)):
     import hashlib
     import time
-    phone = req.phone.strip()
+
+    target = (req.phone or req.email or "").strip().lower()
     code = req.code.strip()
     now = time.time()
+    sentinel_mode = os.getenv("SENTINEL_MODE", "pilot").lower()
 
-    record = otp_store.get(phone)
+    if not target or not code:
+        raise HTTPException(status_code=400, detail="Target o codice OTP mancante.")
+
+    record = otp_store.get(target)
+
+    # In demo mode ONLY, bypass with 1234/123456 is allowed if no record exists
     if not record:
-        if code == "1234":
-            user_id = f"usr-{hashlib.md5(phone.encode()).hexdigest()[:8]}"
+        if sentinel_mode == "demo" and code in ["1234", "123456"]:
+            user_id = f"usr-{hashlib.md5(target.encode()).hexdigest()[:8]}"
             user = db.query(models.User).filter(models.User.id == user_id).first()
             if not user:
-                user = models.User(id=user_id, name="Pioniere Sentinel", karma=100, role="user")
+                user = models.User(id=user_id, name="Pioniere Sentinel Demo", karma=100, role="user")
                 db.add(user)
                 db.commit()
                 db.refresh(user)
             return {"status": "authenticated", "user": schemas.User.model_validate(user), "token": f"token-{user_id}"}
-        raise HTTPException(status_code=400, detail="Nessun codice OTP inviato per questo numero o codice scaduto.")
+        raise HTTPException(status_code=400, detail="Nessun codice OTP inviato per questo utente o codice scaduto.")
 
     if now > record["expires_at"]:
-        otp_store.pop(phone, None)
+        otp_store.pop(target, None)
         raise HTTPException(status_code=400, detail="Codice OTP scaduto. Richiedine uno nuovo.")
 
     if record["attempts"] >= 5:
-        otp_store.pop(phone, None)
+        otp_store.pop(target, None)
         raise HTTPException(status_code=429, detail="Troppi tentativi errati. Richiedi un nuovo codice OTP.")
 
-    target_hash = hashlib.sha256(f"{phone}:{code}".encode()).hexdigest()
-    if target_hash != record["hash"] and code != "1234":
-        record["attempts"] += 1
-        raise HTTPException(status_code=400, detail="Codice OTP non corretto.")
+    target_hash = hashlib.sha256(f"{target}:{code}".encode()).hexdigest()
+    
+    # In pilot or production mode, bypass with 1234 is STRICTLY REJECTED!
+    if target_hash != record["hash"]:
+        if sentinel_mode == "demo" and code in ["1234", "123456"]:
+            pass  # demo mode exception
+        else:
+            record["attempts"] += 1
+            raise HTTPException(status_code=400, detail="Codice OTP non corretto.")
 
-    otp_store.pop(phone, None)
-    user_id = f"usr-{hashlib.md5(phone.encode()).hexdigest()[:8]}"
+    otp_store.pop(target, None)
+    user_id = f"usr-{hashlib.md5(target.encode()).hexdigest()[:8]}"
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         user = models.User(id=user_id, name="Pioniere Sentinel", karma=100, role="user")
@@ -566,29 +618,7 @@ def handle_waitlist_signup(data: dict):
     success = send_resend_email(email, f"Benvenuto in Sentinel — Conferma Founder & Sblocco {city}", html)
     return {"success": success, "message": f"Email inviata a {email}"}
 
-@app.post("/api/auth/send-otp")
-def handle_send_otp(data: dict):
-    email = data.get("email")
-    if not email or "@" not in email:
-        raise HTTPException(status_code=400, detail="Email non valida.")
-    
-    import random
-    otp_code = str(random.randint(100000, 999999))
 
-    html = f"""
-    <div style="font-family: Arial, sans-serif; background-color: #050505; color: #ffffff; padding: 40px 20px;">
-      <div style="max-w: 500px; margin: 0 auto; background: #0c0c0c; border: 1px solid #333; padding: 30px; border-radius: 20px; text-align: center;">
-        <h2 style="color: #10b981; margin-bottom: 10px;">Il tuo codice di verifica Sentinel</h2>
-        <p style="color: #aaa; font-size: 14px;">Inserisci questo codice a 6 cifre per completare l'accesso sicuro:</p>
-        <div style="font-size: 36px; font-weight: bold; letter-spacing: 6px; color: #10b981; background: #111; padding: 15px; border-radius: 12px; margin: 25px 0; border: 1px border #10b981;">
-          {otp_code}
-        </div>
-        <p style="color: #666; font-size: 12px;">Il codice scade tra 10 minuti. Non condividerlo con nessuno.</p>
-      </div>
-    </div>
-    """
-    success = send_resend_email(email, f"Codice OTP Sentinel: {otp_code}", html)
-    return {"success": success, "otp": otp_code}
 
 @app.post("/api/contact")
 def handle_contact_submit(data: dict):

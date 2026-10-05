@@ -30,11 +30,14 @@ class User(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 class OTPSendRequest(BaseModel):
-    phone: str
+    phone: Optional[str] = None
+    email: Optional[str] = None
 
 class OTPVerifyRequest(BaseModel):
-    phone: str
+    phone: Optional[str] = None
+    email: Optional[str] = None
     code: str
+
 
 class ModerateIncidentRequest(BaseModel):
     incident_id: str
