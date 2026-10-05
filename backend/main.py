@@ -182,8 +182,8 @@ def send_otp(req: schemas.OTPSendRequest, request: Request):
     import random
     import time
 
-    target = (req.phone or req.email or "").strip().lower()
-    if not target or len(target) < 5:
+    target = (req.email or req.phone or "").strip().lower()
+    if not target or len(target) < 3:
         raise HTTPException(status_code=400, detail="Numero di telefono o indirizzo email non valido.")
 
     now = time.time()
@@ -226,14 +226,15 @@ def send_otp(req: schemas.OTPSendRequest, request: Request):
                 print(f"[OTP Error] Invio email OTP fallito tramite Resend per {target}")
                 raise HTTPException(
                     status_code=500,
-                    detail="Errore nell'invio dell'email OTP tramite il provider."
+                    detail="Errore nell'invio dell'email OTP tramite il provider Resend."
                 )
         else:
+            # Phone number target in pilot/production mode: require valid email or configured provider
             if not RESEND_API_KEY:
-                print(f"[OTP Error] Provider SMS non configurato per l'invio a {target}")
+                print(f"[OTP Error] Provider OTP non configurato per l'invio a {target}")
                 raise HTTPException(
                     status_code=503,
-                    detail="Servizio OTP per numero di telefono non configurato in modalità pilot/production. Utilizzare un'email valida."
+                    detail="Servizio OTP per numero di telefono non configurato in modalità pilot/production. Utilizzare un'email valida per il login."
                 )
 
     otp_store[target] = {

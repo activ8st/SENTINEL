@@ -16,16 +16,22 @@ export const apiFetch = async (path, options = {}) => {
     throw new Error('API Sentinel non configurata');
   }
 
-  // Fast 3-second max timeout to avoid freezing client UI during Render cold starts
-  const { timeoutMs = 3000, ...fetchOptions } = options;
+  // 15-second timeout to allow Render instances to wake up from cold start
+  const { timeoutMs = 15000, ...fetchOptions } = options;
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    return await fetch(apiUrl(path), {
+    const response = await fetch(apiUrl(path), {
       ...fetchOptions,
       signal: fetchOptions.signal || controller.signal,
     });
+    return response;
+  } catch (err) {
+    if (err.name === 'AbortError' || String(err.message || '').toLowerCase().includes('aborted')) {
+      throw new Error('Il server backend si sta avviando (Cold Start su Render). Riprova tra qualche secondo.');
+    }
+    throw err;
   } finally {
     window.clearTimeout(timeout);
   }
@@ -36,10 +42,10 @@ export const checkApiHealth = async () => {
     return { status: 'unavailable', mode: 'offline', details: 'API non configurata' };
   }
   try {
-    const response = await apiFetch('/api/health', { timeoutMs: 2500 });
+    const response = await apiFetch('/api/health', { timeoutMs: 5000 });
     if (response.ok) {
       const data = await response.json();
-      return { status: 'backend_live', mode: data.mode || 'production', details: data };
+      return { status: 'backend_live', mode: data.mode || 'pilot', details: data };
     }
   } catch (err) {
     console.warn('API health check error:', err);
@@ -50,8 +56,8 @@ export const checkApiHealth = async () => {
 export const fetchApiIncidents = async () => {
   if (!isSentinelApiConfigured) return [];
 
-  // 3-second fast fetch limit to guarantee 0ms responsive client load
-  const response = await apiFetch('/api/incidents?limit=5000', { timeoutMs: 3000 });
+  // Fast fetch with 5-second max timeout for incident list
+  const response = await apiFetch('/api/incidents?limit=5000', { timeoutMs: 5000 });
   if (!response.ok) {
     throw new Error(`API eventi non disponibile (${response.status})`);
   }
