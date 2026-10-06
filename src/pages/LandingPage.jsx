@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ShieldCheck, Map, BellRing, Users, ArrowRight, Lock, Eye, ChevronDown, Download, Compass, Moon, Radio, Navigation } from 'lucide-react';
+import { ShieldCheck, Map, BellRing, Users, ArrowRight, Lock, Eye, ChevronDown, Compass, Navigation, AlertTriangle, CheckCircle, Info, ShieldAlert, FileText, Layers, Ban } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import ItalyMapModal from '@/components/ui/ItalyMapModal';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
@@ -8,6 +8,7 @@ import WaitlistModal from '@/components/ui/WaitlistModal';
 import DualIPhoneHeroMockup from '@/components/ui/DualIPhoneHeroMockup';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
 import { trackEvent, initScrollDepthTracking } from '@/lib/analytics';
+import { Link } from 'react-router-dom';
 
 export default function LandingPage() {
   const { t, lang } = useLanguageTheme();
@@ -20,8 +21,8 @@ export default function LandingPage() {
 
   useEffect(() => {
     document.title = lang === 'it' 
-      ? "Sentinel — Sicurezza verificata, prima di uscire" 
-      : "Sentinel — Verified Safety, Before Stepping Outside";
+      ? "Sentinel — Informazioni locali trasparenti e verificate" 
+      : "Sentinel — Transparent & Verified Local Information";
 
     // Track page view and scroll depth
     trackEvent('page_view', { page: 'LandingPage', lang });
@@ -38,7 +39,6 @@ export default function LandingPage() {
     window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
-      document.head.removeChild(link);
       cleanupScroll();
       window.removeEventListener('scroll', handleScroll);
     };
@@ -69,10 +69,6 @@ export default function LandingPage() {
     {
       question: t('faq_q5'),
       answer: t('faq_a5')
-    },
-    {
-      question: t('faq_q6'),
-      answer: t('faq_a6')
     }
   ];
 
@@ -82,15 +78,16 @@ export default function LandingPage() {
       {/* Ambient Glow Orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-5%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] bg-[#10b981] opacity-10 blur-[180px] rounded-full" />
-        <div className="absolute top-[35%] right-0 translate-x-1/3 w-[500px] h-[500px] bg-amber-500/10 opacity-10 blur-[180px] rounded-full" />
+        <div className="absolute top-[35%] right-0 translate-x-1/3 w-[500px] h-[500px] bg-emerald-500/10 opacity-10 blur-[180px] rounded-full" />
       </div>
 
       {/* 1. NAVBAR */}
       <MarketingNavbar onOpenWaitlist={() => handleOpenWaitlist('navbar')} />
 
       <main className="pt-20">
+        
         {/* 2. HERO SECTION */}
-        <section className="relative z-10 pt-8 pb-24 md:pt-14 md:pb-32 overflow-hidden">
+        <section className="relative z-10 pt-8 pb-20 md:pt-14 md:pb-28 overflow-hidden">
           <div className="max-w-7xl mx-auto px-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               
@@ -104,42 +101,48 @@ export default function LandingPage() {
                 </div>
 
                 {/* H1 Headline */}
-                <h1 className="text-5xl sm:text-6xl lg:text-[76px] leading-[0.98] font-extrabold tracking-tight mb-6 text-slate-900 dark:text-white">
+                <h1 className="text-4xl sm:text-5xl lg:text-[68px] leading-[1.05] font-extrabold tracking-tight mb-6 text-slate-900 dark:text-white">
                   {t('hero_title_1')} <br className="hidden sm:inline" />
                   <span className="text-[#10b981]">{t('hero_title_2')}</span>
                 </h1>
                 
                 {/* Subtitle */}
-                <p className="text-lg md:text-xl text-slate-600 dark:text-white/70 mb-10 max-w-xl leading-relaxed font-normal">
+                <p className="text-lg md:text-xl text-slate-600 dark:text-white/70 mb-8 max-w-xl leading-relaxed font-normal">
                   {t('hero_subtitle')}
                 </p>
                 
                 {/* CTAs */}
                 <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-                  <button 
-                    onClick={() => handleOpenWaitlist('hero_primary')}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-[#10b981] hover:bg-[#059669] text-black px-9 py-4 rounded-full font-bold text-lg transition-all hover:scale-105 shadow-[0_0_30px_rgba(16,185,129,0.4)]"
+                  <Link 
+                    to="/Platform"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-[#10b981] hover:bg-[#059669] text-black px-9 py-4 rounded-full font-bold text-lg transition-all hover:scale-105 shadow-[0_0_30px_rgba(16,185,129,0.3)]"
                   >
-                    <Download className="w-5 h-5" />
+                    <Map className="w-5 h-5" />
                     {t('hero_cta_primary')}
-                  </button>
+                  </Link>
 
                   <a 
-                    href="#prova-prodotto"
+                    href="#funzionamento"
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-200 dark:bg-white/5 hover:bg-slate-300 dark:hover:bg-white/10 text-slate-900 dark:text-white px-8 py-4 rounded-full font-bold text-lg transition-colors border border-slate-300 dark:border-white/10 backdrop-blur-md"
                   >
                     {t('hero_cta_secondary')}
                   </a>
                 </div>
 
+                {/* Transparency Note Under CTAs */}
+                <div className="mt-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-medium leading-relaxed max-w-xl flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <span>{t('hero_transparency_note')}</span>
+                </div>
+
                 {/* Trust Badge */}
-                <div className="mt-10 flex items-center gap-3 text-xs text-slate-500 dark:text-white/50 font-medium">
+                <div className="mt-6 flex items-center gap-3 text-xs text-slate-500 dark:text-white/50 font-medium">
                   <Lock className="w-4 h-4 text-[#10b981]" />
                   <span>{t('hero_trust_badge')}</span>
                 </div>
               </div>
 
-              {/* Right Column: Dual iPhone 17 Pro App Mockup */}
+              {/* Right Column: Dual iPhone App Mockup */}
               <div className="relative animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
                 <DualIPhoneHeroMockup />
               </div>
@@ -148,253 +151,130 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 3. STAT BAR */}
-        <section className="py-10 border-y border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.02]">
-          <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-3xl md:text-4xl font-extrabold mb-1 text-slate-900 dark:text-white">{t('stat_1_val')}</div>
-              <div className="text-xs text-slate-500 dark:text-white/50 uppercase tracking-widest font-bold">{t('stat_1_lbl')}</div>
+        {/* 3. SEZIONE PROBLEMA */}
+        <section className="py-20 border-y border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.02]">
+          <div className="max-w-5xl mx-auto px-6 text-center">
+            <div className="inline-block text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">
+              {t('problem_tag')}
             </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-extrabold text-[#10b981] mb-1">{t('stat_2_val')}</div>
-              <div className="text-xs text-slate-500 dark:text-white/50 uppercase tracking-widest font-bold">{t('stat_2_lbl')}</div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-extrabold mb-1 text-slate-900 dark:text-white">{t('stat_3_val')}</div>
-              <div className="text-xs text-slate-500 dark:text-white/50 uppercase tracking-widest font-bold">{t('stat_3_lbl')}</div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-extrabold text-[#10b981] mb-1">{t('stat_4_val')}</div>
-              <div className="text-xs text-slate-500 dark:text-white/50 uppercase tracking-widest font-bold">{t('stat_4_lbl')}</div>
-            </div>
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-6 text-slate-900 dark:text-white">
+              {t('problem_title')}
+            </h2>
+            <p className="text-base md:text-lg text-slate-600 dark:text-white/70 font-normal leading-relaxed max-w-3xl mx-auto">
+              {t('problem_text')}
+            </p>
           </div>
         </section>
 
-        {/* 4. SEZIONE CASI D'USO REALI (6 STACKING CARDS 100% TRANSLATED) */}
-        <section className="py-28 relative border-b border-slate-200 dark:border-white/10 overflow-visible">
+        {/* 4. SEZIONE DESTINATARI */}
+        <section className="py-24 relative border-b border-slate-200 dark:border-white/10">
           <div className="max-w-7xl mx-auto px-6">
             
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('persona_tag')}</div>
-              <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-white">
-                {t('persona_title')}
+              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('dest_tag')}</div>
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-white">
+                {t('dest_title')}
               </h2>
-              <p className="text-base md:text-lg text-slate-600 dark:text-white/60 font-normal">
-                {t('persona_sub')}
-              </p>
             </div>
 
-            {/* Stacking Cards Container — 6 Total Stacking Cards */}
-            <div className="stacking-cards-container">
-              <ul className="cards-list">
-                
-                {/* STACK 1 — Genitori & Famiglie */}
-                <li className="card-item bg-white dark:bg-[#0e1310] border border-slate-300 dark:border-[#10b981]/30 text-slate-900 dark:text-white shadow-2xl" style={{ '--index': 1 }}>
-                  <div className="card-content">
-                    <div className="max-w-xl">
-                      <div className="w-14 h-14 bg-purple-500/15 rounded-2xl flex items-center justify-center text-purple-500 border border-purple-500/30 mb-6">
-                        <Users className="w-7 h-7" />
-                      </div>
-                      <div className="inline-block text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-500/15 px-3 py-1 rounded-full mb-4">
-                        {t('persona_famiglie_badge')}
-                      </div>
-                      <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">
-                        {t('persona_famiglie_title')}
-                      </h3>
-                      <p className="text-sm md:text-base text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-6">
-                        {t('persona_famiglie_text')}
-                      </p>
-                      <button 
-                        onClick={() => handleOpenWaitlist('persona_famiglie')}
-                        className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] hover:gap-3 transition-all text-left"
-                      >
-                        {t('persona_famiglie_cta')}
-                      </button>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Destinatario 1 */}
+              <div className="p-8 rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 shadow-lg flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-[#10b981]/15 text-[#10b981] flex items-center justify-center mb-6">
+                    <Navigation className="w-6 h-6" />
                   </div>
-                </li>
+                  <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('dest_1_title')}</h3>
+                  <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">
+                    {t('dest_1_text')}
+                  </p>
+                </div>
+              </div>
 
-                {/* STACK 2 — Studenti & Pendolari */}
-                <li className="card-item bg-white dark:bg-[#091217] border border-slate-300 dark:border-blue-500/30 text-slate-900 dark:text-white shadow-2xl" style={{ '--index': 2 }}>
-                  <div className="card-content">
-                    <div className="max-w-xl">
-                      <div className="w-14 h-14 bg-blue-500/15 rounded-2xl flex items-center justify-center text-blue-500 border border-blue-500/30 mb-6">
-                        <Compass className="w-7 h-7" />
-                      </div>
-                      <div className="inline-block text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-500/15 px-3 py-1 rounded-full mb-4">
-                        {t('persona_pendolari_badge')}
-                      </div>
-                      <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">
-                        {t('persona_pendolari_title')}
-                      </h3>
-                      <p className="text-sm md:text-base text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-6">
-                        {t('persona_pendolari_text')}
-                      </p>
-                      <button 
-                        onClick={() => handleOpenWaitlist('persona_pendolari')}
-                        className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] hover:gap-3 transition-all text-left"
-                      >
-                        {t('persona_pendolari_cta')}
-                      </button>
-                    </div>
+              {/* Destinatario 2 */}
+              <div className="p-8 rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 shadow-lg flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-blue-500/15 text-blue-500 flex items-center justify-center mb-6">
+                    <Compass className="w-6 h-6" />
                   </div>
-                </li>
+                  <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('dest_2_title')}</h3>
+                  <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">
+                    {t('dest_2_text')}
+                  </p>
+                </div>
+              </div>
 
-                {/* STACK 3 — Rientro Notturno */}
-                <li className="card-item bg-white dark:bg-[#16120b] border border-slate-300 dark:border-amber-500/30 text-slate-900 dark:text-white shadow-2xl" style={{ '--index': 3 }}>
-                  <div className="card-content">
-                    <div className="max-w-xl">
-                      <div className="w-14 h-14 bg-[#f59e0b]/15 rounded-2xl flex items-center justify-center text-[#f59e0b] border border-[#f59e0b]/30 mb-6">
-                        <Moon className="w-7 h-7" />
-                      </div>
-                      <div className="inline-block text-xs font-bold uppercase tracking-wider text-[#f59e0b] bg-[#f59e0b]/15 px-3 py-1 rounded-full mb-4">
-                        {t('persona_2_badge')}
-                      </div>
-                      <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">
-                        {t('persona_2_title')}
-                      </h3>
-                      <p className="text-sm md:text-base text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-6">
-                        {t('persona_2_text')}
-                      </p>
-                      <button 
-                        onClick={() => handleOpenWaitlist('persona_sera')}
-                        className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] hover:gap-3 transition-all text-left"
-                      >
-                        {t('persona_2_cta')}
-                      </button>
-                    </div>
+              {/* Destinatario 3 */}
+              <div className="p-8 rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 shadow-lg flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 text-indigo-500 flex items-center justify-center mb-6">
+                    <Users className="w-6 h-6" />
                   </div>
-                </li>
+                  <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('dest_3_title')}</h3>
+                  <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">
+                    {t('dest_3_text')}
+                  </p>
+                </div>
+              </div>
 
-                {/* STACK 4 — Turisti & Viaggiatori */}
-                <li className="card-item bg-white dark:bg-[#07130e] border border-slate-300 dark:border-[#10b981]/40 text-slate-900 dark:text-white shadow-2xl" style={{ '--index': 4 }}>
-                  <div className="card-content">
-                    <div className="max-w-xl">
-                      <div className="w-14 h-14 bg-[#10b981]/15 rounded-2xl flex items-center justify-center text-[#10b981] border border-[#10b981]/30 mb-6">
-                        <Compass className="w-7 h-7" />
-                      </div>
-                      <div className="inline-block text-xs font-bold uppercase tracking-wider text-[#10b981] bg-[#10b981]/15 px-3 py-1 rounded-full mb-4">
-                        {t('persona_1_badge')}
-                      </div>
-                      <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">
-                        {t('persona_1_title')}
-                      </h3>
-                      <p className="text-sm md:text-base text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-6">
-                        {t('persona_1_text')}
-                      </p>
-                      <button 
-                        onClick={() => handleOpenWaitlist('persona_turista')}
-                        className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] hover:gap-3 transition-all text-left"
-                      >
-                        {t('persona_1_cta')}
-                      </button>
-                    </div>
+              {/* Destinatario 4 */}
+              <div className="p-8 rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 shadow-lg flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center mb-6">
+                    <ShieldCheck className="w-6 h-6" />
                   </div>
-                </li>
-
-                {/* STACK 5 — Comunità & Vicinato */}
-                <li className="card-item bg-white dark:bg-[#120f18] border border-slate-300 dark:border-indigo-500/30 text-slate-900 dark:text-white shadow-2xl" style={{ '--index': 5 }}>
-                  <div className="card-content">
-                    <div className="max-w-xl">
-                      <div className="w-14 h-14 bg-indigo-500/15 rounded-2xl flex items-center justify-center text-indigo-500 border border-indigo-500/30 mb-6">
-                        <ShieldCheck className="w-7 h-7" />
-                      </div>
-                      <div className="inline-block text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 px-3 py-1 rounded-full mb-4">
-                        {t('persona_community_badge')}
-                      </div>
-                      <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">
-                        {t('persona_community_title')}
-                      </h3>
-                      <p className="text-sm md:text-base text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-6">
-                        {t('persona_community_text')}
-                      </p>
-                      <button 
-                        onClick={() => handleOpenWaitlist('persona_community')}
-                        className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] hover:gap-3 transition-all text-left"
-                      >
-                        {t('persona_community_cta')}
-                      </button>
-                    </div>
-                  </div>
-                </li>
-
-                {/* STACK 6 — Automobilisti */}
-                <li className="card-item bg-white dark:bg-[#0c1614] border border-slate-300 dark:border-emerald-500/40 text-slate-900 dark:text-white shadow-2xl" style={{ '--index': 6 }}>
-                  <div className="card-content">
-                    <div className="max-w-xl">
-                      <div className="w-14 h-14 bg-emerald-500/15 rounded-2xl flex items-center justify-center text-emerald-500 border border-emerald-500/30 mb-6">
-                        <Navigation className="w-7 h-7" />
-                      </div>
-                      <div className="inline-block text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 px-3 py-1 rounded-full mb-4">
-                        {t('persona_automobilisti_badge')}
-                      </div>
-                      <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">
-                        {t('persona_automobilisti_title')}
-                      </h3>
-                      <p className="text-sm md:text-base text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-6">
-                        {t('persona_automobilisti_text')}
-                      </p>
-                      <button 
-                        onClick={() => handleOpenWaitlist('persona_automobilisti')}
-                        className="inline-flex items-center gap-2 text-sm font-bold text-[#10b981] hover:gap-3 transition-all text-left"
-                      >
-                        {t('persona_automobilisti_cta')}
-                      </button>
-                    </div>
-                  </div>
-                </li>
-
-              </ul>
+                  <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('dest_4_title')}</h3>
+                  <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">
+                    {t('dest_4_text')}
+                  </p>
+                </div>
+              </div>
             </div>
 
           </div>
         </section>
 
-        {/* 5. SEZIONE DIFFERENZIAZIONE */}
-        <section className="py-28 bg-slate-100 dark:bg-[#0a0a0a]">
+        {/* 5. SEZIONE COSA MOSTRA */}
+        <section className="py-24 bg-slate-100 dark:bg-[#0a0a0a] border-b border-slate-200 dark:border-white/10">
           <div className="max-w-7xl mx-auto px-6">
             
             <div className="max-w-3xl mb-16">
-              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('princ_tag')}</div>
-              <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6 text-slate-900 dark:text-white">
-                {t('princ_title')}
+              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('shows_tag')}</div>
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                {t('shows_title')}
               </h2>
-              <p className="text-lg text-slate-600 dark:text-white/60 font-normal leading-relaxed">
-                {t('princ_sub')}
-              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Feature 1 */}
-              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 shadow-lg text-slate-900 dark:text-white">
-                <div className="w-12 h-12 rounded-xl bg-[#10b981]/15 flex items-center justify-center text-[#10b981] mb-6">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('princ_1_title')}</h3>
-                <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">
-                  {t('princ_1_text')}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 shadow-lg">
+                <FileText className="w-10 h-10 text-[#10b981] mb-6" />
+                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('shows_card_1_title')}</h3>
+                <p className="text-sm text-slate-600 dark:text-white/60 leading-relaxed font-normal">
+                  {t('shows_card_1_text')}
                 </p>
               </div>
 
-              {/* Feature 2 */}
-              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 shadow-lg text-slate-900 dark:text-white">
-                <div className="w-12 h-12 rounded-xl bg-[#10b981]/15 flex items-center justify-center text-[#10b981] mb-6">
-                  <Eye className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('princ_2_title')}</h3>
-                <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">
-                  {t('princ_2_text')}
+              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 shadow-lg">
+                <Users className="w-10 h-10 text-[#10b981] mb-6" />
+                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('shows_card_2_title')}</h3>
+                <p className="text-sm text-slate-600 dark:text-white/60 leading-relaxed font-normal">
+                  {t('shows_card_2_text')}
                 </p>
               </div>
 
-              {/* Feature 3 */}
-              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 shadow-lg text-slate-900 dark:text-white">
-                <div className="w-12 h-12 rounded-xl bg-[#10b981]/15 flex items-center justify-center text-[#10b981] mb-6">
-                  <Radio className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('princ_3_title')}</h3>
-                <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">
-                  {t('princ_3_text')}
+              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 shadow-lg">
+                <CheckCircle className="w-10 h-10 text-[#10b981] mb-6" />
+                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('shows_card_3_title')}</h3>
+                <p className="text-sm text-slate-600 dark:text-white/60 leading-relaxed font-normal">
+                  {t('shows_card_3_text')}
+                </p>
+              </div>
+
+              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 shadow-lg">
+                <Map className="w-10 h-10 text-[#10b981] mb-6" />
+                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('shows_card_4_title')}</h3>
+                <p className="text-sm text-slate-600 dark:text-white/60 leading-relaxed font-normal">
+                  {t('shows_card_4_text')}
                 </p>
               </div>
             </div>
@@ -402,88 +282,19 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 6. PROVA PRODOTTO */}
-        <section id="prova-prodotto" className="py-28 relative border-t border-slate-200 dark:border-white/10">
-          <div className="max-w-7xl mx-auto px-6">
-            
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8">
-              <div>
-                <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('demo_tag')}</div>
-                <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                  {t('demo_title_1')} <br/>
-                  <span className="text-[#10b981]">{t('demo_title_2')}</span>
-                </h2>
-              </div>
-              <button 
-                onClick={() => setIsMapModalOpen(true)}
-                className="inline-flex items-center gap-3 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-gray-200 text-white dark:text-black px-7 py-3.5 rounded-full font-bold text-sm transition-transform hover:scale-105 shadow-md"
-              >
-                {t('demo_cta')}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Feature Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div 
-                onClick={() => setActiveFeature('mappa')}
-                className="bg-white dark:bg-[#0c0c0c] p-8 rounded-3xl border border-slate-200 dark:border-white/10 hover:border-[#10b981]/50 transition-all shadow-xl group cursor-pointer text-slate-900 dark:text-white"
-              >
-                <Map className="w-10 h-10 text-[#10b981] mb-6 group-hover:scale-110 transition-transform" />
-                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('card_1_title')}</h3>
-                <p className="text-sm text-slate-600 dark:text-white/60 font-normal mb-6 leading-relaxed">
-                  {t('card_1_text')}
-                </p>
-                <span className="text-[#10b981] font-bold text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
-                  {t('card_learn_more')}
-                </span>
-              </div>
-
-              <div 
-                onClick={() => setActiveFeature('allerte')}
-                className="bg-white dark:bg-[#0c0c0c] p-8 rounded-3xl border border-slate-200 dark:border-white/10 hover:border-[#10b981]/50 transition-all shadow-xl group cursor-pointer text-slate-900 dark:text-white"
-              >
-                <BellRing className="w-10 h-10 text-[#10b981] mb-6 group-hover:scale-110 transition-transform" />
-                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('card_2_title')}</h3>
-                <p className="text-sm text-slate-600 dark:text-white/60 font-normal mb-6 leading-relaxed">
-                  {t('card_2_text')}
-                </p>
-                <span className="text-[#10b981] font-bold text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
-                  {t('card_learn_more')}
-                </span>
-              </div>
-
-              <div 
-                onClick={() => setActiveFeature('karma')}
-                className="bg-white dark:bg-[#0c0c0c] p-8 rounded-3xl border border-slate-200 dark:border-white/10 hover:border-[#10b981]/50 transition-all shadow-xl group cursor-pointer text-slate-900 dark:text-white"
-              >
-                <Users className="w-10 h-10 text-[#10b981] mb-6 group-hover:scale-110 transition-transform" />
-                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('card_3_title')}</h3>
-                <p className="text-sm text-slate-600 dark:text-white/60 font-normal mb-6 leading-relaxed">
-                  {t('card_3_text')}
-                </p>
-                <span className="text-[#10b981] font-bold text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
-                  {t('card_learn_more')}
-                </span>
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        {/* 7. COME FUNZIONA (3 Step) */}
-        <section className="py-28 bg-slate-100 dark:bg-[#0a0a0a] border-t border-slate-200 dark:border-white/10 transition-colors">
+        {/* 6. SEZIONE FUNZIONAMENTO (Tre Passaggi) */}
+        <section id="funzionamento" className="py-24 border-b border-slate-200 dark:border-white/10">
           <div className="max-w-7xl mx-auto px-6">
             
             <div className="mb-16">
               <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('how_tag')}</div>
-              <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 {t('how_title')}
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 relative shadow-lg text-slate-900 dark:text-white">
+              <div className="p-8 rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 relative shadow-lg text-slate-900 dark:text-white">
                 <div className="text-5xl font-extrabold text-[#10b981] mb-4">01.</div>
                 <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('step_1_title')}</h3>
                 <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">
@@ -491,7 +302,7 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 relative shadow-lg text-slate-900 dark:text-white">
+              <div className="p-8 rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 relative shadow-lg text-slate-900 dark:text-white">
                 <div className="text-5xl font-extrabold text-[#10b981] mb-4">02.</div>
                 <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('step_2_title')}</h3>
                 <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">
@@ -499,7 +310,7 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <div className="p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 relative shadow-lg text-slate-900 dark:text-white">
+              <div className="p-8 rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 relative shadow-lg text-slate-900 dark:text-white">
                 <div className="text-5xl font-extrabold text-[#10b981] mb-4">03.</div>
                 <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('step_3_title')}</h3>
                 <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">
@@ -511,13 +322,145 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 8. FAQ */}
-        <section className="py-28 border-t border-slate-200 dark:border-white/10">
+        {/* 7. SEZIONE MODERAZIONE */}
+        <section className="py-24 bg-slate-100 dark:bg-[#0a0a0a] border-b border-slate-200 dark:border-white/10">
+          <div className="max-w-5xl mx-auto px-6">
+            <div className="p-8 md:p-12 rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 shadow-xl">
+              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('mod_tag')}</div>
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-6 text-slate-900 dark:text-white">
+                {t('mod_title')}
+              </h2>
+              <p className="text-base md:text-lg text-slate-600 dark:text-white/70 font-normal leading-relaxed mb-8">
+                {t('mod_text')}
+              </p>
+              
+              <div className="p-4 rounded-2xl bg-[#10b981]/10 border border-[#10b981]/30 text-xs text-[#10b981] font-medium leading-relaxed flex items-start gap-3">
+                <Info className="w-5 h-5 shrink-0 mt-0.5" />
+                <span>{t('mod_tech_note')}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 8. SEZIONE PRIVACY E RESPONSABILITÀ */}
+        <section className="py-24 border-b border-slate-200 dark:border-white/10">
+          <div className="max-w-5xl mx-auto px-6">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('privacy_sec_tag')}</div>
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                {t('privacy_sec_title')}
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-6 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 flex items-start gap-4">
+                <ShieldAlert className="w-6 h-6 text-[#10b981] shrink-0 mt-1" />
+                <p className="text-sm text-slate-700 dark:text-white/80 leading-relaxed">{t('privacy_p1')}</p>
+              </div>
+              <div className="p-6 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 flex items-start gap-4">
+                <Eye className="w-6 h-6 text-[#10b981] shrink-0 mt-1" />
+                <p className="text-sm text-slate-700 dark:text-white/80 leading-relaxed">{t('privacy_p2')}</p>
+              </div>
+              <div className="p-6 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 flex items-start gap-4">
+                <Ban className="w-6 h-6 text-[#10b981] shrink-0 mt-1" />
+                <p className="text-sm text-slate-700 dark:text-white/80 leading-relaxed">{t('privacy_p3')}</p>
+              </div>
+              <div className="p-6 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 flex items-start gap-4">
+                <Compass className="w-6 h-6 text-[#10b981] shrink-0 mt-1" />
+                <p className="text-sm text-slate-700 dark:text-white/80 leading-relaxed">{t('privacy_p4')}</p>
+              </div>
+              <div className="p-6 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 flex items-start gap-4">
+                <FileText className="w-6 h-6 text-[#10b981] shrink-0 mt-1" />
+                <p className="text-sm text-slate-700 dark:text-white/80 leading-relaxed">{t('privacy_p5')}</p>
+              </div>
+              <div className="p-6 rounded-2xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 flex items-start gap-4 border-amber-500/30 bg-amber-500/5">
+                <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-1" />
+                <p className="text-sm text-amber-800 dark:text-amber-300 font-semibold leading-relaxed">{t('privacy_p6')}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 9. SEZIONE TECNOLOGIA */}
+        <section className="py-24 bg-slate-100 dark:bg-[#0a0a0a] border-b border-slate-200 dark:border-white/10">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="max-w-3xl mb-16">
+              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('tech_tag')}</div>
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                {t('tech_title')}
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="p-8 rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 shadow-lg">
+                <Map className="w-8 h-8 text-[#10b981] mb-6" />
+                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('tech_1_title')}</h3>
+                <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">{t('tech_1_text')}</p>
+              </div>
+
+              <div className="p-8 rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 shadow-lg">
+                <BellRing className="w-8 h-8 text-[#10b981] mb-6" />
+                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('tech_2_title')}</h3>
+                <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">{t('tech_2_text')}</p>
+              </div>
+
+              <div className="p-8 rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 shadow-lg">
+                <Layers className="w-8 h-8 text-[#10b981] mb-6" />
+                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('tech_3_title')}</h3>
+                <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">{t('tech_3_text')}</p>
+              </div>
+
+              <div className="p-8 rounded-3xl bg-white dark:bg-[#0c0c0c] border border-slate-200 dark:border-white/10 shadow-lg">
+                <Users className="w-8 h-8 text-[#10b981] mb-6" />
+                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">{t('tech_4_title')}</h3>
+                <p className="text-sm text-slate-600 dark:text-white/60 font-normal leading-relaxed">{t('tech_4_text')}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 10. SEZIONE COSA SENTINEL NON È */}
+        <section className="py-24 border-b border-slate-200 dark:border-white/10">
+          <div className="max-w-5xl mx-auto px-6">
+            <div className="p-8 md:p-12 rounded-3xl bg-slate-900 text-white border border-white/10 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#10b981]/10 rounded-full blur-3xl pointer-events-none" />
+              
+              <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('isnot_tag')}</div>
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-8">
+                {t('isnot_title')}
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-sm font-medium">
+                  <span className="text-red-400 font-bold">✕</span> {t('isnot_p1')}
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-sm font-medium">
+                  <span className="text-red-400 font-bold">✕</span> {t('isnot_p2')}
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-sm font-medium">
+                  <span className="text-red-400 font-bold">✕</span> {t('isnot_p3')}
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-sm font-medium">
+                  <span className="text-red-400 font-bold">✕</span> {t('isnot_p4')}
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-sm font-medium">
+                  <span className="text-red-400 font-bold">✕</span> {t('isnot_p5')}
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-sm font-medium">
+                  <span className="text-red-400 font-bold">✕</span> {t('isnot_p6')}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 11. FAQ ESSENZIALI */}
+        <section className="py-24 border-b border-slate-200 dark:border-white/10">
           <div className="max-w-4xl mx-auto px-6">
             
             <div className="text-center mb-16">
               <div className="text-[#10b981] font-bold tracking-widest uppercase text-xs mb-3">{t('faq_tag')}</div>
-              <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-white">
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-white">
                 {t('faq_title')}
               </h2>
               <p className="text-base text-slate-600 dark:text-white/60 font-normal">
@@ -552,22 +495,26 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 9. FINAL CTA */}
+        {/* 12. FINAL CTA & DISCLAIMER */}
         <section className="py-24 bg-gradient-to-b from-slate-100 to-white dark:from-[#0a0a0a] dark:to-[#050505] border-t border-slate-200 dark:border-white/10 text-center relative overflow-hidden transition-colors">
           <div className="max-w-3xl mx-auto px-6 relative z-10">
-            <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 text-slate-900 dark:text-white">
+            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-6 text-slate-900 dark:text-white">
               {t('final_title')}
             </h2>
-            <p className="text-lg text-slate-600 dark:text-white/60 mb-10 max-w-xl mx-auto font-normal leading-relaxed">
+            <p className="text-lg text-slate-600 dark:text-white/70 mb-10 max-w-xl mx-auto font-normal leading-relaxed">
               {t('final_sub')}
             </p>
-            <button 
-              onClick={() => handleOpenWaitlist('final_cta')}
-              className="inline-flex items-center gap-3 bg-[#10b981] hover:bg-[#059669] text-black px-12 py-5 rounded-full font-bold text-xl transition-all hover:scale-105 shadow-[0_0_40px_rgba(16,185,129,0.4)]"
+            <Link 
+              to="/Platform"
+              className="inline-flex items-center gap-3 bg-[#10b981] hover:bg-[#059669] text-black px-12 py-5 rounded-full font-bold text-xl transition-all hover:scale-105 shadow-[0_0_40px_rgba(16,185,129,0.3)]"
             >
               {t('final_cta')}
               <ArrowRight className="w-5 h-5" />
-            </button>
+            </Link>
+
+            <div className="mt-12 p-4 rounded-2xl bg-slate-200/60 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-600 dark:text-white/50 text-xs font-normal leading-relaxed max-w-2xl mx-auto">
+              {t('final_disclaimer')}
+            </div>
           </div>
         </section>
       </main>
@@ -588,13 +535,13 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <button
-            onClick={() => handleOpenWaitlist('sticky_mobile_bar')}
+          <Link
+            to="/Platform"
             className="flex items-center gap-2 bg-[#10b981] text-black px-5 py-2.5 rounded-full font-bold text-xs shadow-lg"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Map className="w-3.5 h-3.5" />
             {t('hero_cta_primary')}
-          </button>
+          </Link>
         </div>
       )}
 

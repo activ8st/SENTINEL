@@ -64,40 +64,40 @@ export default function Manifesto() {
                 I canali ufficiali sono lenti. Hanno procedure, verifiche infinite, burocrazia. Quando un bollettino viene diramato, il danno è già fatto. I social media, d'altra parte, sono ostaggio degli algoritmi: seppelliscono le emergenze reali sotto valanghe di contenuti virali.
               </p>
 
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white pt-4">Il Ribaltamento del Potere</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white pt-4">L'Informazione locale diffusa</h3>
               <p className="text-gray-700 dark:text-white/70 leading-relaxed text-lg">
-                Abbiamo creato Sentinel per disintermediare l'emergenza. Migliaia di occhi, migliaia di smartphone connessi in un'unica rete neurale. Nessun editore decide cosa è importante per te. Se c'è un pericolo nella tua zona, il tuo telefono vibra. Punto.
+                Abbiamo creato Sentinel per offrire un punto d'accesso chiaro alle informazioni locali. Notizie, bollettini pubblici e segnalazioni della community consultabili in un'unica mappa trasparente. Nessun sensazionalismo: se c'è un aggiornamento verificato nella tua area, lo puoi consultare direttamente con il proprio stato di verifica.
               </p>
 
               {/* Data & Perceived Anxiety Section */}
               <div className="bg-white dark:bg-[#0c0c0c] border border-gray-200 dark:border-white/10 p-8 rounded-3xl shadow-xl my-8">
                 <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-4">
-                  Dati, Psicologia & La Realtà Italiana
+                  Dati, Trasparenza & La Realtà Locale
                 </h3>
                 <p className="text-gray-600 dark:text-white/70 text-base leading-relaxed mb-6">
-                  Nelle principali aree metropolitane italiane (Milano, Roma, Verona, Torino, Napoli), oltre l'<strong>82% dei cittadini</strong> dichiara di percepire una costante sensazione di vulnerabilità durante i rientri serali o gli spostamenti in zone isolate. Oltre 12 milioni di pendolari affrontano ogni giorno tratte di viabilità e metropolitane senza avere alcuna certezza di cosa li attenda oltre la fermata.
+                  Nelle aree urbane e nei territori locali (come il pilota Forlì-Cesena e l'Emilia-Romagna), pendolari e cittadini affrontano ogni giorno spostamenti senza avere una visione unificata degli eventi di viabilità, trasporti e segnalazioni territoriali.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="p-4 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-                    <span className="text-3xl font-black text-[#10b981]">82%</span>
-                    <p className="text-xs text-gray-600 dark:text-white/60 mt-1">Ansia da rientro serale nelle città italiane (Dati ISTAT)</p>
+                    <span className="text-3xl font-black text-[#10b981]">100%</span>
+                    <p className="text-xs text-gray-600 dark:text-white/60 mt-1">Fonti dichiarate e stato di verifica trasparente</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-                    <span className="text-3xl font-black text-blue-500">12M+</span>
-                    <p className="text-xs text-gray-600 dark:text-white/60 mt-1">Pendolari giornalieri che necessitano di mappe verificate</p>
+                    <span className="text-3xl font-black text-blue-500">Cesena</span>
+                    <p className="text-xs text-gray-600 dark:text-white/60 mt-1">Primo ambito pilota territoriale per la validazione MVP</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-                    <span className="text-3xl font-black text-orange-500">45%+</span>
-                    <p className="text-xs text-gray-600 dark:text-white/60 mt-1">Micro-eventi non segnalati sui canali tradizionali</p>
+                    <span className="text-3xl font-black text-emerald-500">0</span>
+                    <p className="text-xs text-gray-600 dark:text-white/60 mt-1">Sostituzione ai numeri di emergenza (112 sempre prioritario)</p>
                   </div>
                 </div>
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10 flex items-center justify-between flex-wrap gap-4">
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">Sentinel risponde a questa ansia con risposte oggettive e verificate in tempo reale.</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">Sentinel risponde con dati consultabili e stato di verifica esplicito.</p>
                   <button 
                     onClick={() => setIsWaitlistOpen(true)}
                     className="bg-[#10b981] hover:bg-[#059669] text-black font-bold px-6 py-3 rounded-full text-sm transition-all hover:scale-105 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
                   >
-                    Richiedi Accesso Prioritario
+                    Apri la Mappa
                   </button>
                 </div>
               </div>

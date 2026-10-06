@@ -60,24 +60,24 @@ export default function DualIPhoneHeroMockup() {
             {/* Feed Cards - Sleek Citizen-Style High-Contrast Render */}
             <div className="flex-1 p-2 sm:p-2.5 space-y-2 overflow-hidden text-left bg-[#05070b]">
               
-              {/* Card 1 - Crime Alert */}
-              <div className="p-2 sm:p-2.5 rounded-2xl bg-[#0e111a] border border-red-500/50 shadow-lg relative overflow-hidden">
-                <div className="absolute top-0 left-0 bottom-0 w-1 bg-red-500" />
+              {/* Card 1 - Viabilita & Trasporti */}
+              <div className="p-2 sm:p-2.5 rounded-2xl bg-[#0e111a] border border-[#10b981]/50 shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#10b981]" />
                 <div className="flex items-center justify-between mb-1 pl-1">
-                  <span className="text-[7.5px] font-black text-red-400 bg-red-500/20 border border-red-500/40 px-2 py-0.5 rounded-md tracking-wider">
-                    {isEn ? '🚨 CRIME' : '🚨 CRIMINI'}
+                  <span className="text-[7.5px] font-black text-emerald-400 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-md tracking-wider">
+                    {isEn ? '🚧 TRAFFIC UPDATE' : '🚧 VIABILITÀ & TRASPORTI'}
                   </span>
                   <span className="text-[7.5px] text-white/50 font-bold">{isEn ? '14m ago' : '14m fa'}</span>
                 </div>
                 <div className="text-[8.5px] sm:text-[10px] font-extrabold text-white leading-snug mb-1 pl-1">
-                  {isEn ? 'Confirmed Pickpocketing — Metro Cordusio' : 'Borseggi Confermato — Metro Cordusio'}
+                  {isEn ? 'Road Closure & Bus Detour — Central Station' : 'Deviazione Bus & Chiusura Corsia — Stazione Cesena'}
                 </div>
                 <div className="flex items-center justify-between text-[7.5px] sm:text-[8.5px] text-white/70 pl-1 pt-1 border-t border-white/5">
                   <span className="flex items-center gap-1 font-semibold truncate max-w-[65%]">
-                    <MapPin className="w-2.5 h-2.5 text-[#10b981] shrink-0" /> Cordusio, Milan
+                    <MapPin className="w-2.5 h-2.5 text-[#10b981] shrink-0" /> Cesena, Emilia-Romagna
                   </span>
                   <span className="text-[#10b981] font-black bg-[#10b981]/20 border border-[#10b981]/40 px-1.5 py-0.5 rounded-md">
-                    344m
+                    250m
                   </span>
                 </div>
               </div>
