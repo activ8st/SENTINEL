@@ -22,11 +22,34 @@ class UserBase(BaseModel):
     strikes: int = 0
     is_read_only: bool = False
     role: str = "user"
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    birth_year: Optional[int] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    last_login_at: Optional[datetime] = None
 
 class UserCreate(UserBase):
     pass
 
+class UserUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    birth_year: Optional[int] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
 class User(UserBase):
+    @field_serializer("created_at", "updated_at", "last_login_at", when_used="json")
+    def serialize_utc_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
     model_config = ConfigDict(from_attributes=True)
 
 class OTPSendRequest(BaseModel):
@@ -37,6 +60,9 @@ class OTPVerifyRequest(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     code: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    birth_year: Optional[int] = None
 
 
 class ModerateIncidentRequest(BaseModel):

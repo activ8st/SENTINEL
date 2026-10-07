@@ -96,6 +96,7 @@ async def automatic_incident_refresh() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    ensure_schema_compatibility()
     refresh_task = asyncio.create_task(automatic_incident_refresh()) if AUTO_REFRESH_ENABLED else None
     try:
         yield
@@ -176,13 +177,47 @@ def attach_incident_metadata(incident: models.Incident) -> models.Incident:
 otp_store: dict[str, dict] = {}
 otp_rate_limits: dict[str, list[float]] = {}
 
+from .auth_utils import create_access_token, verify_access_token, normalize_email, normalize_phone
+
+def get_current_user_from_auth_header(
+    request: Request,
+    db: Session = Depends(get_db)
+) -> models.User:
+    sentinel_mode = os.getenv("SENTINEL_MODE", "pilot").lower()
+    auth_header = request.headers.get("Authorization")
+    
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+        user_id = verify_access_token(token)
+        if user_id:
+            user = db.query(models.User).filter(models.User.id == user_id).first()
+            if user:
+                return user
+    
+    # In demo mode ONLY, fallback to demo user if no token present
+    if sentinel_mode == "demo" and not auth_header:
+        user = db.query(models.User).filter(models.User.id == "user-1").first()
+        if not user:
+            user = models.User(id="user-1", name="Utente Sentinel Demo", karma=100, role="user")
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        return user
+
+    raise HTTPException(status_code=401, detail="Token di autenticazione non valido o sessione scaduta. Effettua il login.")
+
 @app.post("/api/auth/send-otp")
 def send_otp(req: schemas.OTPSendRequest, request: Request):
     import hashlib
     import random
     import time
 
-    target = (req.email or req.phone or "").strip().lower()
+    raw_target = (req.email or req.phone or "").strip()
+    if "@" in raw_target:
+        target = normalize_email(raw_target)
+    else:
+        target = normalize_phone(raw_target)
+
     if not target or len(target) < 3:
         raise HTTPException(status_code=400, detail="Numero di telefono o indirizzo email non valido.")
 
@@ -203,7 +238,7 @@ def send_otp(req: schemas.OTPSendRequest, request: Request):
     # In pilot or production mode, dispatch code via real email/SMS provider
     if sentinel_mode in ["pilot", "production"]:
         if "@" in target:
-            if not RESEND_API_KEY:
+            if not get_resend_api_key():
                 print(f"[OTP Error] RESEND_API_KEY non configurata per l'invio OTP a {target}")
                 raise HTTPException(
                     status_code=503,
@@ -246,7 +281,7 @@ def send_otp(req: schemas.OTPSendRequest, request: Request):
         "message": "Codice OTP inviato con successo",
         "expires_in": 300
     }
-    # NEVER return demo_code in pilot or production mode
+    # NEVER return demo_code or otp in pilot or production mode
     if sentinel_mode == "demo":
         res["demo_code"] = code
 
@@ -257,7 +292,12 @@ def verify_otp(req: schemas.OTPVerifyRequest, db: Session = Depends(get_db)):
     import hashlib
     import time
 
-    target = (req.phone or req.email or "").strip().lower()
+    raw_target = (req.email or req.phone or "").strip()
+    if "@" in raw_target:
+        target = normalize_email(raw_target)
+    else:
+        target = normalize_phone(raw_target)
+
     code = req.code.strip()
     now = time.time()
     sentinel_mode = os.getenv("SENTINEL_MODE", "pilot").lower()
@@ -270,14 +310,30 @@ def verify_otp(req: schemas.OTPVerifyRequest, db: Session = Depends(get_db)):
     # In demo mode ONLY, bypass with 1234/123456 is allowed if no record exists
     if not record:
         if sentinel_mode == "demo" and code in ["1234", "123456"]:
-            user_id = f"usr-{hashlib.md5(target.encode()).hexdigest()[:8]}"
+            user_id = f"usr-{hashlib.md5(target.encode()).hexdigest()[:12]}"
             user = db.query(models.User).filter(models.User.id == user_id).first()
             if not user:
-                user = models.User(id=user_id, name="Pioniere Sentinel Demo", karma=100, role="user")
+                first_name = (req.first_name or "").strip() or None
+                last_name = (req.last_name or "").strip() or None
+                full_name = f"{first_name} {last_name}".strip() if (first_name and last_name) else "Pioniere Sentinel Demo"
+                user = models.User(
+                    id=user_id,
+                    name=full_name,
+                    first_name=first_name,
+                    last_name=last_name,
+                    birth_year=req.birth_year,
+                    email=target if "@" in target else None,
+                    phone=target if "@" not in target else None,
+                    karma=100,
+                    role="user",
+                    created_at=datetime.datetime.utcnow(),
+                    last_login_at=datetime.datetime.utcnow()
+                )
                 db.add(user)
                 db.commit()
                 db.refresh(user)
-            return {"status": "authenticated", "user": schemas.User.model_validate(user), "token": f"token-{user_id}"}
+            token = create_access_token(user.id)
+            return {"status": "authenticated", "user": schemas.User.model_validate(user), "token": token}
         raise HTTPException(status_code=400, detail="Nessun codice OTP inviato per questo utente o codice scaduto.")
 
     if now > record["expires_at"]:
@@ -299,30 +355,89 @@ def verify_otp(req: schemas.OTPVerifyRequest, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail="Codice OTP non corretto.")
 
     otp_store.pop(target, None)
-    user_id = f"usr-{hashlib.md5(target.encode()).hexdigest()[:8]}"
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not user:
-        user = models.User(id=user_id, name="Pioniere Sentinel", karma=100, role="user")
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+    user_id = f"usr-{hashlib.md5(target.encode()).hexdigest()[:12]}"
+    user = (
+        db.query(models.User)
+        .filter(
+            (models.User.id == user_id) |
+            (models.User.email == target) |
+            (models.User.phone == target)
+        )
+        .first()
+    )
 
+    first_name = (req.first_name or "").strip() or None
+    last_name = (req.last_name or "").strip() or None
+    birth_year = req.birth_year
+
+    if not user:
+        full_name = f"{first_name} {last_name}".strip() if (first_name and last_name) else "Pioniere Sentinel"
+        user = models.User(
+            id=user_id,
+            name=full_name,
+            first_name=first_name,
+            last_name=last_name,
+            birth_year=birth_year,
+            email=target if "@" in target else None,
+            phone=target if "@" not in target else None,
+            karma=100,
+            role="user",
+            created_at=datetime.datetime.utcnow(),
+            last_login_at=datetime.datetime.utcnow()
+        )
+        db.add(user)
+    else:
+        user.last_login_at = datetime.datetime.utcnow()
+        if first_name:
+            user.first_name = first_name
+        if last_name:
+            user.last_name = last_name
+        if first_name and last_name:
+            user.name = f"{first_name} {last_name}"
+        if birth_year:
+            user.birth_year = birth_year
+        if "@" in target and not user.email:
+            user.email = target
+        if "@" not in target and not user.phone:
+            user.phone = target
+
+    db.commit()
+    db.refresh(user)
+
+    token = create_access_token(user.id)
     return {
         "status": "authenticated",
         "user": schemas.User.model_validate(user),
-        "token": f"token-{user_id}"
+        "token": token
     }
 
-# Auth Mock
 @app.get("/api/users/me", response_model=schemas.User)
-def get_current_user(db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.id == "user-1").first()
-    if not user:
-        user = models.User(id="user-1", name="Utente Sentinel", karma=100, role="user")
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    return user
+def get_current_user(current_user: models.User = Depends(get_current_user_from_auth_header)):
+    return current_user
+
+@app.patch("/api/users/me", response_model=schemas.User)
+def update_current_user(
+    update_data: schemas.UserUpdate,
+    current_user: models.User = Depends(get_current_user_from_auth_header),
+    db: Session = Depends(get_db)
+):
+    if update_data.first_name is not None:
+        current_user.first_name = update_data.first_name.strip()
+    if update_data.last_name is not None:
+        current_user.last_name = update_data.last_name.strip()
+    if update_data.first_name or update_data.last_name:
+        current_user.name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip()
+    if update_data.birth_year is not None:
+        current_user.birth_year = update_data.birth_year
+    if update_data.email is not None:
+        current_user.email = normalize_email(update_data.email)
+    if update_data.phone is not None:
+        current_user.phone = normalize_phone(update_data.phone)
+
+    current_user.updated_at = datetime.datetime.utcnow()
+    db.commit()
+    db.refresh(current_user)
+    return current_user
 
 @app.get("/api/incidents", response_model=List[schemas.Incident])
 def get_incidents(skip: int = 0, limit: int = 2000, db: Session = Depends(get_db)):
@@ -569,14 +684,18 @@ def reject_incident(incident_id: str, db: Session = Depends(get_db)):
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 
+def get_resend_api_key() -> str | None:
+    return os.getenv("RESEND_API_KEY") or RESEND_API_KEY
+
 def send_resend_email(to_email: str, subject: str, html_content: str):
-    if not RESEND_API_KEY:
+    resend_key = get_resend_api_key()
+    if not resend_key:
         print("[Resend] API Key missing.")
         return False
     try:
         import requests
         headers = {
-            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Authorization": f"Bearer {resend_key}",
             "Content-Type": "application/json",
             "User-Agent": "SentinelApp/1.0"
         }

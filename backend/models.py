@@ -12,6 +12,16 @@ class User(Base):
     strikes = Column(Integer, default=0, server_default="0")
     is_read_only = Column(Boolean, default=False, server_default="false")
     role = Column(String, default="user", server_default="user")
+    
+    # Extended Onboarding & Profile Fields
+    email = Column(String, unique=True, index=True, nullable=True)
+    phone = Column(String, unique=True, index=True, nullable=True)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    birth_year = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    last_login_at = Column(DateTime, nullable=True)
 
 class Incident(Base):
     __tablename__ = "incidents"

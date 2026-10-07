@@ -43,6 +43,14 @@ SCHEMA_COMPAT_COLUMNS = {
         "strikes": "INTEGER NOT NULL DEFAULT 0",
         "is_read_only": "BOOLEAN NOT NULL DEFAULT FALSE",
         "role": "VARCHAR DEFAULT 'user'",
+        "email": "VARCHAR",
+        "phone": "VARCHAR",
+        "first_name": "VARCHAR",
+        "last_name": "VARCHAR",
+        "birth_year": "INTEGER",
+        "created_at": "DATETIME",
+        "updated_at": "DATETIME",
+        "last_login_at": "DATETIME",
     },
     "incidents": {
         "fake_votes": "INTEGER NOT NULL DEFAULT 0",
@@ -63,6 +71,7 @@ SCHEMA_COMPAT_COLUMNS = {
 
 def ensure_schema_compatibility(target_engine=engine):
     """Add known backward-compatible columns without replacing user data."""
+    Base.metadata.create_all(bind=target_engine)
     inspector = inspect(target_engine)
     existing_tables = set(inspector.get_table_names())
 

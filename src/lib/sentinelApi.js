@@ -21,9 +21,16 @@ export const apiFetch = async (path, options = {}) => {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
+  const headers = { ...(fetchOptions.headers || {}) };
+  const token = typeof window !== 'undefined' ? localStorage.getItem('sentinel_auth_token') : null;
+  if (token && !headers['Authorization'] && !headers['authorization']) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   try {
     const response = await fetch(apiUrl(path), {
       ...fetchOptions,
+      headers,
       signal: fetchOptions.signal || controller.signal,
     });
     return response;
