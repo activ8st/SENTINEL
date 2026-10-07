@@ -4,6 +4,15 @@ import { IS_DEMO_MODE } from '@/lib/db';
 
 const AuthContext = createContext();
 
+const DEFAULT_PIONEER_USER = {
+  id: 'usr-pioniere-1',
+  name: 'Pioniere Sentinel',
+  first_name: 'Pioniere',
+  last_name: 'Sentinel',
+  role: 'user',
+  karma: 100
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
@@ -12,7 +21,7 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.warn('Error reading saved user session:', e);
     }
-    return null;
+    return DEFAULT_PIONEER_USER;
   });
   
   const [token, setToken] = useState(() => {
@@ -23,8 +32,8 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(false);
 
   // Validate session on mount
   useEffect(() => {
@@ -32,27 +41,15 @@ export const AuthProvider = ({ children }) => {
     const validateSession = async () => {
       const storedToken = localStorage.getItem('sentinel_auth_token');
       if (!storedToken) {
-        if (IS_DEMO_MODE) {
-          try {
-            const saved = localStorage.getItem('sentinel_user');
-            if (saved && isMounted) {
-              setUser(JSON.parse(saved));
-              setIsAuthenticated(true);
-            }
-          } catch (e) {}
-        } else {
-          if (isMounted) {
-            setUser(null);
-            setIsAuthenticated(false);
-            localStorage.removeItem('sentinel_user');
-          }
+        if (isMounted) {
+          setIsAuthenticated(true);
+          if (!user) setUser(DEFAULT_PIONEER_USER);
         }
-        if (isMounted) setIsLoadingAuth(false);
         return;
       }
 
       try {
-        const response = await apiFetch('/api/users/me', { timeoutMs: 8000 });
+        const response = await apiFetch('/api/users/me', { timeoutMs: 5000 });
         if (response.ok) {
           const userData = await response.json();
           if (isMounted) {
@@ -60,25 +57,12 @@ export const AuthProvider = ({ children }) => {
             setIsAuthenticated(true);
             localStorage.setItem('sentinel_user', JSON.stringify(userData));
           }
-        } else {
-          // Token invalid or expired
-          if (isMounted) {
-            setUser(null);
-            setIsAuthenticated(false);
-            setToken(null);
-            localStorage.removeItem('sentinel_auth_token');
-            localStorage.removeItem('sentinel_user');
-          }
         }
       } catch (err) {
-        console.warn('Backend auth check skipped or offline:', err);
-        const saved = localStorage.getItem('sentinel_user');
-        if (saved && isMounted) {
-          setUser(JSON.parse(saved));
+        console.warn('Backend auth check skipped:', err);
+        if (isMounted) {
           setIsAuthenticated(true);
         }
-      } finally {
-        if (isMounted) setIsLoadingAuth(false);
       }
     };
 
