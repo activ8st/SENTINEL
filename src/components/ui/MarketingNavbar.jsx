@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Download, Sun, Moon, Globe, Menu, X, ArrowRight } from 'lucide-react';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
 import { trackEvent } from '@/lib/analytics';
 
 export default function MarketingNavbar({ onOpenWaitlist }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { lang, changeLang, theme, toggleTheme, t } = useLanguageTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -18,7 +19,7 @@ export default function MarketingNavbar({ onOpenWaitlist }) {
   const handleDownloadClick = () => {
     trackEvent('cta_click', { location: 'navbar_download' });
     setMobileMenuOpen(false);
-    if (onOpenWaitlist) onOpenWaitlist();
+    navigate('/Platform');
   };
 
   return (

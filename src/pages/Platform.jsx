@@ -3,7 +3,6 @@ import { ShieldAlert, Server, Smartphone, Database, Compass, Radio, Search, X } 
 import { motion, AnimatePresence } from 'framer-motion';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
-import WaitlistModal from '@/components/ui/WaitlistModal';
 import IncidentMap from '@/components/incidents/IncidentMap';
 import IncidentCard from '@/components/incidents/IncidentCard';
 import { getPersistentIncidents } from '@/lib/liveSyncEngine';
@@ -66,7 +65,6 @@ class MapErrorBoundary extends Component {
 export default function Platform() {
   const { t, lang } = useLanguageTheme();
   const isEn = lang === 'en';
-  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState(null);
 
   useEffect(() => {
@@ -80,7 +78,7 @@ export default function Platform() {
   return (
     <div className="bg-slate-50 dark:bg-[#050505] text-slate-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300 select-none" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
-      <MarketingNavbar onOpenWaitlist={() => setIsWaitlistOpen(true)} />
+      <MarketingNavbar />
 
       {/* Hero Header */}
       <section className="pt-28 pb-12">
@@ -211,11 +209,6 @@ export default function Platform() {
       </section>
 
       <GlobalFooter />
-
-      <WaitlistModal 
-        isOpen={isWaitlistOpen} 
-        onClose={() => setIsWaitlistOpen(false)} 
-      />
 
     </div>
   );

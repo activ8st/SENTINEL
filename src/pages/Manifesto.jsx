@@ -1,13 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { AlertTriangle, CloudLightning, Activity } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
-import WaitlistModal from '@/components/ui/WaitlistModal';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
 
 export default function Manifesto() {
   const { t } = useLanguageTheme();
-  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -16,7 +14,7 @@ export default function Manifesto() {
   return (
     <div className="bg-slate-50 dark:bg-[#050505] text-gray-900 dark:text-[#f5f5f5] min-h-screen font-sans transition-colors duration-300" style={{ fontFamily: "'Funnel Display', sans-serif" }}>
       
-      <MarketingNavbar onOpenWaitlist={() => setIsWaitlistOpen(true)} />
+      <MarketingNavbar />
 
       {/* Hero Banner */}
       <section className="pt-28 pb-16 bg-white dark:bg-[#111] border-b border-gray-200 dark:border-white/10 transition-colors duration-300">
@@ -93,12 +91,12 @@ export default function Manifesto() {
                 </div>
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10 flex items-center justify-between flex-wrap gap-4">
                   <p className="text-sm font-bold text-gray-900 dark:text-white">Sentinel risponde con dati consultabili e stato di verifica esplicito.</p>
-                  <button 
-                    onClick={() => setIsWaitlistOpen(true)}
-                    className="bg-[#10b981] hover:bg-[#059669] text-black font-bold px-6 py-3 rounded-full text-sm transition-all hover:scale-105 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                  <Link 
+                    to="/Platform"
+                    className="bg-[#10b981] hover:bg-[#059669] text-black font-bold px-6 py-3 rounded-full text-sm transition-all hover:scale-105 shadow-[0_0_20px_rgba(16,185,129,0.3)] inline-block text-center"
                   >
                     Apri la Mappa
-                  </button>
+                  </Link>
                 </div>
               </div>
 
@@ -112,11 +110,6 @@ export default function Manifesto() {
       </section>
 
       <GlobalFooter />
-
-      <WaitlistModal 
-        isOpen={isWaitlistOpen} 
-        onClose={() => setIsWaitlistOpen(false)} 
-      />
 
     </div>
   );

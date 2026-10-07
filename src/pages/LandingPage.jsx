@@ -4,17 +4,16 @@ import GlobalFooter from '@/components/ui/GlobalFooter';
 import ItalyMapModal from '@/components/ui/ItalyMapModal';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import FeatureModal from '@/components/ui/FeatureModal';
-import WaitlistModal from '@/components/ui/WaitlistModal';
 import DualIPhoneHeroMockup from '@/components/ui/DualIPhoneHeroMockup';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
 import { trackEvent, initScrollDepthTracking } from '@/lib/analytics';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function LandingPage() {
   const { t, lang } = useLanguageTheme();
+  const navigate = useNavigate();
 
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   const [activeFeature, setActiveFeature] = useState(null);
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
   const [showStickyBar, setShowStickyBar] = useState(false);
@@ -46,7 +45,7 @@ export default function LandingPage() {
 
   const handleOpenWaitlist = (sourceLocation) => {
     trackEvent('cta_click', { location: sourceLocation });
-    setIsWaitlistOpen(true);
+    navigate('/Platform');
   };
 
   const FAQS = [
@@ -548,7 +547,6 @@ export default function LandingPage() {
       {/* MODALS */}
       <ItalyMapModal isOpen={isMapModalOpen} onClose={() => setIsMapModalOpen(false)} />
       <FeatureModal featureId={activeFeature} onClose={() => setActiveFeature(null)} />
-      <WaitlistModal isOpen={isWaitlistOpen} onClose={() => setIsWaitlistOpen(false)} />
 
     </div>
   );

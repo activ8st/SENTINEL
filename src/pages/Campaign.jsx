@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Lock, Users, Sparkles, Trophy, MapPin, CheckCircle2, Award, Zap } from 'lucide-react';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import GlobalFooter from '@/components/ui/GlobalFooter';
-import WaitlistModal from '@/components/ui/WaitlistModal';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
 import { trackEvent } from '@/lib/analytics';
 
 export default function Campaign() {
   const { t, lang } = useLanguageTheme();
-  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleOpenWaitlist = (source) => {
     trackEvent('cta_click', { button: 'campaign_founder_badge', source });
-    setIsWaitlistOpen(true);
+    navigate('/Platform');
   };
 
   const ROLLOUT_CITIES = [
@@ -30,7 +30,7 @@ export default function Campaign() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#10b981] opacity-10 blur-[180px] rounded-full pointer-events-none" />
 
       {/* NAVBAR */}
-      <MarketingNavbar onOpenWaitlist={() => handleOpenWaitlist('campaign_nav')} />
+      <MarketingNavbar />
 
       <main className="pt-24 pb-20">
         
@@ -263,9 +263,6 @@ export default function Campaign() {
 
       {/* FOOTER */}
       <GlobalFooter />
-
-      {/* WAITLIST MODAL */}
-      <WaitlistModal isOpen={isWaitlistOpen} onClose={() => setIsWaitlistOpen(false)} />
 
     </div>
   );
