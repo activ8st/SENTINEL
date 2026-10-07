@@ -29,8 +29,14 @@ export default function Auth() {
   const [demoCode, setDemoCode] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/Home', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   // Registration state
   const [formData, setFormData] = useState({
