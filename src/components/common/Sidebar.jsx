@@ -2,15 +2,11 @@ import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { Home, Map as MapIcon, PlusSquare, Bell, User, Menu, Sun, Moon } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { useTheme } from 'next-themes';
+import { useLanguageTheme } from '@/context/LanguageThemeContext';
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const { theme, setTheme } = useTheme();
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
+  const { theme, toggleTheme } = useLanguageTheme();
 
   const NAV_ITEMS = [
     { name: 'Feed', icon: Home, path: '/Home' },
