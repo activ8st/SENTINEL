@@ -1,68 +1,81 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { apiFetch } from '@/lib/sentinelApi';
-import { IS_DEMO_MODE } from '@/lib/db';
 
 const AuthContext = createContext();
 
-const DEFAULT_PIONEER_USER = {
-  id: 'usr-pioniere-1',
-  name: 'Pioniere Sentinel',
-  first_name: 'Pioniere',
-  last_name: 'Sentinel',
-  role: 'user',
-  karma: 100
+export const DEFAULT_ANONYMOUS_USER = {
+  id: 'usr-anonymous',
+  name: 'Utente anonimo',
+  first_name: 'Utente',
+  last_name: 'anonimo',
+  role: 'anonymous',
+  karma: 0,
+  is_anonymous: true
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('sentinel_user');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn('Error reading saved user session:', e);
-    }
-    return DEFAULT_PIONEER_USER;
-  });
-  
   const [token, setToken] = useState(() => {
     try {
       return localStorage.getItem('sentinel_auth_token') || null;
-    } catch (e) {
+    } catch {
       return null;
     }
   });
 
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sentinel_user');
+      if (saved && token) {
+        const parsed = JSON.parse(saved);
+        return { ...parsed, is_anonymous: false };
+      }
+    } catch (e) {
+      console.warn('Error reading saved user session:', e);
+    }
+    return DEFAULT_ANONYMOUS_USER;
+  });
+
+  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(token));
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
 
-  // Validate session on mount
+  // Validate session on mount if token exists
   useEffect(() => {
     let isMounted = true;
     const validateSession = async () => {
       const storedToken = localStorage.getItem('sentinel_auth_token');
       if (!storedToken) {
         if (isMounted) {
-          setIsAuthenticated(true);
-          if (!user) setUser(DEFAULT_PIONEER_USER);
+          setIsAuthenticated(false);
+          setUser(DEFAULT_ANONYMOUS_USER);
         }
         return;
       }
 
+      setIsLoadingAuth(true);
       try {
         const response = await apiFetch('/api/users/me', { timeoutMs: 5000 });
         if (response.ok) {
           const userData = await response.json();
           if (isMounted) {
-            setUser(userData);
+            const fullUser = { ...userData, is_anonymous: false };
+            setUser(fullUser);
             setIsAuthenticated(true);
-            localStorage.setItem('sentinel_user', JSON.stringify(userData));
+            localStorage.setItem('sentinel_user', JSON.stringify(fullUser));
+          }
+        } else {
+          if (isMounted) {
+            setIsAuthenticated(false);
+            setUser(DEFAULT_ANONYMOUS_USER);
           }
         }
       } catch (err) {
         console.warn('Backend auth check skipped:', err);
         if (isMounted) {
-          setIsAuthenticated(true);
+          // Keep stored user session if available, otherwise anonymous
+          setIsAuthenticated(Boolean(storedToken));
         }
+      } finally {
+        if (isMounted) setIsLoadingAuth(false);
       }
     };
 
@@ -71,10 +84,11 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData, authToken = null) => {
-    setUser(userData);
+    const fullUser = { ...userData, is_anonymous: false };
+    setUser(fullUser);
     setIsAuthenticated(true);
     try {
-      localStorage.setItem('sentinel_user', JSON.stringify(userData));
+      localStorage.setItem('sentinel_user', JSON.stringify(fullUser));
       if (authToken) {
         setToken(authToken);
         localStorage.setItem('sentinel_auth_token', authToken);
@@ -90,7 +104,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setIsAuthenticated(false);
-    setUser(null);
+    setUser(DEFAULT_ANONYMOUS_USER);
     setToken(null);
     try {
       localStorage.removeItem('sentinel_user');
