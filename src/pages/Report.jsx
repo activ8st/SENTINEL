@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import React, { useState, useEffect } from 'react';
-
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,6 +38,7 @@ const DEFAULT_LOC = { lat: 44.1391, lng: 12.2432 }; // Cesena
 
 export default function Report() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1); // 1=type, 2=details, 3=confirm
   const [successId, setSuccessId] = useState(null);
   const [pendingReview, setPendingReview] = useState(false);
@@ -164,6 +165,9 @@ export default function Report() {
       }
 
       setSuccessId(incidentId);
+      queryClient.invalidateQueries({ queryKey: ['incidents-live'] });
+      queryClient.invalidateQueries({ queryKey: ['incidents'] });
+
       if (isPending) {
         toast.info('Segnalazione inviata: in fase di moderazione prima della pubblicazione.');
       } else {

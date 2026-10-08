@@ -148,6 +148,9 @@ def health_check(db: Session = Depends(get_db)):
 
 
 def incident_in_allowed_area(incident: models.Incident) -> bool:
+    # Always allow user-submitted community reports regardless of region
+    if incident.reported_by_id or incident.source in ["Utente Sentinel", "user", "community", "Utente"] or getattr(incident, "source_trust", "") == "user_reported":
+        return True
     try:
         from .fetch_live_incidents import is_allowed_area
 

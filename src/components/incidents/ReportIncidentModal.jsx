@@ -48,7 +48,8 @@ export default function ReportIncidentModal({ isOpen, onClose, userLocation }) {
       }
 
       // Success
-      queryClient.invalidateQueries(['incidents']);
+      queryClient.invalidateQueries({ queryKey: ['incidents-live'] });
+      queryClient.invalidateQueries({ queryKey: ['incidents'] });
       onClose();
       // Reset form
       setTimeout(() => {
@@ -57,8 +58,7 @@ export default function ReportIncidentModal({ isOpen, onClose, userLocation }) {
         setDescription('');
       }, 300);
       
-      // Optional: show a success toast here if you have a toast system
-      alert("Segnalazione inviata con successo!");
+      toast.success("Segnalazione inviata con successo!");
       
     } catch (err) {
       setError(err.message);
