@@ -169,7 +169,7 @@ export default function Report() {
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
 
       if (isPending) {
-        toast.info('Segnalazione inviata: in fase di moderazione prima della pubblicazione.');
+        toast.info('Filtro automatico preliminare con revisione umana per i casi sensibili.');
       } else {
         toast.success('Segnalazione pubblicata in tempo reale sul network!');
       }
@@ -388,7 +388,7 @@ export default function Report() {
                   </div>
                   <p className="text-xs text-gray-600 mt-1.5 flex items-center gap-1">
                     <Shield className="w-3 h-3" aria-hidden="true" />
-                    La geolocalizzazione è obbligatoria per evitare segnalazioni false.
+                    La posizione del dispositivo viene utilizzata per localizzare la segnalazione.
                   </p>
                 </div>
 

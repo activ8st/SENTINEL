@@ -16,10 +16,29 @@ export default function ReportIncidentModal({ isOpen, onClose, userLocation }) {
 
   const handleSubmit = async () => {
     if (!type) return;
+
+    let targetLoc = userLocation;
+    if (!targetLoc && navigator.geolocation) {
+      setIsSubmitting(true);
+      try {
+        const pos = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000, enableHighAccuracy: true });
+        });
+        targetLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      } catch (gpsErr) {
+        setIsSubmitting(false);
+        setError("Posizione GPS del dispositivo necessaria per localizzare la segnalazione.");
+        return;
+      }
+    }
+
+    if (!targetLoc || !Number.isFinite(targetLoc.lat) || !Number.isFinite(targetLoc.lng)) {
+      setError("Posizione GPS del dispositivo necessaria per localizzare la segnalazione.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
-
-    const targetLoc = userLocation || { lat: 41.9028, lng: 12.4964 };
 
     const payload = {
       id: "will-be-generated",
@@ -30,7 +49,7 @@ export default function ReportIncidentModal({ isOpen, onClose, userLocation }) {
       latitude: targetLoc.lat,
       longitude: targetLoc.lng,
       address: "Posizione attuale",
-      city: "Sconosciuta",
+      city: "Cesena",
       status: "active",
       media_urls: []
     };
