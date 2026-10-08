@@ -16,6 +16,8 @@ import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
 
+import ErrorBoundary from '@/components/common/ErrorBoundary';
+
 const { Pages, Layout } = pagesConfig;
 
 const LayoutWrapper = ({ children, currentPageName }) => {
@@ -145,9 +147,11 @@ export default function App() {
     <QueryClientProvider client={queryClientInstance}>
       <AuthProvider>
         <LanguageThemeProvider>
-          <Router>
-            <AuthenticatedApp />
-          </Router>
+          <ErrorBoundary>
+            <Router>
+              <AuthenticatedApp />
+            </Router>
+          </ErrorBoundary>
           <Toaster />
           <SonnerToaster position="top-right" theme="dark" />
           <SpeedInsights />
