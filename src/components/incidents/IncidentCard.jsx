@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { MapPin, Clock, ExternalLink, Share2, Heart, ShieldCheck, ChevronRight, ShieldAlert } from 'lucide-react';
-import { TYPE_CONFIG, SEVERITY_CONFIG } from '@/components/data/mockData';
+import { TYPE_CONFIG, SEVERITY_CONFIG, normalizeIncidentType } from '@/components/data/mockData';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -56,14 +56,40 @@ const HERO_PHOTO_BANKS = {
 
 const resolveIncidentType = (incident) => {
   if (!incident) return 'suspicious';
-  if (incident.type && TYPE_CONFIG[incident.type]) return incident.type;
+  const norm = normalizeIncidentType(incident.type);
+  if (norm && norm !== 'other' && TYPE_CONFIG[norm]) return norm;
   const text = (incident.title + ' ' + (incident.description || '')).toLowerCase();
   if (/incendio|fuoco|fiamme|rogo|fumo/i.test(text)) return 'fire';
   if (/incidente|scontro|investit|ribalt|tamponam|auto|moto|camion|ospedale|118/i.test(text)) return 'accident';
   if (/arrest|furto|rapina|borsegg|aggression|coltell|spacci|omicid|polizia|carabin/i.test(text)) return 'crime';
   if (/traffico|lavori|deviazion|strada|chiusa|cantiere|code/i.test(text)) return 'traffic';
   if (/meteo|temporale|pioggia|allerta|vento|neve|terremoto/i.test(text)) return 'weather';
-  return 'suspicious';
+  return norm || 'suspicious';
+};
+
+const getProvenanceBadge = (incident) => {
+  const src = String(incident?.source || '').toLowerCase();
+  const label = incident?.source_label || incident?.source || '';
+
+  if (src === 'community' || incident?.reported_by || incident?.is_community || label.toLowerCase().includes('segnalazione')) {
+    return {
+      type: 'community',
+      label: 'Segnalazione Community',
+      badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+    };
+  }
+  if (incident?.official_verified || incident?.verification_status === 'official' || src === 'official' || label.toLowerCase().includes('istituzional') || label.toLowerCase().includes('vigili')) {
+    return {
+      type: 'official',
+      label: 'Istituzionale',
+      badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+    };
+  }
+  return {
+    type: 'rss',
+    label: label || 'Editoriale RSS',
+    badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+  };
 };
 
 const getLikedIncidentsFromStorage = () => {
@@ -148,8 +174,7 @@ export default function IncidentCard({ incident, distance, unread = false }) {
     return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
   };
 
-  const sourceLabel = incident.source_label || incident.source || 'Sentinel Ingestion';
-  const isOfficial = incident.official_verified || incident.verification_status === 'official';
+  const provenance = getProvenanceBadge(incident);
 
   return (
     <div className={`relative flex flex-col rounded-[24px] border overflow-hidden transition-all duration-300
@@ -186,9 +211,9 @@ export default function IncidentCard({ incident, distance, unread = false }) {
         
         {/* Source & Provenance Badge */}
         <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-[11px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full uppercase tracking-wider">
-            {isOfficial ? <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> : <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />}
-            {sourceLabel}
+          <span className={`inline-flex items-center gap-1 text-[11px] font-black border px-3 py-1 rounded-full uppercase tracking-wider ${provenance.badgeClass}`}>
+            {provenance.type === 'official' ? <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> : provenance.type === 'community' ? <ShieldAlert className="w-3.5 h-3.5 text-purple-400" /> : <Clock className="w-3.5 h-3.5 text-blue-400" />}
+            {provenance.label}
           </span>
           {incident.verification_status && (
             <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/10">

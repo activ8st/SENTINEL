@@ -211,7 +211,18 @@ export const TYPE_CONFIG = {
   other:      { label: 'Altro',                icon: '⚠️', emoji: '⚠️', bg: 'bg-slate-500/10',  border: 'border-slate-500',  text: 'text-slate-500' },
 };
 
-export const normalizeIncidentType = (type) => type === 'altro' ? 'other' : type;
+export const normalizeIncidentType = (type) => {
+  const norm = String(type || '').toLowerCase().trim();
+  if (!norm || norm === 'other' || norm === 'altro') return 'other';
+  if (norm === 'incendio' || norm === 'fire') return 'fire';
+  if (norm === 'incidente' || norm === 'accident') return 'accident';
+  if (norm === 'traffico' || norm === 'traffic') return 'traffic';
+  if (norm === 'emergenza medica' || norm === 'medical' || norm === 'medica') return 'medical';
+  if (norm === 'meteo' || norm === 'weather' || norm === 'allerta meteo') return 'weather';
+  if (norm === 'crimine' || norm === 'crimini' || norm === 'crime') return 'crime';
+  if (norm === 'att. sospetta' || norm === 'sospetta' || norm === 'suspicious') return 'suspicious';
+  return TYPE_CONFIG[norm] ? norm : 'other';
+};
 
 export const SEVERITY_CONFIG = {
   critical: { label: 'Critico', bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500' },
