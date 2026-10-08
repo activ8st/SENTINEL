@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from . import models, schemas
 from .database import engine, ensure_schema_compatibility, get_db
-from .moderation import moderate_user_report, ModerationAction
+from .moderation import moderate_user_report, ModerationAction, evaluate_report_for_moderation
 from sqlalchemy import text
 
 models.Base.metadata.create_all(bind=engine)
@@ -483,9 +483,16 @@ def get_incident(incident_id: str, db: Session = Depends(get_db)):
 def create_incident(request: Request, incident: schemas.IncidentCreate, db: Session = Depends(get_db)):
     check_rate_limit(request)
 
-    # Moderate report text
+    # Moderate report text, media, and critical severity
+    has_media = bool(incident.media_urls and len(incident.media_urls) > 0)
+    mod_result = evaluate_report_for_moderation(
+        title=incident.title,
+        description=incident.description,
+        has_media=has_media,
+        severity=incident.severity
+    )
+
     combined_text = f"{incident.title} {incident.description}".strip()
-    mod_result = moderate_user_report(combined_text)
 
     # Log BLOCK and FLAG_FOR_REVIEW to Audit Log
     if mod_result.action in (ModerationAction.BLOCK, ModerationAction.FLAG_FOR_REVIEW):
@@ -502,7 +509,8 @@ def create_incident(request: Request, incident: schemas.IncidentCreate, db: Sess
     if mod_result.action == ModerationAction.BLOCK:
         raise HTTPException(status_code=400, detail=mod_result.reason)
 
-    initial_status = "pending_review" if mod_result.action == ModerationAction.FLAG_FOR_REVIEW else incident.status
+    initial_status = "pending_review" if mod_result.action == ModerationAction.FLAG_FOR_REVIEW else "active"
+    verification_status = "pending_review" if initial_status == "pending_review" else "user_submitted"
 
     db_incident = models.Incident(
         id=incident.id,
@@ -515,6 +523,7 @@ def create_incident(request: Request, incident: schemas.IncidentCreate, db: Sess
         address=incident.address,
         city=incident.city,
         status=initial_status,
+        verification_status=verification_status,
         reported_by_id=incident.reported_by_id,
         reporter_karma=incident.reporter_karma,
         created_date=datetime.datetime.utcnow()
@@ -528,7 +537,7 @@ def create_incident(request: Request, incident: schemas.IncidentCreate, db: Sess
             
     db.commit()
     db.refresh(db_incident)
-    db_incident.media_urls = incident.media_urls if initial_status == "active" else []
+    db_incident.media_urls = incident.media_urls if incident.media_urls else []
     return db_incident
 
 @app.post("/api/incidents/user-report", response_model=schemas.Incident)
@@ -545,8 +554,15 @@ def create_user_incident(request: Request, incident: schemas.IncidentCreate, db:
     if user.is_read_only:
         raise HTTPException(status_code=403, detail="Account in modalità Read-Only a causa di ripetute Fake News.")
 
+    has_media = bool(incident.media_urls and len(incident.media_urls) > 0)
+    mod_result = evaluate_report_for_moderation(
+        title=incident.title,
+        description=incident.description,
+        has_media=has_media,
+        severity=incident.severity
+    )
+
     combined_text = f"{incident.title} {incident.description}".strip()
-    mod_result = moderate_user_report(combined_text)
 
     if mod_result.action in (ModerationAction.BLOCK, ModerationAction.FLAG_FOR_REVIEW):
         audit = models.ModerationAuditLog(
@@ -563,6 +579,7 @@ def create_user_incident(request: Request, incident: schemas.IncidentCreate, db:
         raise HTTPException(status_code=400, detail=mod_result.reason)
 
     initial_status = "pending_review" if mod_result.action == ModerationAction.FLAG_FOR_REVIEW else "active"
+    verification_status = "pending_review" if initial_status == "pending_review" else "user_submitted"
 
     new_id = str(uuid.uuid4())
     
@@ -577,6 +594,7 @@ def create_user_incident(request: Request, incident: schemas.IncidentCreate, db:
         address=incident.address,
         city=incident.city,
         status=initial_status,
+        verification_status=verification_status,
         reported_by_id=user.id,
         reporter_karma=user.karma,
         created_date=datetime.datetime.utcnow(),
@@ -592,7 +610,7 @@ def create_user_incident(request: Request, incident: schemas.IncidentCreate, db:
             
     db.commit()
     db.refresh(db_incident)
-    db_incident.media_urls = incident.media_urls if initial_status == "active" else []
+    db_incident.media_urls = incident.media_urls if incident.media_urls else []
     return db_incident
 
 @app.patch("/api/incidents/{incident_id}/vote")

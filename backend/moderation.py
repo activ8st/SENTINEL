@@ -98,9 +98,9 @@ def moderate_user_report(text: str) -> ModerationResult:
     )
 
 
-def evaluate_report_for_moderation(title: str, description: str, has_media: bool = False) -> ModerationResult:
+def evaluate_report_for_moderation(title: str, description: str, has_media: bool = False, severity: str = "medium") -> ModerationResult:
     """
-    Valuta sia il testo che gli allegati media per determinare se la segnalazione
+    Valuta il testo, gli allegati media e il livello di gravità per determinare se la segnalazione
     può essere pubblicata direttamente, va in pending_review o viene bloccata.
     """
     text = f"{title or ''} {description or ''}".strip()
@@ -108,10 +108,11 @@ def evaluate_report_for_moderation(title: str, description: str, has_media: bool
     if result.action == ModerationAction.BLOCK:
         return result
 
-    if has_media:
+    if has_media or str(severity or "").lower() == "critical":
         return ModerationResult(
             action=ModerationAction.FLAG_FOR_REVIEW,
-            reason="Segnalazione contenente file media: richiede revisione umana prima della pubblicazione."
+            reason="Segnalazione contenente file media o allerta critica: richiede revisione umana prima della pubblicazione."
         )
 
     return result
+
