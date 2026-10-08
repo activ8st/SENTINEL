@@ -9,9 +9,8 @@ import {
   Navigation,
   CloudRain,
   Info,
-  ChevronRight,
-  ShieldCheck,
 } from 'lucide-react';
+import { normalizeIncidentType } from '@/components/data/mockData';
 
 const LUCIDE_ICON_MAP = {
   crime: ShieldAlert,
@@ -52,9 +51,10 @@ function formatRelativeTime(dateString) {
 }
 
 export default function NotificationCard({ incident, isRead, onMarkRead, typeConfig }) {
-  const IconComponent = LUCIDE_ICON_MAP[incident.type] || Info;
-  const categoryStyle = CATEGORY_COLORS[incident.type] || CATEGORY_COLORS.other;
-  const label = typeConfig?.label || incident.type || 'Allerta';
+  const normType = normalizeIncidentType(incident?.type);
+  const IconComponent = LUCIDE_ICON_MAP[normType] || Info;
+  const categoryStyle = CATEGORY_COLORS[normType] || CATEGORY_COLORS.other;
+  const label = typeConfig?.label || (normType !== 'other' ? normType : 'Allerta');
   const relativeTime = formatRelativeTime(incident.created_date || incident.published_at);
 
   const locationText = incident.city || incident.address || 'Area locale';
