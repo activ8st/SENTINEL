@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-  MapPin, Sun, Moon, Heart, Shield, Sparkles, UserCheck, Lock
+  MapPin, Sun, Moon, Heart, Shield, Sparkles, Lock
 } from 'lucide-react';
 import HistorySection from '@/components/profile/HistorySection';
 import IncidentCard from '@/components/incidents/IncidentCard';

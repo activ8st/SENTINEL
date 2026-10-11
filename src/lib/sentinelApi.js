@@ -46,18 +46,18 @@ export const apiFetch = async (path, options = {}) => {
 
 export const checkApiHealth = async () => {
   if (!isSentinelApiConfigured) {
-    return { status: 'unavailable', mode: 'offline', details: 'API non configurata' };
+    return { status: 'unavailable', mode: 'offline', is_fallback: true, details: 'API non configurata' };
   }
   try {
     const response = await apiFetch('/api/health', { timeoutMs: 5000 });
     if (response.ok) {
       const data = await response.json();
-      return { status: 'backend_live', mode: data.mode || 'pilot', details: data };
+      return { status: 'backend_live', mode: data.mode || 'pilot', is_fallback: false, details: data };
     }
   } catch (err) {
     console.warn('API health check error:', err);
   }
-  return { status: 'rss_fallback', mode: 'fallback', details: 'Backend offline, fallback a RSS locale/cache' };
+  return { status: 'rss_fallback', mode: 'fallback', is_fallback: true, details: 'Backend offline: modalità fallback RSS attiva (non sostituisce il database condiviso)' };
 };
 
 export const fetchApiIncidents = async () => {
@@ -89,6 +89,8 @@ export const fetchApiIncidents = async () => {
       ) ? 'precise' : 'municipality';
       return {
         ...incident,
+        data_origin: 'shared_db',
+        is_fallback: false,
         location_precision: incident.location_precision || inferredPrecision,
         source_url: incident.source_url || incident.media_urls?.[0] || '',
         official_verified: incident.official_verified

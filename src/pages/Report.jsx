@@ -1,4 +1,3 @@
-import { db } from '@/lib/db';
 import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
@@ -9,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { apiFetch } from '@/lib/sentinelApi';
 import {
   ChevronLeft, ChevronRight, MapPin, Loader2, Check, Shield, Upload, X, ShieldAlert
@@ -136,45 +134,49 @@ export default function Report() {
     };
 
     try {
-      // Send to API if available
-      try {
-        await apiFetch('/api/incidents', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(incidentPayload),
-        });
-      } catch (apiErr) {
-        console.warn('API post incident error fallback to local storage:', apiErr);
+      const res = await apiFetch('/api/incidents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(incidentPayload),
+      });
+
+      if (!res.ok) {
+        let errDetail = `Errore HTTP ${res.status}`;
+        try {
+          const errData = await res.json();
+          if (errData?.detail) errDetail = errData.detail;
+        } catch {}
+        throw new Error(errDetail);
       }
 
-      // Save locally
-      try {
-        const current = getPersistentIncidents();
-        const updated = [incidentPayload, ...current];
-        localStorage.setItem(`sentinel_live_production_v12`, JSON.stringify(updated));
-      } catch (e) {
-        console.warn('LocalStorage save report warning:', e);
-      }
+      const createdIncident = await res.json().catch(() => incidentPayload);
+      const finalId = createdIncident?.id || incidentId;
 
-      try {
-        await db.open();
-        await db.incidents.add(incidentPayload);
-        await db.reports.add(incidentPayload);
-      } catch (e) {
-        console.warn('Dexie save report warning:', e);
-      }
-
-      setSuccessId(incidentId);
+      setSuccessId(finalId);
       queryClient.invalidateQueries({ queryKey: ['incidents-live'] });
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
 
       if (isPending) {
-        toast.info('Filtro automatico preliminare con revisione umana per i casi sensibili.');
+        toast.info('Segnalazione inviata: in attesa di revisione preliminare per i casi sensibili.');
       } else {
         toast.success('Segnalazione pubblicata in tempo reale sul network!');
       }
     } catch (e) {
-      toast.error(e.message || 'Errore nell\'invio della segnalazione.');
+      // Offline draft fallback: EXCLUSIVELY labeled as offline draft, NOT placed in live shared feed
+      try {
+        const offlineDraft = {
+          ...incidentPayload,
+          is_offline_draft: true,
+          status: 'bozza_offline',
+          verification_status: 'bozza_offline',
+        };
+        const currentDrafts = JSON.parse(localStorage.getItem('sentinel_offline_drafts') || '[]');
+        localStorage.setItem('sentinel_offline_drafts', JSON.stringify([offlineDraft, ...currentDrafts]));
+      } catch (saveErr) {
+        console.warn('Errore salvataggio bozza offline:', saveErr);
+      }
+
+      toast.error(`Invio non riuscito: ${e.message || 'Errore di connessione'}. Salvata esclusivamente come bozza offline.`);
     } finally {
       setIsSubmitting(false);
     }
