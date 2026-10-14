@@ -108,10 +108,10 @@ export default function Contact() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h1 className="text-5xl md:text-[75px] font-extrabold tracking-tight mb-6 text-gray-900 dark:text-white">
-              {t('contact_hero_title')}
+              {t('contact_hero_title', 'Contatti & Supporto')}
             </h1>
             <p className="text-lg md:text-xl text-gray-600 dark:text-white/50 max-w-2xl mx-auto font-medium">
-              {t('contact_hero_sub')}
+              {t('contact_hero_sub', 'Hai una domanda, un feedback sul progetto o vuoi proporre una collaborazione istituzionale? Scrivici direttamente.')}
             </p>
           </div>
 
@@ -123,10 +123,10 @@ export default function Contact() {
 
               {!submitted ? (
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold mb-6 text-gray-900 dark:text-white">{t('contact_form_title')}</h2>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold mb-6 text-gray-900 dark:text-white">{t('contact_form_title', 'Invia un Messaggio')}</h2>
                   <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                     <div className="flex flex-col gap-2">
-                      <label className="text-xs font-bold text-gray-700 dark:text-white/70">{t('contact_label_name')}</label>
+                      <label className="text-xs font-bold text-gray-700 dark:text-white/70">{t('contact_label_name', 'Nome Completo')}</label>
                       <input 
                         type="text" 
                         value={name}
@@ -138,7 +138,7 @@ export default function Contact() {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <label className="text-xs font-bold text-gray-700 dark:text-white/70">{t('contact_label_email')}</label>
+                      <label className="text-xs font-bold text-gray-700 dark:text-white/70">{t('contact_label_email', 'Indirizzo Email')}</label>
                       <input 
                         type="email" 
                         value={email}

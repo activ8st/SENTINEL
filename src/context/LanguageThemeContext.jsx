@@ -145,7 +145,20 @@ export const translations = {
     platform_map_badge: "● Pilota Forlì-Cesena",
     manifesto_hero_title: "Informazione Chiara, Senza Sensazionalismo.",
     manifesto_hero_sub: " Sentinel aiuta a consultare notizie e segnalazioni locali distinguendo fonti ufficiali e verifiche in corso.",
-    manifesto_quote: "\"L'informazione utile è quella che contestualizza i fatti con fonti trasparenti e responsabilità.\""
+    manifesto_quote: "\"L'informazione utile è quella che contestualizza i fatti con fonti trasparenti e responsabilità.\"",
+    manifesto_stat_1_val: "+180k",
+    manifesto_stat_1_txt: "Eventi e disagi territoriali registrati ogni anno in Italia",
+    manifesto_stat_2_val: "82%",
+    manifesto_stat_2_txt: "Cittadini che desiderano informazioni locali verificate e trasparenti",
+    manifesto_stat_3_val: "< 5 min",
+    manifesto_stat_3_txt: "Aggiornamento tempestivo delle informazioni da fonti pubbliche",
+
+    // Contact
+    contact_hero_title: "Contatti & Supporto",
+    contact_hero_sub: "Hai una domanda, un feedback sul progetto o vuoi proporre una collaborazione istituzionale? Scrivici direttamente.",
+    contact_form_title: "Invia un Messaggio",
+    contact_label_name: "Nome Completo",
+    contact_label_email: "Indirizzo Email"
   },
   en: {
     // Navbar
@@ -291,7 +304,20 @@ export const translations = {
     platform_map_badge: "● Forlì-Cesena Pilot",
     manifesto_hero_title: "Clear Information, Without Sensationalism.",
     manifesto_hero_sub: "Sentinel helps consult local news and reports, distinguishing official sources from unverified submissions.",
-    manifesto_quote: "\"Useful information contextualizes facts with transparent sources and responsibility.\""
+    manifesto_quote: "\"Useful information contextualizes facts with transparent sources and responsibility.\"",
+    manifesto_stat_1_val: "+180k",
+    manifesto_stat_1_txt: "Local events and disruptions recorded each year in Italy",
+    manifesto_stat_2_val: "82%",
+    manifesto_stat_2_txt: "Citizens seeking verified and transparent local information",
+    manifesto_stat_3_val: "< 5 min",
+    manifesto_stat_3_txt: "Timely information refresh from public sources",
+
+    // Contact
+    contact_hero_title: "Contact & Support",
+    contact_hero_sub: "Have a question, feedback on the project, or want to discuss an institutional partnership? Reach out directly.",
+    contact_form_title: "Send a Message",
+    contact_label_name: "Full Name",
+    contact_label_email: "Email Address"
   }
 };
 
@@ -317,8 +343,8 @@ export function LanguageThemeProvider({ children }) {
     }
   }, [theme]);
 
-  const t = (key) => {
-    return translations[lang]?.[key] || translations['it']?.[key] || key;
+  const t = (key, fallback) => {
+    return translations[lang]?.[key] || translations['it']?.[key] || fallback || key;
   };
 
   const toggleTheme = () => {
