@@ -4,6 +4,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { TYPE_CONFIG } from '@/components/data/mockData';
 import { UserRound } from 'lucide-react';
 import { hasPreciseIncidentLocation } from '@/lib/incidentLocation';
+import { resolveIncidentType } from '@/lib/incidentFilters';
 
 const INCIDENT_SOURCE_ID = 'incident-points';
 const CLUSTER_LAYER_ID = 'incident-clusters';
@@ -309,25 +310,29 @@ export default function IncidentMap({
     }
   };
 
+  const addIncidentIcon = (map, type) => {
+    const config = TYPE_CONFIG[type];
+    if (!map || !config) return;
+    const iconId = `incident-${type}`;
+    if (map.hasImage(iconId)) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, 64, 64);
+    context.font = '38px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(config.emoji || '!', 32, 34);
+    map.addImage(iconId, context.getImageData(0, 0, 64, 64), { pixelRatio: 2 });
+  };
+
   const addIncidentIcons = () => {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    Object.entries(TYPE_CONFIG).forEach(([type, config]) => {
-      const iconId = `incident-${type}`;
-      if (map.hasImage(iconId)) return;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = 64;
-      canvas.height = 64;
-      const context = canvas.getContext('2d');
-      context.clearRect(0, 0, 64, 64);
-      context.font = '38px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.fillText(config.emoji || '!', 32, 34);
-      map.addImage(iconId, context.getImageData(0, 0, 64, 64), { pixelRatio: 2 });
-    });
+    Object.keys(TYPE_CONFIG).forEach(type => addIncidentIcon(map, type));
   };
 
   const updateClustering = map => {
@@ -344,7 +349,9 @@ export default function IncidentMap({
     type: 'FeatureCollection',
     features: incidents
       .filter(hasPreciseIncidentLocation)
-      .map(incident => ({
+      .map(incident => {
+        const resolvedType = resolveIncidentType(incident);
+        return ({
         type: 'Feature',
         geometry: {
           type: 'Point',
@@ -352,10 +359,11 @@ export default function IncidentMap({
         },
         properties: {
           incidentId: String(incident.id),
-          type: incident.type || 'other',
-          iconId: `incident-${TYPE_CONFIG[incident.type] ? incident.type : 'other'}`,
+          type: resolvedType,
+          iconId: `incident-${resolvedType}`,
         },
-      })),
+      });
+      }),
   }), [incidents, visualCoordinates]);
   const radiusCircleGeoJSON = useMemo(
     () => showRadius ? createRadiusCircle(userLocation, radiusKm) : null,
@@ -412,6 +420,10 @@ export default function IncidentMap({
           add3DBuildingsLayer();
           updateClustering(event.target);
           setMapLoaded(true);
+        }}
+        onStyleImageMissing={event => {
+          const type = String(event.id || '').replace(/^incident-/, '');
+          addIncidentIcon(event.target, type);
         }}
         minPitch={0}
         maxPitch={55}

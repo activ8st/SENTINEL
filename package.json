@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"vite\" \"powershell -Command .\\backend\\venv\\Scripts\\python.exe -m uvicorn backend.main:app --reload --port 8000\"",
-    "dev:frontend": "vite",
-    "dev:backend": "powershell -Command .\\backend\\venv\\Scripts\\python.exe -m uvicorn backend.main:app --reload --port 8000",
+    "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\dev.ps1",
+    "dev:frontend": "vite --configLoader runner",
+    "dev:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\dev-backend.ps1",
     "build": "vite build",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",

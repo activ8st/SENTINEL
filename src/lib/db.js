@@ -29,6 +29,6 @@ export const initializeDB = async () => {
       }
     }
   } catch (err) {
-    console.error('Failed to open or seed db', err);
+    console.error('Failed to open local Sentinel database', err);
   }
 };

@@ -60,11 +60,12 @@ export const checkApiHealth = async () => {
   return { status: 'rss_fallback', mode: 'fallback', is_fallback: true, details: 'Backend offline: modalità fallback RSS attiva (non sostituisce il database condiviso)' };
 };
 
-export const fetchApiIncidents = async () => {
+export const fetchApiIncidents = async (limit = 400, skip = 0) => {
   if (!isSentinelApiConfigured) return [];
 
-  // Fast fetch with 5-second max timeout for incident list
-  const response = await apiFetch('/api/incidents?limit=5000', { timeoutMs: 5000 });
+  const safeLimit = Math.min(Math.max(Number(limit) || 400, 1), 1000);
+  const safeSkip = Math.max(Number(skip) || 0, 0);
+  const response = await apiFetch(`/api/incidents?limit=${safeLimit}&skip=${safeSkip}`, { timeoutMs: 5000 });
   if (!response.ok) {
     throw new Error(`API eventi non disponibile (${response.status})`);
   }
@@ -97,4 +98,27 @@ export const fetchApiIncidents = async () => {
           ?? String(incident.source_trust || '').startsWith('institutional'),
       };
     });
+};
+
+export const fetchAllApiIncidents = async ({
+  pageSize = 400,
+  maxItems = 10000,
+  startSkip = 0,
+} = {}) => {
+  const safePageSize = Math.min(Math.max(Number(pageSize) || 400, 1), 1000);
+  const safeMaxItems = Math.max(Number(maxItems) || 10000, safePageSize);
+  const safeStartSkip = Math.max(Number(startSkip) || 0, 0);
+  const incidents = [];
+
+  while (incidents.length < safeMaxItems) {
+    const remaining = safeMaxItems - incidents.length;
+    const page = await fetchApiIncidents(
+      Math.min(safePageSize, remaining),
+      safeStartSkip + incidents.length,
+    );
+    incidents.push(...page);
+    if (page.length < Math.min(safePageSize, remaining)) break;
+  }
+
+  return incidents;
 };

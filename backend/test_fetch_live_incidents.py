@@ -375,6 +375,22 @@ class IncidentImportQualityTests(unittest.TestCase):
             ),
             "traffic",
         )
+        self.assertEqual(
+            classify_type(
+                "Feroce rapina a Marebello, individuati i presunti autori",
+                "La vittima era rimasta ferita durante l'aggressione",
+                "accident",
+            ),
+            "crime",
+        )
+        self.assertEqual(
+            classify_type(
+                "Scontro frontale a Romagnano",
+                "Due giovani soccorsi dal 118",
+                "medical",
+            ),
+            "accident",
+        )
 
     def test_small_municipalities_are_recognized_without_capital_fallback(self):
         examples = (

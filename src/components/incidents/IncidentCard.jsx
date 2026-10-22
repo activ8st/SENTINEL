@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { MapPin, Clock, ExternalLink, Share2, Heart, ShieldCheck, ChevronRight, ShieldAlert } from 'lucide-react';
-import { TYPE_CONFIG, SEVERITY_CONFIG, normalizeIncidentType } from '@/components/data/mockData';
+import { SEVERITY_CONFIG } from '@/components/data/mockData';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
+import IncidentShareDialog from '@/components/incidents/IncidentShareDialog';
+import { resolveIncidentType } from '@/lib/incidentFilters';
 
 const safeFormatTimeAgo = (dateStr) => {
   try {
@@ -54,19 +56,6 @@ const HERO_PHOTO_BANKS = {
   ]
 };
 
-const resolveIncidentType = (incident) => {
-  if (!incident) return 'suspicious';
-  const norm = normalizeIncidentType(incident.type);
-  if (norm && norm !== 'other' && TYPE_CONFIG[norm]) return norm;
-  const text = (incident.title + ' ' + (incident.description || '')).toLowerCase();
-  if (/incendio|fuoco|fiamme|rogo|fumo/i.test(text)) return 'fire';
-  if (/incidente|scontro|investit|ribalt|tamponam|auto|moto|camion|ospedale|118/i.test(text)) return 'accident';
-  if (/arrest|furto|rapina|borsegg|aggression|coltell|spacci|omicid|polizia|carabin/i.test(text)) return 'crime';
-  if (/traffico|lavori|deviazion|strada|chiusa|cantiere|code/i.test(text)) return 'traffic';
-  if (/meteo|temporale|pioggia|allerta|vento|neve|terremoto/i.test(text)) return 'weather';
-  return norm || 'suspicious';
-};
-
 const getProvenanceBadge = (incident) => {
   const src = String(incident?.source || '').toLowerCase();
   const label = incident?.source_label || incident?.source || '';
@@ -111,11 +100,13 @@ const saveLikedIncidentsToStorage = (likedArray) => {
 };
 
 export default function IncidentCard({ incident, distance, unread = false }) {
+  const safeIncident = incident || {};
+  const resolvedTypeKey = resolveIncidentType(safeIncident);
+  const photoBank = HERO_PHOTO_BANKS[resolvedTypeKey] || HERO_PHOTO_BANKS.other;
+
   const [isLiked, setIsLiked] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
-
-  const resolvedTypeKey = resolveIncidentType(incident);
-  const photoBank = HERO_PHOTO_BANKS[resolvedTypeKey] || HERO_PHOTO_BANKS.other;
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   // Sync liked state with localStorage
   useEffect(() => {
@@ -127,7 +118,7 @@ export default function IncidentCard({ incident, distance, unread = false }) {
 
   useEffect(() => {
     setPhotoIndex(0);
-  }, [resolvedTypeKey, incident?.id]);
+  }, [resolvedTypeKey, safeIncident.id]);
 
   if (!incident) return null;
 
@@ -157,16 +148,7 @@ export default function IncidentCard({ incident, distance, unread = false }) {
   const handleShare = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (navigator.share) {
-      navigator.share({
-        title: incident.title,
-        text: `${incident.title} - ${incident.address || incident.city}`,
-        url: window.location.href,
-      }).catch(() => {});
-    } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link dell\'allerta copiato negli appunti!');
-    }
+    setIsShareOpen(true);
   };
 
   const formatDist = (km) => {
@@ -294,6 +276,13 @@ export default function IncidentCard({ incident, distance, unread = false }) {
         </div>
 
       </div>
+
+      <IncidentShareDialog
+        incident={incident}
+        imageUrl={currentPhotoSrc}
+        open={isShareOpen}
+        onOpenChange={setIsShareOpen}
+      />
     </div>
   );
 }

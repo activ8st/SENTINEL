@@ -4,20 +4,28 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import IncidentCard from '@/components/incidents/IncidentCard';
-import { calcDistance, TYPE_CONFIG, normalizeIncidentType } from '@/components/data/mockData';
+import { TYPE_CONFIG } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
 import { SlidersHorizontal, Navigation, RefreshCw, X, Check } from 'lucide-react';
 import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
 import IncidentMap from '@/components/incidents/IncidentMap';
 import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
-import { AREA_RADIUS_PRESETS, loadAreaFilter, saveAreaFilter } from '@/lib/areaFilter';
+import {
+  AREA_RADIUS_PRESETS,
+  MAX_AREA_RADIUS_KM,
+  MIN_AREA_RADIUS_KM,
+  loadAreaFilter,
+  saveAreaFilter,
+  subscribeAreaFilter,
+} from '@/lib/areaFilter';
 import { hasPreciseIncidentLocation } from '@/lib/incidentLocation';
+import { filterIncidents } from '@/lib/incidentFilters';
 
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
 const zoomForRadius = (radiusKm) => {
   const safeRadius = Math.max(1, Number(radiusKm) || 1);
-  return Math.max(7.5, Math.min(14.5, 14.5 - Math.log2(safeRadius)));
+  return Math.max(3, Math.min(14.5, 14.5 - Math.log2(safeRadius)));
 };
 
 const TIME_WINDOWS = [
@@ -41,7 +49,7 @@ export default function MapView() {
     return TIME_WINDOWS.some(window => window.hours === saved) ? saved : 720;
   });
   const [radius, setRadius] = useState(() => loadAreaFilter().radius);
-  const [useRadius, setUseRadius] = useState(false);
+  const [useRadius, setUseRadius] = useState(() => loadAreaFilter().enabled);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [refreshingNews, setRefreshingNews] = useState(false);
@@ -50,6 +58,11 @@ export default function MapView() {
   useEffect(() => {
     saveAreaFilter(useRadius, radius);
   }, [useRadius, radius]);
+
+  useEffect(() => subscribeAreaFilter(next => {
+    setUseRadius(next.enabled);
+    setRadius(next.radius);
+  }), []);
 
   useEffect(() => {
     localStorage.setItem('sentinelMapTimeHoursV6', String(selectedHours));
@@ -89,28 +102,27 @@ export default function MapView() {
     return getPersistentIncidents();
   }, [rawLiveIncidents]);
 
-  const incidentsWithDistance = useMemo(() => {
-    return baseIncidents.map(inc => ({
-      ...inc,
-      distance: calcDistance(location.lat, location.lng, inc.latitude, inc.longitude)
-    }));
-  }, [baseIncidents, location]);
-
   const filteredIncidents = useMemo(() => {
-    const cutoffTime = Date.now() - selectedHours * 3600 * 1000;
-    return incidentsWithDistance
-      .filter(i => activeTypes.includes(normalizeIncidentType(i.type)))
-      .filter(i => !useRadius || !userGpsActive || (i.distance ?? 999999) <= radius)
-      .filter(i => {
-        if (!i.created_date) return true;
-        return new Date(i.created_date).getTime() >= cutoffTime;
-      });
-  }, [incidentsWithDistance, activeTypes, useRadius, userGpsActive, radius, selectedHours]);
+    return filterIncidents(baseIncidents, {
+      activeTypes,
+      selectedHours,
+      useRadius,
+      radius,
+      userLocation: location,
+      hasUserLocation: userGpsActive,
+    });
+  }, [baseIncidents, activeTypes, selectedHours, useRadius, radius, location, userGpsActive]);
 
   const mappedIncidents = useMemo(
     () => filteredIncidents.filter(hasPreciseIncidentLocation),
     [filteredIncidents]
   );
+
+  useEffect(() => {
+    if (selectedIncident && !mappedIncidents.some(item => String(item.id) === String(selectedIncident.id))) {
+      setSelectedIncident(null);
+    }
+  }, [mappedIncidents, selectedIncident]);
 
   const handleRefresh = async () => {
     setRefreshingNews(true);
@@ -132,6 +144,8 @@ export default function MapView() {
   };
 
   const categoryFiltersCount = Object.keys(TYPE_CONFIG).length - activeTypes.length;
+  const hasActiveFilters = categoryFiltersCount > 0 || useRadius || selectedHours !== 720;
+  const unmappedCount = filteredIncidents.length - mappedIncidents.length;
   const mapZoom = userGpsActive
     ? (useRadius ? zoomForRadius(radius) : zoomForRadius(1))
     : 6;
@@ -140,7 +154,7 @@ export default function MapView() {
     <div style={{ position: 'relative', width: '100%', height: 'calc(100vh - 64px)', minHeight: '500px' }} className="bg-[#05070a] overflow-hidden">
       
       {/* 1. Top Floating Controls Bar */}
-      <div className="absolute top-4 inset-x-4 z-20 max-w-xl mx-auto flex items-center justify-between gap-2 pointer-events-none">
+      <div className="absolute top-4 inset-x-4 z-30 max-w-sm mx-auto flex items-center justify-between gap-2 pointer-events-none">
         
         {/* Left: GPS & Time Selector */}
         <div className="pointer-events-auto flex items-center gap-2 bg-[#0d1017]/90 backdrop-blur-md p-1.5 px-3 rounded-full border border-white/15 shadow-2xl">
@@ -172,8 +186,8 @@ export default function MapView() {
           <Button
             size="icon"
             onClick={() => setShowFilters(true)}
-            aria-label={`Filtri${categoryFiltersCount > 0 ? `, ${categoryFiltersCount} attivi` : ''}`}
-            className={`relative border rounded-full w-8 h-8 shadow-2xl ${categoryFiltersCount > 0 ? 'bg-[#10b981] hover:bg-emerald-400 text-black border-[#10b981]' : 'bg-[#0d1017]/90 hover:bg-[#141721] text-white border-white/15'}`}
+            aria-label={`Filtri${hasActiveFilters ? ', filtri attivi' : ''}`}
+            className={`relative border rounded-full w-8 h-8 shadow-2xl ${hasActiveFilters ? 'bg-[#10b981] hover:bg-emerald-400 text-black border-[#10b981]' : 'bg-[#0d1017]/90 hover:bg-[#141721] text-white border-white/15'}`}
           >
             <SlidersHorizontal className="w-4 h-4" />
             {categoryFiltersCount > 0 && (
@@ -258,6 +272,10 @@ export default function MapView() {
           </SheetHeader>
 
           <div className="py-4 space-y-6">
+            <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] text-white/60">
+              <span className="font-bold text-white">{mappedIncidents.length}</span> eventi visibili sulla mappa
+              {unmappedCount > 0 && <span> · {unmappedCount} presenti nel feed senza coordinate precise</span>}
+            </div>
             <div>
               <button
                 type="button"
@@ -279,7 +297,7 @@ export default function MapView() {
               )}
               {useRadius && (
                 <div className="pt-2 px-1">
-                  <div className="mb-3 grid grid-cols-5 gap-2">
+                  <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
                     {AREA_RADIUS_PRESETS.map(km => (
                       <button
                         key={km}
@@ -293,16 +311,37 @@ export default function MapView() {
                   </div>
                   <Slider
                     value={[radius]}
-                    min={1}
-                    max={100}
+                    min={MIN_AREA_RADIUS_KM}
+                    max={MAX_AREA_RADIUS_KM}
                     step={1}
                     onValueChange={([val]) => setRadius(val)}
                   />
                   <div className="flex justify-between text-[10px] text-white/40 mt-2">
-                    <span>1 km</span>
+                    <span>{MIN_AREA_RADIUS_KM} km</span>
                     <span className="text-[#10b981] font-bold">{radius} km</span>
-                    <span>100 km</span>
+                    <span>{MAX_AREA_RADIUS_KM} km</span>
                   </div>
+                  <label className="mt-3 flex min-h-11 items-center gap-3 rounded-lg border border-white/15 bg-white/[0.03] px-3">
+                    <span className="flex-1 text-xs font-semibold text-white/70">Raggio personalizzato</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={MIN_AREA_RADIUS_KM}
+                      max={MAX_AREA_RADIUS_KM}
+                      step={1}
+                      value={radius}
+                      onChange={event => {
+                        const value = Number(event.target.value);
+                        if (Number.isFinite(value)) {
+                          setRadius(Math.min(MAX_AREA_RADIUS_KM, Math.max(MIN_AREA_RADIUS_KM, value)));
+                          setUseRadius(true);
+                        }
+                      }}
+                      aria-label="Raggio personalizzato in chilometri"
+                      className="h-8 w-24 rounded-md border border-white/20 bg-black/30 px-2 text-right text-sm font-bold text-[#10b981] outline-none focus:border-[#10b981]"
+                    />
+                    <span className="text-xs font-bold text-white/50">km</span>
+                  </label>
                 </div>
               )}
             </div>

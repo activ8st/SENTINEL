@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -30,6 +31,8 @@ def _mark_checked(incident: Incident) -> None:
 
 
 def repair_recent_locations(db: Session, limit: int | None = 200) -> dict[str, int]:
+    retry_hours = max(1, int(os.getenv("SENTINEL_LOCATION_RETRY_HOURS", "24")))
+    retry_before = dt.datetime.now(dt.UTC).replace(tzinfo=None) - dt.timedelta(hours=retry_hours)
     candidates = (
         db.query(Incident)
         .options(selectinload(Incident.media))
@@ -41,11 +44,17 @@ def repair_recent_locations(db: Session, limit: int | None = 200) -> dict[str, i
                 Incident.source_trust.is_(None),
                 ~Incident.source_trust.contains(LOCATION_CHECK_MARKER),
             ),
+            or_(
+                Incident.last_verified_at.is_(None),
+                Incident.last_verified_at < retry_before,
+            ),
         )
         .order_by(Incident.created_date.desc())
         .all()
     )
     candidates.sort(key=lambda incident: (
+        incident.last_verified_at is not None,
+        incident.last_verified_at or dt.datetime.min,
         incident.address != incident.city,
         incident.source != "riminitoday-diretto",
         -(incident.created_date.timestamp() if incident.created_date else 0),
@@ -65,6 +74,7 @@ def repair_recent_locations(db: Session, limit: int | None = 200) -> dict[str, i
         already_precise = 0
         for future in as_completed(jobs):
             incident = jobs[future]
+            incident.last_verified_at = dt.datetime.now(dt.UTC).replace(tzinfo=None)
             try:
                 description, _published_at = future.result()
             except Exception:
@@ -83,7 +93,7 @@ def repair_recent_locations(db: Session, limit: int | None = 200) -> dict[str, i
                 ),
                 analyze_with_ai=analyze_article,
                 build_from_analysis=precise_incident_from_analysis,
-                prefer_ai=False,
+                prefer_ai=True,
             )
             coords = resolution.coordinates
             incident.type = resolution.event_type
@@ -108,10 +118,10 @@ def repair_recent_locations(db: Session, limit: int | None = 200) -> dict[str, i
                     if resolution.enriched_incident
                     else address
                 ) or address
+                _mark_checked(incident)
             else:
                 incident.location_precision = "municipality"
                 incident.location_evidence = incident.city
-            _mark_checked(incident)
 
     return {
         "location_articles_checked": checked,

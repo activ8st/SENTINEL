@@ -7,8 +7,9 @@ import uuid
 from contextlib import asynccontextmanager, suppress
 from typing import List, Optional
 
-from fastapi import FastAPI, Depends, Header, HTTPException, Request
+from fastapi import FastAPI, Depends, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy.orm import Session, selectinload
 
 from . import models, schemas
@@ -123,6 +124,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 @app.get("/api/health")
@@ -443,18 +445,40 @@ def update_current_user(
     return current_user
 
 @app.get("/api/incidents", response_model=List[schemas.Incident])
-def get_incidents(skip: int = 0, limit: int = 2000, db: Session = Depends(get_db)):
+def get_incidents(
+    response: Response,
+    skip: int = 0,
+    limit: int = 400,
+    db: Session = Depends(get_db),
+):
     safe_limit = min(max(limit, 1), 5000)
-    all_incidents = (
-        db.query(models.Incident)
-        .options(selectinload(models.Incident.media))
-        .filter(models.Incident.status.in_(["active", "monitoring"]))
-        .order_by(models.Incident.created_date.desc())
-        .all()
-    )
-    incidents = [inc for inc in all_incidents if incident_in_allowed_area(inc)][skip:skip + safe_limit]
+    safe_skip = max(skip, 0)
+    target_count = safe_skip + safe_limit
+    query_offset = 0
+    batch_size = min(max(target_count * 2, 500), 5000)
+    allowed_incidents = []
+
+    while len(allowed_incidents) < target_count:
+        batch = (
+            db.query(models.Incident)
+            .options(selectinload(models.Incident.media))
+            .filter(models.Incident.status.in_(["active", "monitoring"]))
+            .order_by(models.Incident.created_date.desc())
+            .offset(query_offset)
+            .limit(batch_size)
+            .all()
+        )
+        if not batch:
+            break
+        allowed_incidents.extend(inc for inc in batch if incident_in_allowed_area(inc))
+        query_offset += len(batch)
+        if len(batch) < batch_size:
+            break
+
+    incidents = allowed_incidents[safe_skip:target_count]
     for inc in incidents:
         attach_incident_metadata(inc)
+    response.headers["Cache-Control"] = "public, max-age=15, stale-while-revalidate=120"
     return incidents
 
 @app.post("/api/incidents/refresh")

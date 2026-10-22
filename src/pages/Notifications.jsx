@@ -8,10 +8,16 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { calcDistance, TYPE_CONFIG } from '@/components/data/mockData';
+import { TYPE_CONFIG } from '@/components/data/mockData';
 import { getPersistentIncidents, syncSentinelFeedsPermanently } from '@/lib/liveSyncEngine';
-import { loadAreaFilter, saveAreaFilter } from '@/lib/areaFilter';
-import { hasPreciseIncidentLocation } from '@/lib/incidentLocation';
+import {
+  MAX_AREA_RADIUS_KM,
+  MIN_AREA_RADIUS_KM,
+  loadAreaFilter,
+  saveAreaFilter,
+  subscribeAreaFilter,
+} from '@/lib/areaFilter';
+import { filterIncidents, incidentTimestamp } from '@/lib/incidentFilters';
 import { useQuery } from '@tanstack/react-query';
 import {
   Trash2, MapPin, Settings, ShieldCheck, SlidersHorizontal, ChevronDown, ChevronUp
@@ -56,6 +62,11 @@ export default function Notifications() {
     saveAreaFilter(useRadius, radius);
   }, [useRadius, radius]);
 
+  useEffect(() => subscribeAreaFilter(next => {
+    setUseRadius(next.enabled);
+    setRadius(next.radius);
+  }), []);
+
   const setReadIds = (newSet) => {
     const updatedSet = typeof newSet === 'function' ? newSet(readIds) : newSet;
     setReadIdsState(updatedSet);
@@ -84,15 +95,16 @@ export default function Notifications() {
     const titleMap = new Map();
     const result = [];
 
-    const enriched = fetchedAlerts
-      .filter(i => i && i.id && !dismissed.has(i.id))
-      .filter(hasPreciseIncidentLocation)
-      .map(i => ({
-        ...i,
-        distance: calcDistance(location.lat, location.lng, i.latitude, i.longitude),
-      }))
-      .filter(i => !useRadius || !hasUserLocation || i.distance <= radius)
-      .sort((a, b) => new Date(b.created_date || Date.now()) - new Date(a.created_date || Date.now()));
+    const enriched = filterIncidents(
+      fetchedAlerts.filter(i => i && i.id && !dismissed.has(i.id)),
+      {
+        useRadius,
+        radius,
+        userLocation: location,
+        hasUserLocation,
+        requirePreciseLocation: true,
+      }
+    );
 
     // Prudential deduplication by normalized title to prevent identical duplicate alerts
     for (const item of enriched) {
@@ -124,7 +136,7 @@ export default function Notifications() {
     const other = [];
 
     processedAlerts.forEach(inc => {
-      const isNear = hasUserLocation && Number.isFinite(inc.distance) && inc.distance <= radius;
+      const isNear = useRadius && hasUserLocation && Number.isFinite(inc.distance) && inc.distance <= radius;
       if (isNear) {
         near.push(inc);
       } else {
@@ -134,7 +146,8 @@ export default function Notifications() {
 
     // Group general alerts by date
     const dGroups = (useRadius && hasUserLocation ? other : processedAlerts).reduce((acc, inc) => {
-      const d = inc.created_date ? new Date(inc.created_date) : new Date();
+      const timestamp = incidentTimestamp(inc);
+      const d = timestamp ? new Date(timestamp) : new Date();
       const today = new Date();
       const yesterday = new Date(today);
       yesterday.setDate(today.getDate() - 1);
@@ -273,7 +286,32 @@ export default function Notifications() {
                       {radius} km da te
                     </span>
                   </div>
-                  <Slider value={[radius]} onValueChange={([v]) => setRadius(v)} min={1} max={100} step={1} className="my-2" />
+                  <Slider
+                    value={[radius]}
+                    onValueChange={([v]) => setRadius(v)}
+                    min={MIN_AREA_RADIUS_KM}
+                    max={MAX_AREA_RADIUS_KM}
+                    step={1}
+                    className="my-2"
+                  />
+                  <label className="mt-3 flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 dark:border-white/10 dark:bg-white/[0.03]">
+                    <span className="flex-1 text-xs font-semibold text-slate-600 dark:text-white/70">Raggio personalizzato</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={MIN_AREA_RADIUS_KM}
+                      max={MAX_AREA_RADIUS_KM}
+                      step={1}
+                      value={radius}
+                      onChange={event => {
+                        const value = Number(event.target.value);
+                        if (Number.isFinite(value)) setRadius(Math.min(MAX_AREA_RADIUS_KM, Math.max(MIN_AREA_RADIUS_KM, value)));
+                      }}
+                      aria-label="Raggio personalizzato in chilometri"
+                      className="h-8 w-24 rounded-md border border-slate-300 bg-white px-2 text-right text-sm font-bold text-[#10b981] outline-none focus:border-[#10b981] dark:border-white/20 dark:bg-black/30"
+                    />
+                    <span className="text-xs font-bold text-slate-500 dark:text-white/50">km</span>
+                  </label>
                 </div>
               )}
 
@@ -349,10 +387,7 @@ export default function Notifications() {
 
             {/* Feed Generale o Altri Aggiornamenti */}
             {Object.entries(dateGroups).map(([dateLabel, items]) => {
-              // Avoid duplicate rendering if items were already shown in "Vicino a te"
-              const displayItems = (hasUserLocation && useRadius && nearAlerts.length > 0)
-                ? items.filter(inc => !nearAlerts.some(n => n.id === inc.id))
-                : items;
+              const displayItems = items;
 
               if (displayItems.length === 0) return null;
 

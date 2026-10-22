@@ -11,6 +11,7 @@ import {
   Info,
 } from 'lucide-react';
 import { normalizeIncidentType } from '@/components/data/mockData';
+import { resolveIncidentType } from '@/lib/incidentFilters';
 
 const LUCIDE_ICON_MAP = {
   crime: ShieldAlert,
@@ -51,7 +52,7 @@ function formatRelativeTime(dateString) {
 }
 
 export default function NotificationCard({ incident, isRead, onMarkRead, typeConfig }) {
-  const normType = normalizeIncidentType(incident?.type);
+  const normType = resolveIncidentType(incident) || normalizeIncidentType(incident?.type);
   const IconComponent = LUCIDE_ICON_MAP[normType] || Info;
   const categoryStyle = CATEGORY_COLORS[normType] || CATEGORY_COLORS.other;
   const label = typeConfig?.label || (normType !== 'other' ? normType : 'Allerta');

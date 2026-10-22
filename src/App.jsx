@@ -8,10 +8,10 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
-import { calcDistance } from '@/components/data/mockData';
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeDB } from '@/lib/db';
-import { getPersistentIncidents, syncSentinelFeedsPermanently } from '@/lib/liveSyncEngine';
+import { incidentDistance } from '@/lib/incidentFilters';
+import { getIndexedDbIncidents, getPersistentIncidents, keepLatestIncidents, syncSentinelFeedsPermanently } from '@/lib/liveSyncEngine';
 import { LanguageThemeProvider } from '@/context/LanguageThemeContext';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
@@ -37,7 +37,6 @@ const loadNotifySettings = () => {
 };
 
 const AuthenticatedApp = () => {
-  const notifySettings = loadNotifySettings();
   const prevIncidentIdsRef = useRef(new Set());
   const isFirstFetchRef = useRef(true);
   const [userRealGps, setUserRealGps] = useState(null);
@@ -64,11 +63,25 @@ const AuthenticatedApp = () => {
       return syncSentinelFeedsPermanently();
     },
     initialData: () => getPersistentIncidents(),
+    staleTime: 15000,
     refetchInterval: 30000,
   });
 
   useEffect(() => {
+    let active = true;
+    getIndexedDbIncidents().then((cachedIncidents) => {
+      if (!active || cachedIncidents.length === 0) return;
+      queryClientInstance.setQueryData(['incidents-live'], (current = []) => (
+        keepLatestIncidents([...current, ...cachedIncidents])
+      ));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
     if (!dbIncidents.length) return;
+    const notifySettings = loadNotifySettings();
 
     if (isFirstFetchRef.current) {
       dbIncidents.forEach((inc) => prevIncidentIdsRef.current.add(inc.id));
@@ -86,9 +99,9 @@ const AuthenticatedApp = () => {
         const isEnabled = notifySettings[notifyKeyForType(inc.type)] !== false;
         if (!isEnabled) return;
 
-        const dist = calcDistance(userRealGps.lat, userRealGps.lng, inc.latitude, inc.longitude);
+        const dist = incidentDistance(inc, userRealGps);
         // Only trigger toast for real incidents within 15 km of the user's actual physical location
-        if (dist <= 15) {
+        if (dist != null && dist <= 15) {
           toast.warning(`ALLERTA IN ZONA: ${inc.title}`, {
             description: `${inc.address || inc.city} (${dist.toFixed(1)} km da te)`,
             duration: 8000,
@@ -96,7 +109,7 @@ const AuthenticatedApp = () => {
         }
       }
     });
-  }, [dbIncidents, userRealGps, notifySettings]);
+  }, [dbIncidents, userRealGps]);
 
   return (
     <Routes>
@@ -153,7 +166,7 @@ export default function App() {
             </Router>
           </ErrorBoundary>
           <Toaster />
-          <SonnerToaster position="top-right" theme="dark" />
+          <SonnerToaster position="top-right" theme="dark" offset="72px" />
           <SpeedInsights />
           <Analytics />
         </LanguageThemeProvider>

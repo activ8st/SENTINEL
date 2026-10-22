@@ -1,7 +1,7 @@
 import { db, IS_DEMO_MODE } from '@/lib/db';
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getIncidentById, TYPE_CONFIG, SEVERITY_CONFIG, STATUS_CONFIG, MOCK_INCIDENTS } from '@/components/data/mockData';
+import { resolveIncidentType } from '@/lib/incidentFilters';
 import { getPersistentIncidents } from '@/lib/liveSyncEngine';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 import VoteButtons from '@/components/incidents/VoteButtons';
 import { ReliabilityBadge } from '@/components/data/reliability';
+import IncidentShareDialog from '@/components/incidents/IncidentShareDialog';
 
 const IncidentMap = lazy(() => import('@/components/incidents/IncidentMap'));
 
@@ -36,7 +38,6 @@ const generateTimeline = (incident) => [
 
 export default function IncidentDetail() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const incidentId = urlParams.get('id');
 
@@ -44,6 +45,7 @@ export default function IncidentDetail() {
   const [isSafe, setIsSafe] = useState(false);
   const [following, setFollowing] = useState(false);
   const [showTimeline, setShowTimeline] = useState(true);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   const { data: incident, isLoading } = useQuery({
     queryKey: ['incident', incidentId],
@@ -107,27 +109,6 @@ export default function IncidentDetail() {
     isPending: false
   };
 
-  const handleShare = async () => {
-    const text = `🚨 ${incident.title}\n📍 ${incident.address}\n\nVia Sentinel App`;
-    if (navigator.share) {
-      await navigator.share({ title: incident.title, text, url: window.location.href }).catch(() => {});
-    } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => toast.success('Copiato negli appunti!'));
-    } else {
-      const textArea = document.createElement("textarea");
-      textArea.value = text;
-      document.body.appendChild(textArea);
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        toast.success('Copiato negli appunti!');
-      } catch (err) {
-        toast.error('Impossibile copiare il link');
-      }
-      document.body.removeChild(textArea);
-    }
-  };
-
   const handleSafe = () => {
     setIsSafe(true);
     toast.success('Segnalato come "Sono al sicuro" ✓', { duration: 3000 });
@@ -159,7 +140,7 @@ export default function IncidentDetail() {
     );
   }
 
-  const type = TYPE_CONFIG[incident.type] || TYPE_CONFIG.other;
+  const type = TYPE_CONFIG[resolveIncidentType(incident)] || TYPE_CONFIG.other;
   const severity = SEVERITY_CONFIG[incident.severity] || SEVERITY_CONFIG.medium;
   const status = STATUS_CONFIG[incident.status] || STATUS_CONFIG.active;
   const timeline = generateTimeline(incident);
@@ -187,7 +168,7 @@ export default function IncidentDetail() {
           )}
           <button
             className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-white/15 text-gray-900 dark:text-white rounded-full px-4 py-2 text-sm font-semibold shadow active:scale-95 transition-transform"
-            onClick={handleShare}
+            onClick={() => setIsShareOpen(true)}
             aria-label="Condividi incidente"
           >
             <Share2 className="w-4 h-4" />
@@ -435,6 +416,11 @@ export default function IncidentDetail() {
           )}
         </div>
       </div>
+      <IncidentShareDialog
+        incident={incident}
+        open={isShareOpen}
+        onOpenChange={setIsShareOpen}
+      />
     </div>
   );
 }

@@ -1,42 +1,28 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import IncidentCard from '@/components/incidents/IncidentCard';
-import { calcDistance } from '@/components/data/mockData';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw, ChevronDown, Radio, ShieldCheck, Sparkles, Clock3, MapPin } from 'lucide-react';
 import ReportIncidentModal from '@/components/incidents/ReportIncidentModal';
 import { syncSentinelFeedsPermanently, getPersistentIncidents } from '@/lib/liveSyncEngine';
-import { loadAreaFilter, saveAreaFilter } from '@/lib/areaFilter';
-import { hasPreciseIncidentLocation } from '@/lib/incidentLocation';
+import { loadAreaFilter, subscribeAreaFilter } from '@/lib/areaFilter';
+import { filterIncidents } from '@/lib/incidentFilters';
 
 const DEFAULT_LOC = { lat: 45.4642, lng: 9.1900 };
 
 const TIME_WINDOWS = [
+  { hours: 0, label: 'Tutti gli eventi disponibili' },
   ...Array.from({ length: 8 }, (_, index) => ({ hours: (index + 1) * 3, label: `Ultime ${(index + 1) * 3} ore` })),
   ...Array.from({ length: 29 }, (_, index) => ({ hours: (index + 2) * 24, label: `Ultimi ${index + 2} giorni` })),
 ];
 
-const incidentTimestamp = (incident) => {
-  const rawDate = incident.created_date || incident.published_at || incident.last_seen_at;
-  if (!rawDate) return 0;
-
-  const italianDate = String(rawDate).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
-  if (italianDate) {
-    const [, day, month, year, hours = '0', minutes = '0', seconds = '0'] = italianDate;
-    return new Date(Number(year), Number(month) - 1, Number(day), Number(hours), Number(minutes), Number(seconds)).getTime();
-  }
-
-  const parsed = new Date(rawDate).getTime();
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
 export default function Home() {
   const [userLocation, setUserLocation] = useState(DEFAULT_LOC);
   const [hasUserLocation, setHasUserLocation] = useState(false);
-  const [selectedHours, setSelectedHours] = useState(720);
+  const [selectedHours, setSelectedHours] = useState(0);
   const [sortMode, setSortMode] = useState(() => localStorage.getItem('sentinelFeedSort') === 'distance' ? 'distance' : 'recent');
-  const [radius] = useState(() => loadAreaFilter().radius);
-  const [useRadius] = useState(() => loadAreaFilter().enabled);
+  const [radius, setRadius] = useState(() => loadAreaFilter().radius);
+  const [useRadius, setUseRadius] = useState(() => loadAreaFilter().enabled);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [refreshingNews, setRefreshingNews] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
@@ -58,9 +44,10 @@ export default function Home() {
     );
   }, []);
 
-  useEffect(() => {
-    saveAreaFilter(useRadius, radius);
-  }, [useRadius, radius]);
+  useEffect(() => subscribeAreaFilter(next => {
+    setUseRadius(next.enabled);
+    setRadius(next.radius);
+  }), []);
 
   useEffect(() => {
     localStorage.setItem('sentinelFeedSort', sortMode);
@@ -73,6 +60,8 @@ export default function Home() {
     queryFn: async () => {
       return await syncSentinelFeedsPermanently();
     },
+    initialData: () => getPersistentIncidents(),
+    staleTime: 15000,
     refetchInterval: 15000,
   });
 
@@ -83,31 +72,20 @@ export default function Home() {
     return getPersistentIncidents();
   }, [rawLiveIncidents]);
 
-  const incidentsWithDistance = useMemo(() => {
-    return baseIncidents.map(inc => ({
-      ...inc,
-      distance: hasPreciseIncidentLocation(inc)
-        ? calcDistance(userLocation.lat, userLocation.lng, inc.latitude, inc.longitude)
-        : null,
-    }));
-  }, [baseIncidents, userLocation]);
-
   const filteredIncidents = useMemo(() => {
-    const cutoffTime = Date.now() - selectedHours * 3600 * 1000;
-    const filtered = incidentsWithDistance
-      .filter(i => !useRadius || !hasUserLocation || (i.distance != null && i.distance <= radius))
-      .filter(i => {
-        const timestamp = incidentTimestamp(i);
-        return timestamp === 0 || timestamp >= cutoffTime;
-      });
-
-    return [...filtered].sort((a, b) => {
-      if (sortMode === 'distance' && hasUserLocation) {
-        return (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY);
-      }
-      return incidentTimestamp(b) - incidentTimestamp(a);
+    return filterIncidents(baseIncidents, {
+      selectedHours,
+      useRadius,
+      radius,
+      userLocation,
+      hasUserLocation,
+      sortMode,
     });
-  }, [incidentsWithDistance, selectedHours, useRadius, hasUserLocation, radius, sortMode]);
+  }, [baseIncidents, selectedHours, useRadius, radius, userLocation, hasUserLocation, sortMode]);
+
+  useEffect(() => {
+    setDisplayLimit(15);
+  }, [selectedHours, useRadius, radius]);
 
   // Visible items limited by displayLimit for infinite scroll
   const visibleIncidents = useMemo(() => {

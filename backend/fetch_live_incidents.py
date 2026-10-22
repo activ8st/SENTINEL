@@ -63,6 +63,10 @@ MAX_ARTICLE_ENRICHMENTS_PER_SOURCE = 3
 DIRECT_ARTICLE_ENRICHMENTS_PER_SOURCE = 8
 FEED_DOWNLOAD_WORKERS = 8
 ARTICLE_ENRICHMENT_WORKERS = 6
+MAX_ARTICLE_ENRICHMENTS_PER_REFRESH = max(
+    1,
+    int(os.getenv("SENTINEL_ARTICLE_ENRICHMENT_BATCH", "120")),
+)
 GEOCODE_DELAY_SECONDS = 1.1
 MAX_NEWS_AGE = dt.timedelta(days=30)
 try:
@@ -2278,10 +2282,38 @@ def fetch_source_items(source: Source) -> list[dict[str, str]]:
 
 def classify_type(title: str, description: str, default_type: str) -> str:
     text = normalize(f"{title} {description}")
+    scores = {incident_type: 0.0 for incident_type, _keywords in TYPE_KEYWORDS}
+    base_weights = {
+        "crime": 7.0,
+        "fire": 7.0,
+        "weather": 7.0,
+        "accident": 8.0,
+        "medical": 5.0,
+        "traffic": 6.0,
+        "suspicious": 4.0,
+    }
+    weak_signals = {
+        ("accident", "ferito"), ("accident", "feriti"),
+        ("accident", "autostrada"), ("accident", "strada chiusa"),
+        ("accident", "cavalcavia"),
+        ("medical", "soccorso"), ("medical", "ricoverato"),
+        ("medical", "evacuato"),
+        ("fire", "fumo"),
+    }
+
     for incident_type, keywords in TYPE_KEYWORDS:
-        if any(keyword in text for keyword in keywords):
-            return incident_type
-    return default_type
+        for keyword in keywords:
+            if keyword not in text:
+                continue
+            weight = 1.0 if (incident_type, keyword) in weak_signals else base_weights[incident_type]
+            if " " in keyword:
+                weight += 1.5
+            scores[incident_type] += weight
+
+    if default_type in scores:
+        scores[default_type] += 2.0
+    best_type = max(scores, key=scores.get)
+    return best_type if scores[best_type] > 0 else default_type
 
 
 def classify_severity(title: str, description: str) -> str:
@@ -2691,7 +2723,10 @@ def coordinates_for(
     description: str,
     source_name: str | None = None,
     allow_geocode: bool = True,
+    allow_city_geocode: bool | None = None,
 ) -> tuple[float, float, str, str, bool] | None:
+    if allow_city_geocode is None:
+        allow_city_geocode = allow_geocode
     city_evidence = detect_city_evidence(title, description, source_name)
     if not city_evidence:
         return None
@@ -2723,7 +2758,7 @@ def coordinates_for(
     if key in CITY_COORDS:
         lat, lon = CITY_COORDS[key]
         return lat, lon, city, city, location_method != "publisher"
-    if allow_geocode:
+    if allow_city_geocode:
         coords = geocode_place(city)
         time.sleep(GEOCODE_DELAY_SECONDS)
         if coords:
@@ -2871,7 +2906,11 @@ def save_item(db, source: Source, item: dict[str, str]) -> bool:
         default_event_type=source.default_type,
         classify_event=classify_type,
         resolve_from_text=lambda _title, body, source_name: coordinates_for(
-            raw_title, body, source_name, allow_geocode=True,
+            raw_title,
+            body,
+            source_name,
+            allow_geocode=analysis_enabled,
+            allow_city_geocode=True,
         ),
         analyze_with_ai=analyze_article if analysis_enabled else None,
         build_from_analysis=precise_incident_from_analysis if analysis_enabled else None,
@@ -3412,7 +3451,12 @@ def select_enrichment_jobs(
                 continue
             jobs.append((source, item))
             selected_items += 1
-    return jobs, skipped_existing
+    jobs.sort(
+        key=lambda pair: parse_published_at(pair[1].get("published", ""))
+        or dt.datetime.min.replace(tzinfo=dt.UTC),
+        reverse=True,
+    )
+    return jobs[:MAX_ARTICLE_ENRICHMENTS_PER_REFRESH], skipped_existing
 
 
 def main(*, perform_maintenance: bool = False) -> dict:
@@ -3429,8 +3473,7 @@ def main(*, perform_maintenance: bool = False) -> dict:
     try:
         ensure_sentinel_bot(db)
         db.commit()
-        removed_old = cleanup_old_incidents(db)
-        db.commit()
+        removed_old = 0
         cleanup_result = {"updated_generic_locations": 0, "removed_generic_locations": 0}
         sardinia_cleanup_result = {"updated_sardinia_locations": 0, "removed_sardinia_locations": 0}
         region_cleanup_result = {"updated_region_locations": 0, "removed_region_locations": 0}
@@ -3492,11 +3535,15 @@ def main(*, perform_maintenance: bool = False) -> dict:
         for completed_count, (source, items) in enumerate(downloaded_sources, start=1):
             for item in items:
                 seen += 1
+                source_event_key = (source.name, item.get("guid", "")[:500])
+                if source_event_key in known_source_events:
+                    continue
                 try:
                     with db.begin_nested():
                         item_added = save_item(db, source, item)
                     if item_added:
                         added += 1
+                        known_source_events.add(source_event_key)
                 except SQLAlchemyError as exc:
                     failed_items += 1
                     print(f"Notizia saltata da {source.name}: {exc.__class__.__name__}")
@@ -3540,6 +3587,20 @@ def main(*, perform_maintenance: bool = False) -> dict:
                     db.commit()
                     print(f"Articoli approfonditi: {completed_count}/{len(enrichment_jobs)}")
         db.commit()
+
+        minimum_healthy_sources = max(1, min(25, math.ceil(len(SOURCES) * 0.20)))
+        refresh_is_healthy = (
+            len(downloaded_sources) >= minimum_healthy_sources
+            and seen > 0
+        )
+        if refresh_is_healthy:
+            removed_old = cleanup_old_incidents(db)
+            db.commit()
+        else:
+            print(
+                "Pulizia eventi vecchi rinviata: aggiornamento fonti incompleto "
+                f"({len(downloaded_sources)}/{len(SOURCES)} fonti, {seen} elementi)."
+            )
 
         removed_duplicates = 0
         while True:

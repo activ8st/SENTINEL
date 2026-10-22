@@ -68,6 +68,25 @@ SCHEMA_COMPAT_COLUMNS = {
     },
 }
 
+SCHEMA_COMPAT_INDEXES = {
+    "ix_incidents_status_created_date": {
+        "table": "incidents",
+        "columns": {"status", "created_date"},
+        "statement": (
+            "CREATE INDEX IF NOT EXISTS ix_incidents_status_created_date "
+            "ON incidents (status, created_date DESC)"
+        ),
+    },
+    "ix_media_incident_id": {
+        "table": "media",
+        "columns": {"incident_id"},
+        "statement": (
+            "CREATE INDEX IF NOT EXISTS ix_media_incident_id "
+            "ON media (incident_id)"
+        ),
+    },
+}
+
 
 def ensure_schema_compatibility(target_engine=engine):
     """Add known backward-compatible columns without replacing user data."""
@@ -88,6 +107,19 @@ def ensure_schema_compatibility(target_engine=engine):
                 connection.execute(text(
                     f'ALTER TABLE "{table_name}" ADD COLUMN "{column_name}" {definition}'
                 ))
+
+        refreshed_inspector = inspect(target_engine)
+        refreshed_tables = set(refreshed_inspector.get_table_names())
+        for index_spec in SCHEMA_COMPAT_INDEXES.values():
+            table_name = index_spec["table"]
+            if table_name not in refreshed_tables:
+                continue
+            table_columns = {
+                column["name"]
+                for column in refreshed_inspector.get_columns(table_name)
+            }
+            if index_spec["columns"].issubset(table_columns):
+                connection.execute(text(index_spec["statement"]))
 
 def get_db():
     db = SessionLocal()

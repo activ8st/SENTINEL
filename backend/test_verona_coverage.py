@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 
+from backend.incident_enrichment import PrecisePosition
 from backend.fetch_live_incidents import (
     VERONA_ROWS, VERONA_CITIES, CITY_COORDS, SOURCES,
     allowed_area_for, detect_city_evidence, coordinates_for,
@@ -23,7 +24,16 @@ class VeronaCoverageTests(unittest.TestCase):
             "e' seguito dai carabinieri di Novafeltria."
         )
         self.assertEqual(detect_city_evidence(title, body)[0], "Sant'Agata Feltria")
-        with patch("backend.fetch_live_incidents.geocode_place", return_value=None), patch("backend.fetch_live_incidents.time.sleep"):
+        romagnano = PrecisePosition(
+            latitude=43.9219111,
+            longitude=12.1674664,
+            address="SP 146, Romagnano, Sant'Agata Feltria",
+            precision="locality",
+        )
+        with patch(
+            "backend.fetch_live_incidents.geocode_precise_position",
+            return_value=romagnano,
+        ), patch("backend.fetch_live_incidents.time.sleep"):
             result = coordinates_for(title, body)
         self.assertEqual(result[2], "Sant'Agata Feltria")
         self.assertEqual(result[3], "SP 146, Romagnano, Sant'Agata Feltria")
