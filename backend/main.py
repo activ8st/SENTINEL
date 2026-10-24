@@ -13,13 +13,10 @@ from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy.orm import Session, selectinload
 
 from . import models, schemas
-from .database import engine, ensure_schema_compatibility, get_db
+from .database import ensure_schema_compatibility, get_db
 from .moderation import moderate_user_report, ModerationAction, evaluate_report_for_moderation
 from .incident_enrichment import synchronize_location_note
 from sqlalchemy import text
-
-models.Base.metadata.create_all(bind=engine)
-ensure_schema_compatibility()
 
 AUTO_REFRESH_MINUTES = max(5, int(os.getenv("SENTINEL_AUTO_REFRESH_MINUTES", "15")))
 AUTO_REFRESH_ENABLED = os.getenv("SENTINEL_AUTO_REFRESH_ENABLED", "true").strip().lower() in {

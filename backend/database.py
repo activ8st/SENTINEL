@@ -98,15 +98,15 @@ def schema_definition_for_dialect(definition: str, dialect_name: str) -> str:
 def ensure_schema_compatibility(target_engine=engine):
     """Add known backward-compatible columns without replacing user data."""
     Base.metadata.create_all(bind=target_engine)
-    inspector = inspect(target_engine)
-    existing_tables = set(inspector.get_table_names())
 
     with target_engine.begin() as connection:
+        inspector = inspect(connection)
+        existing_tables = set(inspector.get_table_names())
         for table_name, expected_columns in SCHEMA_COMPAT_COLUMNS.items():
             if table_name not in existing_tables:
                 continue
             current_columns = {
-                column["name"] for column in inspect(target_engine).get_columns(table_name)
+                column["name"] for column in inspector.get_columns(table_name)
             }
             for column_name, definition in expected_columns.items():
                 if column_name in current_columns:
@@ -119,7 +119,7 @@ def ensure_schema_compatibility(target_engine=engine):
                     f'ALTER TABLE "{table_name}" ADD COLUMN "{column_name}" {dialect_definition}'
                 ))
 
-        refreshed_inspector = inspect(target_engine)
+        refreshed_inspector = inspect(connection)
         refreshed_tables = set(refreshed_inspector.get_table_names())
         for index_spec in SCHEMA_COMPAT_INDEXES.values():
             table_name = index_spec["table"]
