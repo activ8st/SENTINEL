@@ -2331,7 +2331,7 @@ def format_city_name(city: str) -> str:
 
 
 AMBIGUOUS_CITY_NAMES = {
-    "cento", "classe", "dello", "fondi", "marino", "medicina", "meta", "minori",
+    "cento", "classe", "dello", "fondi", "marino", "medicina", "mese", "meta", "minori",
     "opera", "pace", "ponte", "rocca", "russi", "sala", "zone",
 }
 
@@ -2606,7 +2606,7 @@ BLOCKED_PLACE_WORDS = {
     "venezuela", "spagna", "portogallo", "slovenia", "germania", "canada",
     "francia", "ucraina", "russia", "andorra", "austria", "svizzera",
     "croazia", "grecia", "turchia", "marocco", "tunisia", "libia", "egitto",
-    "aurora", "elvo", "calore",
+    "aurora", "elvo", "calcio", "calore", "miniatura",
 }
 
 BLOCKED_PLACE_NAMES = {

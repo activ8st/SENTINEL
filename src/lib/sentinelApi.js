@@ -60,6 +60,33 @@ export const checkApiHealth = async () => {
   return { status: 'rss_fallback', mode: 'fallback', is_fallback: true, details: 'Backend offline: modalità fallback RSS attiva (non sostituisce il database condiviso)' };
 };
 
+const isValidApiIncident = (incident) => (
+  incident
+  && incident.id
+  && incident.title
+  && Number.isFinite(Number(incident.latitude))
+  && Number.isFinite(Number(incident.longitude))
+);
+
+export const normalizeApiIncident = (incident) => {
+  if (!isValidApiIncident(incident)) return null;
+
+  const inferredPrecision = (
+    String(incident.address || '').trim().toLocaleLowerCase('it-IT')
+    !== String(incident.city || '').trim().toLocaleLowerCase('it-IT')
+  ) ? 'precise' : 'municipality';
+
+  return {
+    ...incident,
+    data_origin: 'shared_db',
+    is_fallback: false,
+    location_precision: incident.location_precision || inferredPrecision,
+    source_url: incident.source_url || incident.media_urls?.[0] || '',
+    official_verified: incident.official_verified
+      ?? String(incident.source_trust || '').startsWith('institutional'),
+  };
+};
+
 export const fetchApiIncidents = async (limit = 400, skip = 0) => {
   if (!isSentinelApiConfigured) return [];
 
@@ -75,29 +102,21 @@ export const fetchApiIncidents = async (limit = 400, skip = 0) => {
     throw new Error('Risposta eventi non valida');
   }
 
-  return incidents
-    .filter((incident) => (
-      incident
-      && incident.id
-      && incident.title
-      && Number.isFinite(Number(incident.latitude))
-      && Number.isFinite(Number(incident.longitude))
-    ))
-    .map((incident) => {
-      const inferredPrecision = (
-        String(incident.address || '').trim().toLocaleLowerCase('it-IT')
-        !== String(incident.city || '').trim().toLocaleLowerCase('it-IT')
-      ) ? 'precise' : 'municipality';
-      return {
-        ...incident,
-        data_origin: 'shared_db',
-        is_fallback: false,
-        location_precision: incident.location_precision || inferredPrecision,
-        source_url: incident.source_url || incident.media_urls?.[0] || '',
-        official_verified: incident.official_verified
-          ?? String(incident.source_trust || '').startsWith('institutional'),
-      };
-    });
+  return incidents.map(normalizeApiIncident).filter(Boolean);
+};
+
+export const fetchApiIncidentById = async (incidentId) => {
+  if (!isSentinelApiConfigured || !incidentId) return null;
+
+  const response = await apiFetch(`/api/incidents/${encodeURIComponent(incidentId)}`, {
+    timeoutMs: 15000,
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`API dettaglio evento non disponibile (${response.status})`);
+  }
+
+  return normalizeApiIncident(await response.json());
 };
 
 export const fetchAllApiIncidents = async ({

@@ -14,6 +14,36 @@ const mins = (m) => new Date(now - m * 60 * 1000).toISOString();
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || ('pk.eyJ1IjoiYWN0aXY4c3QiLCJh' + 'IjoiY21yYzc3bmVtMDBtajJ3cnowMGExMDBycyJ9.mM-UgVYY8UhIVAB5Hxd2mw');
 
+const COVERED_AREA_BOUNDS = [
+  { minLat: 44.60, maxLat: 46.70, minLng: 8.30, maxLng: 11.55 }, // Lombardia
+  { minLat: 43.70, maxLat: 45.25, minLng: 9.10, maxLng: 12.90 }, // Emilia-Romagna
+  { minLat: 40.70, maxLat: 42.90, minLng: 11.35, maxLng: 14.10 }, // Lazio
+  { minLat: 39.90, maxLat: 41.65, minLng: 13.70, maxLng: 15.85 }, // Campania
+  { minLat: 45.00, maxLat: 45.90, minLng: 10.55, maxLng: 11.55 }, // Verona e provincia
+];
+
+export const isCoveredLaunchArea = (latitude, longitude) => {
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  return COVERED_AREA_BOUNDS.some((bounds) => (
+    lat >= bounds.minLat
+    && lat <= bounds.maxLat
+    && lng >= bounds.minLng
+    && lng <= bounds.maxLng
+  ));
+};
+
+const stableFeedId = (prefix, item) => {
+  const seed = String(item?.guid || item?.link || item?.title || prefix);
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${prefix}-${(hash >>> 0).toString(16)}`;
+};
+
 // Master Geocoding Dictionary for Covered Launch Hubs
 const NEIGHBORHOOD_COORDS = {
   // Milano & Hinterland
@@ -258,7 +288,7 @@ export const fetchIngvEarthquakes = async () => {
         official_verified: true,
         source_url: eventUrl
       };
-    });
+    }).filter((incident) => isCoveredLaunchArea(incident.latitude, incident.longitude));
   } catch (err) {
     console.warn('INGV live fetch warning:', err);
     return [];
@@ -278,7 +308,7 @@ export const fetchMilanoToday = async () => {
     if (!geocoded) return null;
 
     return {
-      id: `milanotoday-${idx}-${now}`,
+      id: stableFeedId('milanotoday', item),
       title: cleanTitle,
       description: cleanDesc.length > 150 ? cleanDesc.substring(0, 150) + '...' : cleanDesc,
       type: cat.type,
@@ -310,7 +340,7 @@ export const fetchRomaToday = async () => {
     if (!geocoded) return null;
 
     return {
-      id: `romatoday-${idx}-${now}`,
+      id: stableFeedId('romatoday', item),
       title: cleanTitle,
       description: cleanDesc.length > 150 ? cleanDesc.substring(0, 150) + '...' : cleanDesc,
       type: cat.type,
@@ -342,7 +372,7 @@ export const fetchVeronaLiveFeeds = async () => {
     if (!geocoded) return null;
 
     return {
-      id: `verona-${idx}-${now}`,
+      id: stableFeedId('verona', item),
       title: cleanTitle,
       description: cleanDesc.length > 150 ? cleanDesc.substring(0, 150) + '...' : cleanDesc,
       type: cat.type,
@@ -374,7 +404,7 @@ export const fetchNapoliLiveFeeds = async () => {
     if (!geocoded) return null;
 
     return {
-      id: `napoli-${idx}-${now}`,
+      id: stableFeedId('napoli', item),
       title: cleanTitle,
       description: cleanDesc.length > 150 ? cleanDesc.substring(0, 150) + '...' : cleanDesc,
       type: cat.type,
@@ -406,7 +436,7 @@ export const fetchBolognaLiveFeeds = async () => {
     if (!geocoded) return null;
 
     return {
-      id: `bologna-${idx}-${now}`,
+      id: stableFeedId('bologna', item),
       title: cleanTitle,
       description: cleanDesc.length > 150 ? cleanDesc.substring(0, 150) + '...' : cleanDesc,
       type: cat.type,

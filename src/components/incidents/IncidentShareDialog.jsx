@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Copy, Download, Instagram, LoaderCircle, RectangleVertical, Share2, Square } from 'lucide-react';
+import { Copy, Download, Instagram, LoaderCircle, MessageCircle, RectangleVertical, Share2, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -71,6 +71,15 @@ export default function IncidentShareDialog({ incident, imageUrl = '', open, onO
     }
   };
 
+  const handleWhatsApp = () => {
+    const url = getIncidentShareUrl(incident);
+    const location = incident.address || incident.city || '';
+    const message = [incident.title, location, `Leggi e segui gli aggiornamenti su Sentinel: ${url}`]
+      .filter(Boolean)
+      .join('\n');
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+  };
+
   const copyLink = async () => {
     await navigator.clipboard.writeText(getIncidentShareUrl(incident));
     toast.success('Link dell evento copiato');
@@ -123,7 +132,10 @@ export default function IncidentShareDialog({ incident, imageUrl = '', open, onO
           {format === 'story' ? 'Condividi come Storia' : 'Condividi come Post'}
         </button>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={handleWhatsApp} className="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs font-bold text-emerald-300 hover:bg-emerald-500/15">
+            <MessageCircle className="h-4 w-4" /> WhatsApp
+          </button>
           <button type="button" onClick={handleNativeShare} className="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 text-xs font-bold text-white/80 hover:bg-white/10">
             <Share2 className="h-4 w-4" /> Altro
           </button>

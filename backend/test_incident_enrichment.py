@@ -105,6 +105,10 @@ class IncidentEnrichmentTests(unittest.TestCase):
         self.assertEqual(location_precision_for("Rimini", "Marebello, Rimini"), "precise")
 
         incident = type("IncidentRecord", (), {})()
+        incident.description = (
+            "La fonte segnala una rapina. Fonte: Test. Localizzazione: Rimini. "
+            "Data e ora mostrate: pubblicazione; orario evento non determinato."
+        )
         apply_resolved_location(
             incident,
             (44.0417567, 12.608035, "Rimini", "Marebello, Rimini", True),
@@ -112,6 +116,8 @@ class IncidentEnrichmentTests(unittest.TestCase):
         )
         self.assertEqual(incident.location_precision, "precise")
         self.assertEqual(incident.location_evidence, "rapina a Marebello")
+        self.assertIn("Localizzazione: Marebello, Rimini.", incident.description)
+        self.assertNotIn("Localizzazione: Rimini.", incident.description)
 
 
 if __name__ == "__main__":

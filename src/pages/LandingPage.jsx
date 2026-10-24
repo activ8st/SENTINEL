@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { ShieldCheck, Map, BellRing, Users, ArrowRight, Lock, Eye, ChevronDown, Compass, Navigation, AlertTriangle, CheckCircle, Info, ShieldAlert, FileText, Layers, Ban } from 'lucide-react';
 import GlobalFooter from '@/components/ui/GlobalFooter';
-import ItalyMapModal from '@/components/ui/ItalyMapModal';
 import MarketingNavbar from '@/components/ui/MarketingNavbar';
 import FeatureModal from '@/components/ui/FeatureModal';
 import DualIPhoneHeroMockup from '@/components/ui/DualIPhoneHeroMockup';
 import { useLanguageTheme } from '@/context/LanguageThemeContext';
 import { trackEvent, initScrollDepthTracking } from '@/lib/analytics';
 import { Link, useNavigate } from 'react-router-dom';
+
+const ItalyMapModal = lazy(() => import('@/components/ui/ItalyMapModal'));
 
 export default function LandingPage() {
   const { t, lang } = useLanguageTheme();
@@ -545,7 +546,11 @@ export default function LandingPage() {
       )}
 
       {/* MODALS */}
-      <ItalyMapModal isOpen={isMapModalOpen} onClose={() => setIsMapModalOpen(false)} />
+      {isMapModalOpen && (
+        <Suspense fallback={null}>
+          <ItalyMapModal isOpen={isMapModalOpen} onClose={() => setIsMapModalOpen(false)} />
+        </Suspense>
+      )}
       <FeatureModal featureId={activeFeature} onClose={() => setActiveFeature(null)} />
 
     </div>

@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getIncidentById, TYPE_CONFIG, SEVERITY_CONFIG, STATUS_CONFIG, MOCK_INCIDENTS } from '@/components/data/mockData';
 import { resolveIncidentType } from '@/lib/incidentFilters';
 import { getPersistentIncidents } from '@/lib/liveSyncEngine';
+import { fetchApiIncidentById } from '@/lib/sentinelApi';
+import { queryClientInstance } from '@/lib/query-client';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -24,9 +26,20 @@ import {
 } from 'lucide-react';
 import VoteButtons from '@/components/incidents/VoteButtons';
 import { ReliabilityBadge } from '@/components/data/reliability';
-import IncidentShareDialog from '@/components/incidents/IncidentShareDialog';
+const IncidentShareDialog = lazy(() => import('@/components/incidents/IncidentShareDialog'));
 
 const IncidentMap = lazy(() => import('@/components/incidents/IncidentMap'));
+
+const findIncident = (incidents, incidentId) => (
+  Array.isArray(incidents)
+    ? incidents.find((incident) => String(incident.id) === String(incidentId)) || null
+    : null
+);
+
+const getCachedIncident = (incidentId) => (
+  findIncident(queryClientInstance.getQueryData(['incidents-live']), incidentId)
+  || findIncident(getPersistentIncidents(), incidentId)
+);
 
 // Mock timeline updates
 const generateTimeline = (incident) => [
@@ -47,16 +60,25 @@ export default function IncidentDetail() {
   const [showTimeline, setShowTimeline] = useState(true);
   const [isShareOpen, setIsShareOpen] = useState(false);
 
-  const { data: incident, isLoading } = useQuery({
+  const { data: incident, isLoading, isError } = useQuery({
     queryKey: ['incident', incidentId],
     queryFn: async () => {
       if (!incidentId) return null;
-      // 1. Check persistent incidents cache
-      const persistent = getPersistentIncidents();
-      const foundPersistent = persistent.find(i => String(i.id) === String(incidentId));
-      if (foundPersistent) return foundPersistent;
 
-      // 2. Check static mock incidents (ONLY in demo mode)
+      const cachedIncident = getCachedIncident(incidentId);
+      if (cachedIncident) return cachedIncident;
+
+      try {
+        const indexedIncident = await db.incidents.get(incidentId);
+        if (indexedIncident) return indexedIncident;
+      } catch (error) {
+        console.warn('IndexedDB incident lookup failed:', error);
+      }
+
+      if (!IS_DEMO_MODE) {
+        return fetchApiIncidentById(incidentId);
+      }
+
       if (IS_DEMO_MODE) {
         const foundMock = MOCK_INCIDENTS.find(i => String(i.id) === String(incidentId));
         if (foundMock) return { ...foundMock, is_demo: true };
@@ -69,14 +91,13 @@ export default function IncidentDetail() {
     enabled: !!incidentId,
     initialData: () => {
       if (!incidentId) return null;
-      const persistent = getPersistentIncidents();
-      const foundPersistent = persistent.find(i => String(i.id) === String(incidentId));
-      if (foundPersistent) return foundPersistent;
+      const cachedIncident = getCachedIncident(incidentId);
+      if (cachedIncident) return cachedIncident;
       if (IS_DEMO_MODE) {
         const foundMock = MOCK_INCIDENTS.find(i => String(i.id) === String(incidentId));
         return foundMock ? { ...foundMock, is_demo: true } : null;
       }
-      return null;
+      return undefined;
     }
   });
 
@@ -131,7 +152,9 @@ export default function IncidentDetail() {
   if (!incident) {
     return (
       <div className="min-h-screen bg-transparent flex flex-col items-center justify-center gap-4 px-4">
-        <p className="text-gray-900 dark:text-white font-semibold">Incidente non trovato</p>
+        <p className="text-gray-900 dark:text-white font-semibold">
+          {isError ? 'Impossibile caricare l\'evento' : 'Incidente non trovato'}
+        </p>
         <Button onClick={() => navigate(-1)} variant="outline" className="border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Torna indietro
@@ -416,11 +439,15 @@ export default function IncidentDetail() {
           )}
         </div>
       </div>
-      <IncidentShareDialog
-        incident={incident}
-        open={isShareOpen}
-        onOpenChange={setIsShareOpen}
-      />
+      {isShareOpen && (
+        <Suspense fallback={null}>
+          <IncidentShareDialog
+            incident={incident}
+            open={isShareOpen}
+            onOpenChange={setIsShareOpen}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

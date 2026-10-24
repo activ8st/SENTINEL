@@ -167,7 +167,9 @@ export const filterIncidents = (incidents, {
     .filter(incident => !useRadius || !hasUserLocation || (
       incident.distance != null && incident.distance <= Number(radius)
     ))
-    .filter(incident => selectedHours === 0 || incident.timestamp === 0 || incident.timestamp >= cutoff)
+    .filter(incident => selectedHours === 0 || (
+      incident.timestamp > 0 && incident.timestamp >= cutoff
+    ))
     .sort((left, right) => {
       if (sortMode === 'distance' && hasUserLocation) {
         return (left.distance ?? Number.POSITIVE_INFINITY) - (right.distance ?? Number.POSITIVE_INFINITY);

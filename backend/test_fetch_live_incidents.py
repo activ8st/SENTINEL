@@ -21,6 +21,7 @@ from backend.fetch_live_incidents import (
     FOCUS_METROPOLITAN_AREAS,
     REGIONAL_LOCAL_MEDIA_SOURCES,
     REGIONAL_MUNICIPALITY_SOURCES,
+    RECOGNIZED_CITIES,
     SOURCE_BY_NAME,
     SOURCES,
     allowed_area_for,
@@ -484,6 +485,27 @@ class IncidentImportQualityTests(unittest.TestCase):
         for title, expected in examples:
             with self.subTest(title=title):
                 self.assertEqual(detect_city(title, "", "google-news-incidenti"), expected)
+
+    def test_mese_requires_explicit_location_context(self):
+        was_known = "mese" in RECOGNIZED_CITIES
+        RECOGNIZED_CITIES.add("mese")
+        try:
+            self.assertIsNone(detect_city(
+                "I controlli proseguiranno per tutto il mese",
+                "La polizia intensifica il servizio",
+                "google-news-incidenti",
+            ))
+            self.assertEqual(
+                detect_city(
+                    "Incendio a Mese, intervengono i vigili del fuoco",
+                    "",
+                    "google-news-incidenti",
+                ),
+                "Mese",
+            )
+        finally:
+            if not was_known:
+                RECOGNIZED_CITIES.remove("mese")
 
     def test_san_marino_is_not_confused_with_marino(self):
         self.assertIsNone(

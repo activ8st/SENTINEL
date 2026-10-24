@@ -6,6 +6,15 @@ import pluginUnusedImports from "eslint-plugin-unused-imports";
 
 export default [
   {
+    ignores: [
+      "**/.pytest_cache/**",
+      "**/__pycache__/**",
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/venv/**",
+    ],
+  },
+  {
     files: [
       "src/components/**/*.{js,mjs,cjs,jsx}",
       "src/pages/**/*.{js,mjs,cjs,jsx}",

@@ -5,8 +5,9 @@ import { MapPin, Clock, ExternalLink, Share2, Heart, ShieldCheck, ChevronRight, 
 import { SEVERITY_CONFIG } from '@/components/data/mockData';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
-import IncidentShareDialog from '@/components/incidents/IncidentShareDialog';
 import { resolveIncidentType } from '@/lib/incidentFilters';
+
+const IncidentShareDialog = React.lazy(() => import('@/components/incidents/IncidentShareDialog'));
 
 const safeFormatTimeAgo = (dateStr) => {
   try {
@@ -277,12 +278,16 @@ export default function IncidentCard({ incident, distance, unread = false }) {
 
       </div>
 
-      <IncidentShareDialog
-        incident={incident}
-        imageUrl={currentPhotoSrc}
-        open={isShareOpen}
-        onOpenChange={setIsShareOpen}
-      />
+      {isShareOpen && (
+        <React.Suspense fallback={null}>
+          <IncidentShareDialog
+            incident={incident}
+            imageUrl={currentPhotoSrc}
+            open={isShareOpen}
+            onOpenChange={setIsShareOpen}
+          />
+        </React.Suspense>
+      )}
     </div>
   );
 }

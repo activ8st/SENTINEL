@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from typing import List, Optional
 from datetime import datetime, timezone
 
@@ -88,7 +88,7 @@ class IncidentBase(BaseModel):
     reported_by_id: Optional[str] = None
     reporter_karma: int = 0
     fake_votes: int = 0
-    media_urls: Optional[List[str]] = []
+    media_urls: List[str] = Field(default_factory=list)
     
     # Provenance and Data Verification Fields
     verification_status: Optional[str] = "unverified"

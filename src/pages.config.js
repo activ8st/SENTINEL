@@ -47,18 +47,20 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Home from './pages/Home';
-import IncidentDetail from './pages/IncidentDetail';
-import MapView from './pages/MapView';
-import Notifications from './pages/Notifications';
-import Profile from './pages/Profile';
-import Report from './pages/Report';
-import LandingPage from './pages/LandingPage';
-import Platform from './pages/Platform';
-import Manifesto from './pages/Manifesto';
-import Contact from './pages/Contact';
-import Auth from './pages/Auth';
+import { lazy } from 'react';
 import __Layout from './Layout.jsx';
+
+const Home = lazy(() => import('./pages/Home'));
+const IncidentDetail = lazy(() => import('./pages/IncidentDetail'));
+const MapView = lazy(() => import('./pages/MapView'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Report = lazy(() => import('./pages/Report'));
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const Platform = lazy(() => import('./pages/Platform'));
+const Manifesto = lazy(() => import('./pages/Manifesto'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Auth = lazy(() => import('./pages/Auth'));
 
 export const PAGES = {
     "Home": Home,

@@ -40,4 +40,5 @@ backend/__pycache__/
 *.db-shm
 backend/*.db
 __pycache__/
+.pytest_cache/
 .sentinel-cache/

@@ -2,7 +2,11 @@
  * Production live-feed ingestion with a fast persistent cache.
  */
 
-import { fetchAllLiveSentinelFeeds, getColdBootRealLiveFeeds } from '@/lib/newsScraper';
+import {
+  fetchAllLiveSentinelFeeds,
+  getColdBootRealLiveFeeds,
+  isCoveredLaunchArea,
+} from '@/lib/newsScraper';
 import { db, APP_MODE, IS_DEMO_MODE } from '@/lib/db';
 import { fetchAllApiIncidents, fetchApiIncidents } from '@/lib/sentinelApi';
 
@@ -27,6 +31,11 @@ const isDemoIncident = (item) => Boolean(
   item?.is_demo
   || /^inc-m\d+$/i.test(String(item?.id || ''))
   || String(item?.id || '').startsWith('mock-')
+);
+
+const isAllowedCachedIncident = (item) => (
+  item?.data_origin !== 'rss_fallback'
+  || isCoveredLaunchArea(item?.latitude, item?.longitude)
 );
 
 export const calculateFreshnessStatus = (createdDate) => {
@@ -56,6 +65,7 @@ export const deduplicateFeeds = (items) => {
 export const keepLatestIncidents = (items, limit = INDEXED_DB_INCIDENT_LIMIT) => (
   deduplicateFeeds(items)
     .filter((item) => IS_DEMO_MODE || !isDemoIncident(item))
+    .filter(isAllowedCachedIncident)
     .sort((a, b) => incidentTimestamp(b) - incidentTimestamp(a))
     .slice(0, limit)
 );

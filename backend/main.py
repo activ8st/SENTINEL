@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, selectinload
 from . import models, schemas
 from .database import engine, ensure_schema_compatibility, get_db
 from .moderation import moderate_user_report, ModerationAction, evaluate_report_for_moderation
+from .incident_enrichment import synchronize_location_note
 from sqlalchemy import text
 
 models.Base.metadata.create_all(bind=engine)
@@ -170,6 +171,11 @@ def attach_incident_metadata(incident: models.Incident) -> models.Incident:
             and incident.address.strip().casefold() != incident.city.strip().casefold()
         )
         incident.location_precision = "precise" if has_precise_address else "municipality"
+    incident.description = synchronize_location_note(
+        incident.description,
+        incident.city or "",
+        incident.address or "",
+    )
     match = re.search(
         r"\bFonte:\s*(.+?)\.\s+Localizzazione:",
         incident.description or "",
@@ -498,7 +504,15 @@ def refresh_incidents_status():
 
 @app.get("/api/incidents/{incident_id}", response_model=schemas.Incident)
 def get_incident(incident_id: str, db: Session = Depends(get_db)):
-    incident = db.query(models.Incident).filter(models.Incident.id == incident_id, models.Incident.status == "active").first()
+    incident = (
+        db.query(models.Incident)
+        .options(selectinload(models.Incident.media))
+        .filter(
+            models.Incident.id == incident_id,
+            models.Incident.status.in_(["active", "monitoring"]),
+        )
+        .first()
+    )
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
     return attach_incident_metadata(incident)

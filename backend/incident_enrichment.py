@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any, Callable, Mapping, TypeAlias
 
@@ -16,6 +17,23 @@ VALID_EVENT_TYPES = {
 }
 
 IncidentCoordinates: TypeAlias = tuple[float, float, str, str, bool]
+
+LOCATION_NOTE_PATTERN = re.compile(
+    r"(\bLocalizzazione:\s*)(.*?)(?=\.(?:\s+(?:Data e ora mostrate:|Ora evento indicata dalla fonte:)|\s*$))",
+    flags=re.IGNORECASE,
+)
+
+
+def synchronize_location_note(description: str | None, city: str, address: str) -> str:
+    text = description or ""
+    location = (address or city or "").strip()
+    if not text or not location:
+        return text
+    return LOCATION_NOTE_PATTERN.sub(
+        lambda match: f"{match.group(1)}{location}",
+        text,
+        count=1,
+    )
 
 
 def location_precision_for(city: str, address: str) -> str:
@@ -36,6 +54,8 @@ def apply_resolved_location(
     incident.address = address
     incident.location_precision = location_precision_for(city, address)
     incident.location_evidence = evidence or address or city
+    if hasattr(incident, "description"):
+        incident.description = synchronize_location_note(incident.description, city, address)
 
 
 @dataclass(frozen=True, slots=True)

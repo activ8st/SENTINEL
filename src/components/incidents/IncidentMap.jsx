@@ -395,7 +395,7 @@ export default function IncidentMap({
   return (
     <div 
       ref={containerRef} 
-      style={{ position: 'relative', width: '100%', height: height === '100%' ? 'calc(100vh - 64px)' : height, minHeight: '480px' }} 
+      style={{ position: 'relative', width: '100%', height, minHeight: 0 }}
       className={`overflow-hidden bg-[#05070a] border border-white/10 ${className} relative text-white select-none`}
     >
       <style>{`
@@ -431,7 +431,7 @@ export default function IncidentMap({
         maxZoom={17}
         mapboxAccessToken={mapboxToken}
         mapStyle="mapbox://styles/mapbox/dark-v11"
-        style={{ width: '100%', height: '100%', minHeight: '480px' }}
+        style={{ width: '100%', height: '100%' }}
         attributionControl={false}
       >
         <NavigationControl position="top-right" showCompass={true} />
@@ -443,20 +443,22 @@ export default function IncidentMap({
           </Source>
         )}
 
-        <Source
-          key={shouldCluster ? 'incident-source-clustered' : 'incident-source-points'}
-          id={INCIDENT_SOURCE_ID}
-          type="geojson"
-          data={incidentGeoJSON}
-          cluster={shouldCluster}
-          clusterMaxZoom={CLUSTER_MAX_ZOOM}
-          clusterRadius={60}
-        >
-          <Layer {...clusterLayer} />
-          <Layer {...clusterCountLayer} />
-          <Layer {...pointLayer} />
-          <Layer {...pointIconLayer} />
-        </Source>
+        {mapLoaded && (
+          <Source
+            key={shouldCluster ? 'incident-source-clustered' : 'incident-source-points'}
+            id={INCIDENT_SOURCE_ID}
+            type="geojson"
+            data={incidentGeoJSON}
+            cluster={shouldCluster}
+            clusterMaxZoom={CLUSTER_MAX_ZOOM}
+            clusterRadius={60}
+          >
+            <Layer {...clusterLayer} />
+            <Layer {...clusterCountLayer} />
+            <Layer {...pointLayer} />
+            <Layer {...pointIconLayer} />
+          </Source>
+        )}
 
         {/* 1. User Physical GPS Location Marker */}
         {userLocation && (
