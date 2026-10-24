@@ -88,6 +88,13 @@ SCHEMA_COMPAT_INDEXES = {
 }
 
 
+def schema_definition_for_dialect(definition: str, dialect_name: str) -> str:
+    """Translate portable compatibility definitions for the active database."""
+    if dialect_name == "postgresql":
+        return definition.replace("DATETIME", "TIMESTAMP")
+    return definition
+
+
 def ensure_schema_compatibility(target_engine=engine):
     """Add known backward-compatible columns without replacing user data."""
     Base.metadata.create_all(bind=target_engine)
@@ -104,8 +111,12 @@ def ensure_schema_compatibility(target_engine=engine):
             for column_name, definition in expected_columns.items():
                 if column_name in current_columns:
                     continue
+                dialect_definition = schema_definition_for_dialect(
+                    definition,
+                    target_engine.dialect.name,
+                )
                 connection.execute(text(
-                    f'ALTER TABLE "{table_name}" ADD COLUMN "{column_name}" {definition}'
+                    f'ALTER TABLE "{table_name}" ADD COLUMN "{column_name}" {dialect_definition}'
                 ))
 
         refreshed_inspector = inspect(target_engine)

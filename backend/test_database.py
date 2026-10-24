@@ -2,10 +2,20 @@ import unittest
 
 from sqlalchemy import create_engine, inspect, text
 
-from backend.database import ensure_schema_compatibility
+from backend.database import ensure_schema_compatibility, schema_definition_for_dialect
 
 
 class SchemaCompatibilityTests(unittest.TestCase):
+    def test_datetime_definition_is_valid_for_postgresql(self):
+        self.assertEqual(
+            schema_definition_for_dialect("DATETIME", "postgresql"),
+            "TIMESTAMP",
+        )
+        self.assertEqual(
+            schema_definition_for_dialect("DATETIME", "sqlite"),
+            "DATETIME",
+        )
+
     def test_missing_columns_are_added_without_replacing_tables(self):
         test_engine = create_engine("sqlite://")
         with test_engine.begin() as connection:
